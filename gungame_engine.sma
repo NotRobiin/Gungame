@@ -7,8 +7,8 @@
 #include <sqlx>
 #include <fun>
 
-#define AUTHOR "aSior - amxx.pl/user/60210-asiorr/"
-
+// Do not change that, thank you
+#define AUTHOR "Wicked - amxx.pl/user/60210-wicked/"
 
 // Used in custom mapchooser.
 native showMapVoteMenu();
