@@ -13,7 +13,6 @@
 // Used in custom mapchooser.
 native showMapVoteMenu();
 
-
 #pragma semicolon 1
 #pragma compress 1
 
@@ -190,7 +189,7 @@ new const Float:heGrenadeExplodeTime = 1.1;
 enum (+= 1)
 {
 	gameDeathMatch = 0,
-	gameTeamPlay
+	gameTeamDeathMatch
 };
 
 // Hud objects enum.
@@ -612,7 +611,11 @@ new userLevel[MAX_PLAYERS + 1],
 	wandSpritesIndexes[sizeof(wandSprites)],
 	wandLastAttack[MAX_PLAYERS + 1],
 
-	cvarsData[sizeof(ggCvarsData)];
+	cvarsData[sizeof(ggCvarsData)],
+	
+	gameMode,
+	deathMatchVotes,
+	teamDeathMatchVotes;
 
 
 public plugin_init()
@@ -880,7 +883,7 @@ public native_GetWeaponsData(plugin, params)
 	return weaponsData[userLevel[index]][value];
 }
 
-public naitve_GetUserWins(plugin, params)
+public native_GetUserWins(plugin, params)
 {
 	new index = get_param(1);
 
@@ -1808,6 +1811,52 @@ public displayHud(taskIndex)
 public respawnPlayerOnJoin(taskIndex)
 {
 	respawnPlayer(taskIndex - TASK_RESPAWN_ON_JOIN, 0.1);
+}
+
+/*
+		[ Mode Choosing ]
+*/
+
+public gameModeVote(taskIndex)
+{
+	new time = 5;
+	new menu = menu_create("Jaki mod gramy ?", "gameModeVoteHandler");
+	menu_additem(menu, "Deathmatch");
+	menu_additem(menu, "TeamDeathMatch");
+	menu_display(0, menu, 0, time);
+
+	set_task(float(time), "gameModeVoteFinished");
+}
+
+public gameModeVoteHandler(id, menu, item)
+{
+	if (item == 0)
+	{
+		deathMatchVotes++;
+	}
+	else
+	{
+		teamDeathMatchVotes++;
+	}
+}
+
+public gameModeVoteFinished()
+{
+	if (deathMatchVotes > teamDeathMatchVotes)
+	{
+		gameMode = gameDeathMatch;
+		ColorChat(0, RED, "Wygral tryb DeathMatch");
+	}
+	else if (teamDeathMatchVotes > deathMatchVotes)
+	{
+		gameMode = gameTeamDeathMatch;
+		ColorChat(0, RED, "Wygral tryb TeamDeathMatch");
+	}
+	else
+	{
+		gameMode = random_num(0, 1);
+		ColorChat(0, RED, "Rowna liczba glosow! Wylosowano tryb: %s", (gameMode == 0 ? "DeathMatch" : "TeamDeathMatch"));
+	}
 }
 
 /*
