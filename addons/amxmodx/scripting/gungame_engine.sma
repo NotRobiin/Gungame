@@ -188,8 +188,8 @@ new const Float:heGrenadeExplodeTime = 1.1;
 // Game type enums
 enum (+= 1)
 {
-	gameDeathMatch = 0,
-	gameTeamDeathMatch
+	gameModeDeathMatch = 0,
+	gameModeTeamDeathMatch
 };
 
 // Hud objects enum.
@@ -567,6 +567,10 @@ new const ggCvarsData[][][] =
 
 new userLevel[MAX_PLAYERS + 1],
 	userKills[MAX_PLAYERS + 1],
+	teamTTLevel,
+	teamTTKills,
+	teamCTLevel,
+	teamCTKills,
 	userName[MAX_PLAYERS + 1][MAX_CHARS],
 	userShortName[MAX_PLAYERS + 1][MAX_CHARS],
 	userTimeToRespawn[MAX_PLAYERS + 1],
@@ -613,9 +617,9 @@ new userLevel[MAX_PLAYERS + 1],
 
 	cvarsData[sizeof(ggCvarsData)],
 	
-	gameMode,
-	deathMatchVotes,
-	teamDeathMatchVotes;
+	gameMode = 0,
+	deathMatchVotes = 0,
+	teamDeathMatchVotes = 0;
 
 
 public plugin_init()
@@ -1267,7 +1271,7 @@ public playerDeathEvent()
 	// Remove HUD.
 	removeHud(victim);
 	
-	// Set killstreak to 0.	
+	// Set killstreak to 0.
 	userCombo[victim] = 0;
 	
 	new killer = read_data(1),
@@ -1817,9 +1821,10 @@ public respawnPlayerOnJoin(taskIndex)
 		[ Mode Choosing ]
 */
 
+// Init game mode voting
 public gameModeVote(taskIndex)
 {
-	new time = 5;
+	new time = 5; // todo: add time cvar
 	new menu = menu_create("Jaki mod gramy ?", "gameModeVoteHandler");
 	menu_additem(menu, "Deathmatch");
 	menu_additem(menu, "TeamDeathMatch");
@@ -1828,6 +1833,7 @@ public gameModeVote(taskIndex)
 	set_task(float(time), "gameModeVoteFinished");
 }
 
+// Vote Handler
 public gameModeVoteHandler(id, menu, item)
 {
 	if (item == 0)
@@ -1840,16 +1846,17 @@ public gameModeVoteHandler(id, menu, item)
 	}
 }
 
+// Voting finished - set game mode
 public gameModeVoteFinished()
 {
 	if (deathMatchVotes > teamDeathMatchVotes)
 	{
-		gameMode = gameDeathMatch;
+		gameMode = gameModeDeathMatch;
 		ColorChat(0, RED, "Wygral tryb DeathMatch");
 	}
 	else if (teamDeathMatchVotes > deathMatchVotes)
 	{
-		gameMode = gameTeamDeathMatch;
+		gameMode = gameModeTeamDeathMatch;
 		ColorChat(0, RED, "Wygral tryb TeamDeathMatch");
 	}
 	else
@@ -2216,28 +2223,35 @@ showPlayerInfo(index, target)
 	}
 }
 
+randomizeSoundIndex(soundType)
+{
+	// Create dynamic array to store valid sound indexes.
+	new Array:soundIndexes = ArrayCreate(1, 1);
+
+	// Iterate through sounds array to find valid sounds, then add them to dynamic array.
+	ForRange(j, 0, maxSounds - 1)
+	{
+		if(strlen(soundsData[soundType][j]))
+		{
+			ArrayPushCell(soundIndexes, j);
+		}
+	}
+
+	// Randomize valid index read from dynamic array.
+	new soundIndex = ArrayGetCell(soundIndexes, random_num(0, ArraySize(soundIndexes) - 1));
+	
+	// Get rid of array to save data space.
+	ArrayDestroy(soundIndexes);
+
+	return soundIndex;
+}
+
 playSound(index, soundType, soundIndex, bool:emitSound)
 {
 	// Sound index is set to random?
 	if(soundIndex < 0)
 	{
-		// Create dynamic array to store valid sound indexes.
-		new Array:soundIndexes = ArrayCreate(1, 1);
-
-		// Iterate through sounds array to find valid sounds, then add them to dynamic array.
-		ForRange(j, 0, maxSounds - 1)
-		{
-			if(strlen(soundsData[soundType][j]))
-			{
-				ArrayPushCell(soundIndexes, j);
-			}
-		}
-
-		// Randomize valid index read from dynamic array.
-		soundIndex = ArrayGetCell(soundIndexes, random_num(0, ArraySize(soundIndexes) - 1));
-		
-		// Get rid of array to save data space.
-		ArrayDestroy(soundIndexes);
+		soundIndex = randomizeSoundIndex(soundType);
 	}
 
 	// Emit sound directly from entity? 
@@ -2248,6 +2262,37 @@ playSound(index, soundType, soundIndex, bool:emitSound)
 	else
 	{
 		client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
+	}
+}
+
+playSoundForTeam(CsTeams:team, soundType, soundIndex, bool:emitSound)
+{
+	// Sound index is set to random?
+	if(soundIndex < 0)
+	{
+		soundIndex = randomizeSoundIndex(soundType);
+	}
+
+	// Emit sound directly from entity?
+	if(emitSound)
+	{
+		ForPlayers(index)
+		{
+			if (cs_get_user_team(index) == team)
+			{
+				emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
+			}
+		}
+	}
+	else
+	{
+		ForPlayers(index)
+		{
+			if (cs_get_user_team(index) == team)
+			{
+				client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
+			}
+		}
 	}
 }
 
@@ -2399,6 +2444,22 @@ decrementUserWeaponKills(index, value, bool:levelLose)
 	}
 }
 
+// Decrement weapon kills, take care of leveldown.
+decrementTeamWeaponKills(CsTeams:team, value, bool:levelLose)
+{
+	if (levelLose && userKills[index] - value < 0)
+	{
+		if (team == CS_TEAM_T)
+		{
+			decrementTeamLevel(CS_TEAM_T, 1);
+		}
+		else if (team == CS_TEAM_CT)
+		{
+			decrementTeamLevel(CS_TEAM_CT, 1);
+		}
+	}
+}
+
 incrementUserLevel(index, value, bool:notify)
 {
 	// Set weapon kills based on current level required kills. Set new level if valid number.
@@ -2463,6 +2524,28 @@ decrementUserLevel(index, value)
 
 	// Play leveldown sound.
 	playSound(index, soundLevelDown, -1, false);
+}
+
+decrementTeamLevel(CsTeams:team, value)
+{
+	if (team == CS_TEAM_T)
+	{
+		// Decrement user level, make sure their level is not negative.
+		teamTerroLevel = (teamTerroLevel - value < 0 ? 0 : teamTerroLevel - value);
+		teamTerroKills = 0;
+
+		// Play leveldown sound for whole team
+		playSoundForTeam(CS_TEAM_T, soundLevelDown, -1, false);
+	}
+	else if (team == CS_TEAM_CT)
+	{
+		// Decrement team level, make sure their level is not negative.
+		teamCTLevel = (teamCTLevel - value < 0 ? 0 : teamCTLevel - value);
+		teamCTKills = 0;
+
+		// Play leveldown sound.
+		playSoundForTeam(CS_TEAM_CT, soundLevelDown, -1, false);
+	}
 }
 
 endGunGame(winner)
