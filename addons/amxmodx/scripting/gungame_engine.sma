@@ -474,18 +474,18 @@ new const nativesErrorValue = -1;
 // Natives: [][0] is native name, [][1] is native function.
 new const nativesData[][][] =
 {
-	{ "SetUserLevel", "native_SetUserLevel" },
-	{ "GetUserLevel", "native_GetUserLevel" },
+	{ "set_user_level", "native_SetUserLevel" },
+	{ "get_user_level", "native_GetUserLevel" },
 	
-	{ "GetMaxLevel", "native_GetMaxLevel" },
+	{ "get_max_level", "native_GetMaxLevel" },
 	
-	{ "RespawnPlayer", "native_RespawnPlayer" },
+	{ "respawn_player", "native_RespawnPlayer" },
 	
-	{ "GetUserWeapon", "native_GetUserWeapon" },
-	{ "GetWeaponsData", "native_GetWeaponsData" },
+	{ "get_user_weapon", "native_GetUserWeapon" },
+	{ "get_weapons_data", "native_GetWeaponsData" },
 
-	{ "GetUserWins", "native_GetUserWins" },
-	{ "GetUserCombo", "native_GetUserCombo" }
+	{ "get_user_wins", "native_GetUserWins" },
+	{ "get_user_combo", "native_GetUserCombo" }
 };
 
 enum (+= 1)
@@ -560,6 +560,26 @@ new const ggCvarsData[][][] =
 	{ "gg_removeWeaponsOffTheGround", "1" } // Remove weapons off the ground when loading map?
 };
 
+new const forwardsNames[][] =
+{
+	"gg_level_up",
+	"gg_level_down",
+	"gg_game_end",
+	"gg_game_beginning",
+	"gg_player_spawned",
+	"gg_combo_streak",
+};
+
+enum forwardsEnum (+= 1)
+{
+	forwardLevelUp,
+	forwardLevelDown,
+	forwardGameEnd,
+	forwardGameBeginning,
+	forwardPlayerSpawned,
+	forwardComboStreak
+};
+
 new userLevel[MAX_PLAYERS + 1],
 	userKills[MAX_PLAYERS + 1],
 	userName[MAX_PLAYERS + 1][MAX_CHARS],
@@ -594,6 +614,9 @@ new userLevel[MAX_PLAYERS + 1],
 
 	Handle:mysqlHandle,
 	bool:mysqlLoaded,
+
+	forwardHandles[sizeof(forwardsNames)],
+	forwardReturnDummy,
 
 	topPlayersNames[topPlayersDisplayed + 1][MAX_CHARS],
 	topPlayersWins[topPlayersDisplayed + 1],
@@ -701,6 +724,14 @@ public plugin_init()
 	// Get half of max gungame level rounded, so we can limit level on freshly-joined players.
 	halfMaxLevel = floatround(float(maxLevel) / 2, floatround_round);
 
+	// Create forwards.
+	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL); // Level up (2)
+	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (2)
+	forwardHandles[2] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
+	forwardHandles[3] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
+	forwardHandles[4] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
+	forwardHandles[5] = CreateMultiForward(forwardsNames[5], ET_IGNORE, FP_CELL, FP_CELL); // Combo streak (2)
+
 	// Toggle warmup a bit delayed from plugin start.
 	set_task(1.0, "delayed_toggleWarmup");
 
@@ -709,7 +740,6 @@ public plugin_init()
 
 	// Load cvars.
 	loadGameCvars();
-
 
 #if defined TEST_MODE
 
@@ -1378,6 +1408,8 @@ public playerSpawn(index)
 
 		// Set task to chcek if player is AFK.
 		set_task(get_pcvar_float(cvarsData[cvar_idleCheckInterval]), "checkIdle", index + TASK_IDLECHECK, .flags = "b");
+
+		ExecuteForward(forwardHandles[forwardPlayerSpawned], forwardReturnDummy, index);
 	}
 }
 
@@ -2328,6 +2360,8 @@ incrementUserWeaponKills(index, value)
 	userCombo[index] += value;
 	userKills[index] += value;
 
+	ExecuteForward(forwardHandles[forwardComboStreak], forwardReturnDummy, index, userCombo[index]);
+
 	// Levelup player if weapon kills are greater than reqiured for his current level.
 	while(userKills[index] >= weaponsData[userLevel[index]][weaponKills])
 	{
@@ -2361,6 +2395,8 @@ incrementUserLevel(index, value, bool:notify)
 
 	// Add weapons for player's current level.
 	giveWeapons(index);
+
+	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, index, userLevel[index]);
 
 	if(notify)
 	{
@@ -2408,12 +2444,16 @@ decrementUserLevel(index, value)
 
 	// Play leveldown sound.
 	playSound(index, soundLevelDown, -1, false);
+
+	ExecuteForward(forwardHandles[forwardLevelDown], forwardReturnDummy, index, userLevel[index]);
 }
 
 endGunGame(winner)
 {
 	// Mark gungame as ended.
 	gungameEnded = true;
+
+	ExecuteForward(forwardHandles[forwardGameEnd], forwardReturnDummy, winner);
 
 	// Remove hud, and tasks if they exist.
 	ForPlayers(i)

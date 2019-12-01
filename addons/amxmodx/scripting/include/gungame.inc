@@ -5,7 +5,7 @@
 
 enum (+= 1)
 {
-	weaponCSW = 0,
+	weaponCSW,
 	weaponKills,
 	weaponDamage
 };
@@ -18,7 +18,7 @@ enum (+= 1)
 
 	@return 		1 if level was changed, nativesErrorValue otherwise.
 */
-native SetUserLevel(index, level);
+native gg_set_user_level(index, level);
 
 /*
 	Gets player's level.
@@ -27,14 +27,14 @@ native SetUserLevel(index, level);
 
 	@return 		Player level or nativeErrorValue if player is not connected.
 */
-native GetUserLevel(index);
+native gg_get_user_level(index);
 
 /*
 	Gets size of weapons array - 1, which is max level. 
 
 	@return			Max possible gungame level.
 */
-native GetMaxLevel();
+native gg_get_max_level();
 
 /*
 	Respawns player after certain time.
@@ -44,7 +44,7 @@ native GetMaxLevel();
 
 	@return 		1 if player will be respawned, nativesErrorValue otherwise.
 */
-native RespawnPlayer(index, Float:time = 1.0);
+native gg_respawn_player(index, Float:time = 1.0);
 
 /*
 	Gets player's current level weapon.
@@ -53,7 +53,7 @@ native RespawnPlayer(index, Float:time = 1.0);
 
 	@return 		CSW index of player's weapon, nativesErrorValue otherwise.
 */
-native GetUserWeapon(index);
+native gg_get_user_weapon(index);
 
 /*
 	Gets data from main-gungame array. You should use enum from line 6-11.
@@ -67,7 +67,7 @@ native GetUserWeapon(index);
 
 	@return 		Level data.
 */
-native GetWeaponsData(arrayIndex, dataType);
+native gg_get_weapons_data(arrayIndex, dataType);
 
 /*
 	Gets player's wins.
@@ -76,7 +76,7 @@ native GetWeaponsData(arrayIndex, dataType);
 
 	@return 		User wins, nativesErrorValue if an error occured.
 */
-native GetUserWins(index);
+native gg_get_user_wins(index);
 
 /*
 	Gets player's combo.
@@ -85,62 +85,14 @@ native GetUserWins(index);
 
 	@return 		User killstreak, nativesErrorValue if an error occured.
 */
-native GetUserCombo(index);
+native gg_get_user_combo(index);
 
 /*
 	Gets current game leader.
 
 	@return			Valid (1-32) player index. 0 if leader was not found.
 */
-native GetGameLeader();
-
-/*
-	Saves data of type integer to .json file.
-
-	@param index		Valid (1-32) player index.
-	@param label[]		Child of index's player name.
-	@param dotNotation	Whether to use dot notation.
-
-	@return			1 if successfully saved data, 0 otherwise.
-*/
-native SaveDataInt(index, label[], value, bool:dotNotation = true);
-
-/*
-	Gets data of type integer from .json file.
-
-	@param index		Valid (1-32) player index.
-	@param label[]		Child of index's player name.
-	@param dotNotation	Whether to use dot notation.
-
-	@return 		Player's name & label child value.
-*/
-native GetDataInt(index, label[], bool:dotNotation = true);
-
-/*
-	Saves data of type string to .json file.
-	This is not meant to be treated as array function.
-
-	@param index		Valid (1-32) player index.
-	@param label[]		Child of index's player name.
-	@param string[]		Data to save.
-	@param dotNotation	Whether to use dot notation.
-
-	@return 			True if successfully saved data, false otherwise.
-*/
-native SaveDataString(index, label[], string[], bool:dotNotation = true);
-
-/*
-	Gets data of type string from .json file.
-
-	@param index		Valid (1-32) player index.
-	@param label[]		Child of index's player name.
-	@param string[]		Array to copy string value.
-	@param length		Max. length of string.
-
-	@return			The number of cells written to the buffer.
-*/
-native GetDataString(index, label[], string[], length);
-
+native gg_get_game_leader();
 
 /*
 	Called when player ranks up.
@@ -148,7 +100,7 @@ native GetDataString(index, label[], string[], length);
 	@param index		Valid (1-32) player index.
 	@param level 		New player's level.
 */
-forward levelUp(index, level);
+forward gg_level_up(index, level);
 
 /*
 	Called when player ranks down.
@@ -156,28 +108,28 @@ forward levelUp(index, level);
 	@param index		Valid (1-32) player index.
 	@param level 		New player's level.
 */
-forward levelDown(index, level);
+forward gg_level_down(index, level);
 
 /*
 	Called when someone wins gungame.
 
 	@param winner		Valid (1-32) player index.
 */
-forward gameEnd(winner);
+forward gg_game_end(winner);
 
 /*
 	Called when gungame beings, and warmup ends.
 
 	@param warmupWinner	Valid (1-32) player index. 0 if warmup ended with no winner.
 */
-forward gameBeginning(warmupWinner);
+forward gg_game_beginning(warmupWinner);
 
 /*
 	Called when player is spawned and gungame is active (warmup does not count).
 
 	@param index		Valid (1-32) player index.
 */
-forward playerSpawned(index);
+forward gg_player_spawned(index);
 
 /*
 	Called when someone gets a kill.
@@ -185,4 +137,4 @@ forward playerSpawned(index);
 	@param index		Valid (1-32) player index.
 	@param streak 		Player's current killstreak.
 */
-forward comboStreak(index, streak);
+forward gg_combo_streak(index, streak);
