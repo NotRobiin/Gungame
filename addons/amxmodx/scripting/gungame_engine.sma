@@ -186,6 +186,12 @@ const Float:defaultExplodeTime = 3.0;
 // Modified HE explode time (set to defaultExplodeTime to disable).
 new const Float:heGrenadeExplodeTime = 1.1;
 
+// Game type enums
+enum (+= 1)
+{
+	gameDeathMatch = 0,
+	gameTeamPlay
+};
 
 // Hud objects enum.
 enum (+= 1)
