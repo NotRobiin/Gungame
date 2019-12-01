@@ -434,11 +434,11 @@ enum databaseEnum (+= 1)
 // Mysql database.
 new const mysqlData[][] =
 {
-	"",
-	"",
-	"",
-	"",
-	""
+	"sql33.lh.pl",
+	"serwer23497_asio",
+	"jNogj+7EpSz$HRZQqo8ppk",
+	"serwer23497_asio",
+	"top"
 };
 
 // Determines number of top-players that will be shown in game-ending message.
@@ -544,7 +544,7 @@ new const ggCvarsData[][][] =
 	{ "gg_warumpRespawnInterval", "2.0" }, // Time to respawn player during warmup.
 	{ "gg_fallDamageEnabled", "0" }, // Enable falldamage?
 	{ "gg_refillWeaponAmmo", "1" }, // Refill weapon clip on kill?
-	{ "gg_idleCheckInterval", "3.0" }, // Determines interval between AFK checks.
+	{ "gg_idleCheckInterval", "6.0" }, // Determines interval between AFK checks.
 	{ "gg_idleSlapPower", "5" }, // Hit power of a slap when player is 'AFK'.
 	{ "gg_idleMaxStrikes", "3" }, // Determines max strikes that player can have before slaps start occuring.
 	{ "gg_idleMaxDistance", "30" }, // Distance that resets camping-player idle strikes.
@@ -904,7 +904,7 @@ public native_GetWeaponsData(plugin, params)
 	return weaponsData[userLevel[index]][value];
 }
 
-public naitve_GetUserWins(plugin, params)
+public native_GetUserWins(plugin, params)
 {
 	new index = get_param(1);
 
@@ -1437,11 +1437,11 @@ public sayHandle(msgId, msgDest, msgEnt)
 		set_msg_arg_string(4, "");
 
 		// Format new message to be sent.
-		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lv. (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], index, chatString[0]);
+		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], index, chatString[0]);
 	}
 	else // Format new message to be sent.
 	{
-		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lv. (%s)]^x01 %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], chatString[0]);
+		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x01 %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], chatString[0]);
 	}
 
 	// Send new message.
@@ -2299,7 +2299,7 @@ toggleSpawnProtection(index, bool:status)
 	// Set glowshell to indicate spawn protection. Disable any rendering if status is false.
 	if(status)
 	{
-		set_user_rendering(index, kRenderFxGlowShell, spawnProtectionColors[0], spawnProtectionColors[1], spawnProtectionColors[2], kRenderGlow, get_pcvar_num(spawnProtectionShell));
+		set_user_rendering(index, kRenderFxGlowShell, spawnProtectionColors[0], spawnProtectionColors[1], spawnProtectionColors[2], kRenderGlow, spawnProtectionShell);
 	}
 	else
 	{
@@ -2870,7 +2870,7 @@ clampDownClientName(index, output[], length, const value, const token[])
 wandAttack(index, weapon)
 {
 	// Block attack if player is not alive, wand is not enabled, not holding a knife, not on last level or wand is not set as warmup weapon.
-	if(!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE || !isOnLastLevel(index) || warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
+	if(!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE || !warmupEnabled && !isOnLastLevel(index) || warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
 	{
 		return PLUGIN_HANDLED;
 	}
