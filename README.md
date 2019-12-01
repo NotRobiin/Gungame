@@ -1,14 +1,19 @@
-# Gungame
-This plugin adds a gungame mode to the server. It is invasive to the core gameplay.
+# GunGame
+A mod where you start with (preferably) pistol and slowly upgrade to better weapon by getting kills.
 
-# Requirements
-- Amxx 1.9
-- ReHlds
+### Requirements
+- AMXX 1.8.2 or higher
+- ReHLDS
 - ReGameDLL
-- Mapchooser
+- Map-chooser plugin that is located in the same repository
 
-# Installation
-Required compiling with 1.8.3-re or higher local compilator, then just copy and paste it in cstrike/addons/amxmodx/plugins and you're ready to go.
+### Installation
+Default plugin installation, only two files required
 
-# Configuration
-In gungame_engine.sma every const variable is configurable and should be working independently. Each is also commented for clarity.
+
+### Configuration
+There are no cvars other than the ones from ReGameDLL.
+Every feature can be changed in constant variables that are properly commented and located at the top of code.
+
+### Detailed description in Polish:
+https://amxx.pl/topic/162628-paczka-gungame-rehlds/

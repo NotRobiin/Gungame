@@ -1,11 +1,8 @@
 #include <amxmodx>
-
-#if AMXX_VERSION_NUM < 183
 #include <colorchat>
-#endif
 
 #define PLUGIN "Map Manager"
-#define VERSION "2.5.112"
+#define VERSION "2.5.115"
 #define AUTHOR "Mistrick"
 
 #pragma semicolon 1

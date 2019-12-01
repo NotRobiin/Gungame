@@ -145,24 +145,39 @@ new const blockedCommands[][] =
 {
 	"drop",
 	"fullupdate",
-	"radio1",
+	"kill",
 
+	"radio1",
 	"radio2",
 	"radio3",
-	"kill"
+	"report",
+    "coverme",
+    "takepoint",
+    "holdpos",
+    "regroup",
+    "followme",
+    "takingfire",
+    "go",
+    "fallback",
+    "sticktog",
+    "getinpos",
+    "stormfront",
+    "roger",
+    "enemyspot",
+    "needbackup",
+    "sectorclear",
+    "inposition",
+    "reportingin",
+    "getout",
+    "negative",
+    "enemydown"
 };
-
-// Time in which player CAN get killed, but the killer will not be granted any weapon kills if victim is in spawn protection.
-const Float:spawnProtectionTime = 1.5;
 
 // RGB of colored shell (set_user_rendering) when in spawn protection.
 new const spawnProtectionColors[] = { 80, 0, 0 };
 
 // Shell thickness.
 new const spawnProtectionShell = 100;
-
-// Respawn time during GunGame.
-const Float:respawnInterval = 3.0;	
 
 
 // Default HE explode time.
@@ -187,41 +202,9 @@ const Float:hudDisplayInterval = 1.0;
 new const hudColors[] = { 200, 130, 0 };
 
 
-// Determines wheter to enable flashes on last level. Does not support wand.
-new const bool:flashesEnabled = true;
-
-// Time between giving a player next HE grenade (during warmup & on HE weapon level).
-new const Float:giveBackHeInterval = 1.8;
-
-// Time between giving a player next Flash grenade.
-new const Float:giveBackFlashInterval = 4.5;
-
-
-// Time of warmup in seconds.
-new const warmupDuration = 120;
-
-// Level that will be set to warmup winner. Value < 1 will disable notifications and picking warmup winner.
-new const warmupLevelReward = 3;
-
-// Health that players will be set to during warmup.
-new const warmupHealth = 50;
-
-// Set that to CSW_ index, -1 to get random weapon, -2 to get wands (ignoring wandEnabled value) or -3 to get random weapon for every player.
-new const warmupWeapon = -3;
-
-// Time to respawn player during warmup.
-const Float:warumpRespawnInterval = 2.0;
-
 // RGB colors of warmup HUD.
 new const warmupHudColors[] = { 255, 255, 255 };
 
-
-// Enable falldamage?
-const bool:fallDamageEnabled = false;
-
-
-// Refill weapon clip on kill?
-new const bool:refillWeaponAmmo = true;
 
 // Ammo indexes;
 new const ammoAmounts[] =
@@ -240,50 +223,12 @@ new const ammoAmounts[] =
 };
 
 
-// Determines interval between AFK checks.
-const Float:idleCheckInterval = 3.0;
-
-// Hit power of a slap when player is 'AFK'.
-new const idleSlapPower = 5;
-
-// Determines max strikes that player can have before slaps start occuring.
-new const idleMaxStrikes = 2;
-
-// Distance that resets camping-player idle strikes.
-new const idleMaxDistance = 80;
-
-
-// Armor level for every player.
-new const defaultArmorLevel = 0;
-
 // Set that really high, so we dont have to worry about screen getting back to non-colored.
 const Float:blackScreenTimer = 50.0;
 
 
-// If that's set to true, knife will instantly give you knifeKillReward levels. Otherwise knifeKillReward means weapon kills.
-new const knifeKillInstantLevelup = false;
-
-// Knife kill reward value based on knifeKillInstantLevelup var.
-new const knifeKillReward = 2;
-
-
-// Determines whether you want last level weapon to be knife (false) or wand (true).
-new const wandEnabled = false;
-
 // Base weapon_* for wand.
 new const wandBaseEntity[] = "weapon_knife";
-
-// Wand primary attack sprite brightness.
-new const wandAttackSpriteBrightness = 255;
-
-// Wand primary attack sprite life.
-new const wandAttackSpriteLife = 4;
-
-// Wand primary attack max distance.
-new const wandAttackMaxDistance = 550;
-
-// Wand primary attack interval.
-new const Float:wandAttackInterval = 2.2;
 
 // Wand models [0] - V_ || [1] - P_.
 new const wandModels[][] =
@@ -301,7 +246,7 @@ enum (+= 1)
 // Wand sounds.
 new const wandSounds[][] =
 {
-	"testSounds/wandShoot.wav"
+	"gungame/wandShoot.wav"
 };
 
 // Wand primary attack sprite RGB.
@@ -354,9 +299,6 @@ new const nicknameReplaceToken[] = "...";
 const maxNicknameLength = 10 + charsmax(nicknameReplaceToken);
 
 
-// Take damage hud hold-time.
-const Float:takeDamageHudTime = 1.3;
-
 // Take damage hud colors.
 new const takeDamageHudColor[] = { 0, 200, 200 };
 
@@ -391,13 +333,13 @@ new const maxSounds = 2;
 // Main sound-data array. Every index is a different sound. Indexes with strlen == 0 will be continued, instead plugin will use first available index.
 new const soundsData[][][] =
 {
-	{ "testSounds/levelup.wav", "" },
-	{ "testSounds/leveldown.wav", "" },
-	{ "testSounds/timertick4.wav", "" },
+	{ "gungame/levelup.wav", "" },
+	{ "gungame/leveldown.wav", "" },
+	{ "gungame/timertick4.wav", "" },
 
-	{ "testSounds/warmup.wav", "" },
-	{ "testSounds/announcewinner.wav", "" },
-	{ "testSounds/gungamestart.wav", "testSounds/gungamestart2.wav" }
+	{ "gungame/warmup.wav", "" },
+	{ "gungame/announcewinner.wav", "" },
+	{ "gungame/gungamestart.wav", "gungame/gungamestart2.wav" }
 };
 
 // Custom volumes of each sound.
@@ -439,10 +381,6 @@ new const spriteLevelupRGB[] = { 0, 255, 0 };
 
 // Brightness.
 new const spriteLevelupBrightness = 80;
-
-
-// Remove weapons off the ground when loading map?
-new const removeWeaponsOffTheGround = true;
 
 
 new const gameCvars[][][] =
@@ -503,7 +441,6 @@ new const mysqlData[][] =
 	""
 };
 
-
 // Determines number of top-players that will be shown in game-ending message.
 const topPlayersDisplayed = 10;
 
@@ -547,8 +484,92 @@ new const nativesData[][][] =
 	{ "GetUserWeapon", "native_GetUserWeapon" },
 	{ "GetWeaponsData", "native_GetWeaponsData" },
 
-	{ "GetUserWins", "naitve_GetUserWins" },
+	{ "GetUserWins", "native_GetUserWins" },
 	{ "GetUserCombo", "native_GetUserCombo" }
+};
+
+new const cvarNames[][] =
+{
+	"gg_spawnProtectionTime",
+
+	"gg_respawnInterval",
+
+	"gg_flashesEnabled",
+
+	"gg_giveBackHeInterval",
+	"gg_giveBackFlashInterval",
+
+	"gg_warmupDuration",
+	"gg_warmupLevelReward",
+	"gg_warmupHealth",
+	"gg_warmupWeapon",
+	"gg_warumpRespawnInterval",
+
+	"gg_fallDamageEnabled",
+
+	"gg_refillWeaponAmmo",
+
+	"gg_idleCheckInterval",
+	"gg_idleSlapPower",
+	"gg_idleMaxStrikes",
+	"gg_idleMaxDistance",
+
+	"gg_defaultArmorLevel",
+
+	"gg_knifeKillInstantLevelup",
+	"gg_knifeKillReward",
+
+	"gg_wandEnabled",
+	"gg_wandAttackSpriteBrightness",
+	"gg_wandAttackSpriteLife",
+	"gg_wandAttackMaxDistance",
+	"gg_wandAttackInterval",
+
+	"gg_takeDamageHudTime",
+
+	"gg_removeWeaponsOffTheGround"
+};
+
+enum (+= 1)
+{
+	cvar_spawnProtectionTime,
+
+	cvar_respawnInterval,
+
+	cvar_flashesEnabled,
+
+	cvar_giveBackHeInterval,
+	cvar_giveBackFlashInterval,
+
+	cvar_warmupDuration,
+	cvar_warmupLevelReward,
+	cvar_warmupHealth,
+	cvar_warmupWeapon,
+	cvar_warumpRespawnInterval,
+
+	cvar_fallDamageEnabled,
+
+	cvar_refillWeaponAmmo,
+
+	cvar_idleCheckInterval,
+	cvar_idleSlapPower,
+	cvar_idleMaxStrikes,
+	cvar_idleMaxDistance,
+
+	cvar_defaultArmorLevel,
+
+	cvar_knifeKillInstantLevelup,
+	cvar_knifeKillReward,
+
+	cvar_wandEnabled,
+	cvar_wandAttackSpriteBrightness,
+	cvar_wandAttackSpriteLife,
+	cvar_wandAttackMaxDistance,
+	cvar_wandAttackInterval,
+
+	cvar_takeDamageHudTime,
+	
+	cvar_removeWeaponsOffTheGround
 };
 
 
@@ -596,16 +617,32 @@ new userLevel[MAX_PLAYERS + 1],
 	bool:topPlayersMotdCreated,
 
 	wandSpritesIndexes[sizeof(wandSprites)],
-	wandLastAttack[MAX_PLAYERS + 1];
+	wandLastAttack[MAX_PLAYERS + 1],
+
+	cvarsData[sizeof(cvarNames)];
 
 
 public plugin_init()
 {
-	register_plugin("GunGame", "v2.0", AUTHOR);
+	register_plugin("GunGame", "v2.2", AUTHOR);
+
+	// Register cvars.
+	ForArray(i, cvarNames)
+	{
+		cvarsData[i] = register_cvar(cvarNames[i], "");
+	}
 
 	// Register Death and team assign events.
 	register_event("DeathMsg", "playerDeathEvent", "a");
 	register_event("TeamInfo", "onTeamAssign", "a");
+
+	// Remove weapons off the ground if enabled.
+	if(get_pcvar_num(cvarsData[cvar_removeWeaponsOffTheGround]))
+	{
+		removeWeaponsOffGround();
+		
+		register_event("HLTV", "roundStart", "a", "1=0", "2=0");
+	}
 
 	// Register info change and model set events.
 	register_forward(FM_ClientUserInfoChanged, "clientInfoChanged");
@@ -630,7 +667,7 @@ public plugin_init()
 	}
 
 	// Register knife deployement for model-changes if wand is enabled.
-	if(wandEnabled)
+	if(get_pcvar_num(cvarsData[cvar_wandEnabled]))
 	{
 		RegisterHam(Ham_Item_Deploy, wandBaseEntity, "weaponDeploy", true);
 	}
@@ -653,7 +690,6 @@ public plugin_init()
 		RegisterHam(Ham_Weapon_PrimaryAttack, weaponEntityNames[i], "primaryAttack");
 	}
 
-
 	// Block some commands.
 	registerCommands(blockedCommands, sizeof blockedCommands, "blockCommandUsage");
 
@@ -663,7 +699,6 @@ public plugin_init()
 	// Register top player menu commands.
 	registerCommands(topPlayersMotdCommands, sizeof topPlayersMotdCommands, "topPlayersMotdHandler");
 	
-
 	// Create hud objects.
 	ForRange(i, 0, charsmax(hudObjects))
 	{
@@ -688,11 +723,6 @@ public plugin_init()
 	// Load cvars.
 	loadGameCvars();
 
-	// Remove weapons off the ground if enabled.
-	if(removeWeaponsOffTheGround)
-	{
-		removeWeaponsOffGround();
-	}
 
 #if defined TEST_MODE
 
@@ -839,7 +869,7 @@ public native_GetWeaponsData(plugin, params)
 
 	new value = get_param(2),
 		min = 0,
-		max = 2
+		max = 2;
 
 	// Log to console and return if data index is too high/low.
 	if(min > value > max)
@@ -1037,9 +1067,9 @@ public setEntityModel(entity, model[])
 	// Set tasks to give grenade back after it has exploded. 
 	if(model[9] == 'h' && model[10] == 'e')
 	{
-		if(weaponsData[userLevel[owner]][weaponCSW] == CSW_HEGRENADE || warmupWeapon == CSW_HEGRENADE && warmupEnabled)
+		if(weaponsData[userLevel[owner]][weaponCSW] == CSW_HEGRENADE || get_pcvar_num(cvarsData[cvar_warmupWeapon]) == CSW_HEGRENADE && warmupEnabled)
 		{
-			set_task(giveBackHeInterval, "giveHeGrenade", owner + TASK_GIVEGRENADE);
+			set_task(get_pcvar_float(cvarsData[cvar_giveBackHeInterval]), "giveHeGrenade", owner + TASK_GIVEGRENADE);
 		}
 
 		if(heGrenadeExplodeTime != defaultExplodeTime)
@@ -1049,7 +1079,7 @@ public setEntityModel(entity, model[])
 	}
 	else if(model[9] == 'f' && model[10] == 'l' && weaponsData[userLevel[owner]][weaponCSW] == CSW_KNIFE)
 	{
-		set_task(giveBackFlashInterval, "giveFlashGrenade", owner + TASK_GIVEGRENADE);
+		set_task(get_pcvar_float(cvarsData[cvar_giveBackFlashInterval]), "giveFlashGrenade", owner + TASK_GIVEGRENADE);
 	}
 }
 
@@ -1095,7 +1125,7 @@ public onAddItemToPlayer(index, weaponEntity)
 public client_PreThink(index)
 {
 	// Return if player is not alive, is hltv or a bot.
-	if(!fallDamageEnabled || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index))
+	if(!get_pcvar_num(cvarsData[cvar_fallDamageEnabled]) || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
@@ -1107,7 +1137,7 @@ public client_PreThink(index)
 public client_PostThink(index)
 {
 	// Return if player is not alive, is hltv, is bot or is not falling.
-	if(!fallDamageEnabled || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index) || !userFalling[index])
+	if(!get_pcvar_num(cvarsData[cvar_fallDamageEnabled]) || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index) || !userFalling[index])
 	{
 		return;
 	}
@@ -1150,6 +1180,11 @@ public onTeamAssign()
 	set_task(2.0, "respawnPlayerOnJoin", index + TASK_RESPAWN_ON_JOIN);
 }
 
+public roundStart()
+{
+	removeWeaponsOffGround();
+}
+
 public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 {
 	// Return if attacker isnt alive, self damage, no damage or players are on the same team.
@@ -1168,7 +1203,7 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 	SetHamParamFloat(4, damage * (weaponsData[userLevel[attacker]][weaponDamage] / 100.0));
 
 	// Show damage info in hud.
-	set_hudmessage(takeDamageHudColor[0], takeDamageHudColor[1], takeDamageHudColor[2], 0.8, 0.4, 0, 6.0, takeDamageHudTime, 0.0, 0.0);
+	set_hudmessage(takeDamageHudColor[0], takeDamageHudColor[1], takeDamageHudColor[2], 0.8, 0.4, 0, 6.0, get_pcvar_float(cvarsData[cvar_takeDamageHudTime]), 0.0, 0.0);
 	ShowSyncHudMsg(attacker, hudObjects[hudObjectDamage], "%i^n", floatround(damage, floatround_round));
 
 	return HAM_IGNORED;
@@ -1192,7 +1227,7 @@ public weaponDeploy(entity)
 		weapon = cs_get_weapon_id(entity);
 
 	// Return if player isnt alive or its not a warmup with wands.
-	if(!warmupEnabled && warmupWeapon != -2 || !is_user_alive(index) || userLevel[index] != maxLevel || !wandEnabled || weapon != CSW_KNIFE)
+	if(!warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2 || !is_user_alive(index) || userLevel[index] != maxLevel || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE)
 	{
 		return;
 	}
@@ -1222,7 +1257,7 @@ public playerDeathEvent()
 	// Respawn player shortly if warmup is enabled.
 	if(warmupEnabled)
 	{
-		respawnPlayer(victim, warumpRespawnInterval);
+		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_warumpRespawnInterval]));
 	
 		return;
 	}
@@ -1257,7 +1292,7 @@ public playerDeathEvent()
 		removePlayerWeapons(victim);
 
 		// Respawn player.
-		respawnPlayer(victim, respawnInterval);
+		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
 
 		return;
 	}
@@ -1271,7 +1306,7 @@ public playerDeathEvent()
 	}
 
 	// Respawn victim normally.
-	respawnPlayer(victim, respawnInterval);
+	respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
 
 	if(userSpawnProtection[victim])
 	{
@@ -1302,7 +1337,7 @@ public playerDeathEvent()
 		}
 
 		// Increment killer's weapon kills by two instead of leveling up imediatly.
-		knifeKillInstantLevelup ? incrementUserLevel(killer, knifeKillReward, true) : incrementUserWeaponKills(killer, knifeKillReward);
+		get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]) ? incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true) : incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
 	}
 	else
 	{
@@ -1310,7 +1345,7 @@ public playerDeathEvent()
 	}
 
 	// Ammo refill enabled?
-	if(refillWeaponAmmo)
+	if(get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
 	{
 		refillAmmo(killer);
 	}
@@ -1338,7 +1373,7 @@ public playerSpawn(index)
 		// Give weapons to player.
 		giveWarmupWeapons(index);
 
-		set_user_health(index, warmupHealth);
+		set_user_health(index, get_pcvar_num(cvarsData[cvar_warmupHealth]));
 	}
 	else
 	{
@@ -1352,10 +1387,10 @@ public playerSpawn(index)
 		toggleSpawnProtection(index, true);
 
 		// Set task to disable spawn protection.
-		set_task(spawnProtectionTime, "spawnProtectionOff", index + TASK_SPAWNPROTECTION);
+		set_task(get_pcvar_float(cvarsData[cvar_spawnProtectionTime]), "spawnProtectionOff", index + TASK_SPAWNPROTECTION);
 
 		// Set task to chcek if player is AFK.
-		set_task(idleCheckInterval, "checkIdle", index + TASK_IDLECHECK, .flags = "b");
+		set_task(get_pcvar_float(cvarsData[cvar_idleCheckInterval]), "checkIdle", index + TASK_IDLECHECK, .flags = "b");
 	}
 }
 
@@ -1496,7 +1531,7 @@ public displayWarmupTimer()
 		// Display warmup hud.
 		set_hudmessage(warmupHudColors[0], warmupHudColors[1], warmupHudColors[2], -1.0, 0.1, 0, 6.0, 0.6, 0.2, 0.2);
 		
-		if(warmupWeapon == -3)
+		if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -3)
 		{
 			ForPlayers(i)
 			{
@@ -1510,7 +1545,7 @@ public displayWarmupTimer()
 		}
 		else
 		{
-			ShowSyncHudMsg(0, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupTimer, warmupWeapon == -2 ? "Rozdzki" : customWeaponNames[warmupWeapon == -1 ? warmupWeaponIndex : warmupWeaponName]);
+			ShowSyncHudMsg(0, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupTimer, get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2 ? "Rozdzki" : customWeaponNames[get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1 ? warmupWeaponIndex : warmupWeaponName]);
 		}
 
 		// Set task to display hud again.
@@ -1530,7 +1565,7 @@ public listWeaponsMenu(index)
 	ForArray(i, weaponsData)
 	{
 		// Add item to menu.
-		menu_additem(menuIndex, fmt("[%s - %i lv. - %i]", i == maxLevel ? (wandEnabled ? "Rozdzka" : customWeaponNames[i]) : customWeaponNames[i], i + 1, weaponsData[i][weaponKills]));
+		menu_additem(menuIndex, fmt("[%s - %i lv. - %i]", i == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[i]) : customWeaponNames[i], i + 1, weaponsData[i][weaponKills]));
 	}
 
 	// Display menu to player.
@@ -1583,13 +1618,13 @@ public rewardWarmupWinner(taskIndex)
 	new winner = taskIndex - TASK_REWARDWINNER;
 
 	// Return if user is not connected or his level is somehow incorrect. 
-	if(!is_user_connected(winner) || userLevel[winner] >= warmupLevelReward)
+	if(!is_user_connected(winner) || userLevel[winner] >= get_pcvar_num(cvarsData[cvar_warmupLevelReward]))
 	{
 		return;
 	}
 
 	// Add reward.
-	incrementUserLevel(winner, warmupLevelReward - userLevel[winner] - 1, false);
+	incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]) - userLevel[winner] - 1, false);
 }
 
 public giveHeGrenade(taskIndex)
@@ -1669,14 +1704,14 @@ public checkIdle(taskIndex)
 		userLastOrigin[index][i] = currentOrigin[i];
 	}
 
-	if(distance < idleMaxDistance)
+	if(distance < get_pcvar_num(cvarsData[cvar_idleMaxDistance]))
 	{
 		// Slap player if he's camping, make sure not to kill him.
-		if(++userIdleStrikes[index] >= idleMaxStrikes)
+		if(++userIdleStrikes[index] >= get_pcvar_num(cvarsData[cvar_idleMaxStrikes]))
 		{
 			ForRange(i, 0, 1)
 			{
-				user_slap(index, !i ? (get_user_health(index) > idleSlapPower ? idleSlapPower : 0) : 0);
+				user_slap(index, !i ? (get_user_health(index) > get_pcvar_num(cvarsData[cvar_idleSlapPower]) ? get_pcvar_num(cvarsData[cvar_idleSlapPower]) : 0) : 0);
 			}
 		}
 	}
@@ -1758,13 +1793,13 @@ public displayHud(taskIndex)
 	}
 	else
 	{
-		formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]", printName(leader), userLevel[leader] + 1, userLevel[leader] == maxLevel ? (wandEnabled ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[leader]], userKills[leader], weaponsData[userLevel[leader]][weaponKills]);
+		formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]", printName(leader), userLevel[leader] + 1, userLevel[leader] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[leader]], userKills[leader], weaponsData[userLevel[leader]][weaponKills]);
 	}
 
 	// Format next weapon name if available, change knife to wand if enabled so.
 	if(userLevel[index] == sizeof weaponsData - 2)
 	{
-		formatex(nextWeapon, charsmax(nextWeapon), "%s", wandEnabled ? "Rozdzka" : customWeaponNames[userLevel[index] + 1]);
+		formatex(nextWeapon, charsmax(nextWeapon), "%s", get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index] + 1]);
 	}
 	else
 	{
@@ -1773,7 +1808,7 @@ public displayHud(taskIndex)
 
 	// Display hud.
 	set_hudmessage(hudColors[0], hudColors[1], hudColors[2], -1.0, 0.02, 0, 6.0, hudDisplayInterval + 0.1, 0.0, 0.0);
-	ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s", userLevel[index] + 1, sizeof weaponsData, isOnLastLevel(index) ? (wandEnabled ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], userKills[index], weaponsData[userLevel[index]][weaponKills], userCombo[index], nextWeapon, leaderData);
+	ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s", userLevel[index] + 1, sizeof weaponsData, isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], userKills[index], weaponsData[userLevel[index]][weaponKills], userCombo[index], nextWeapon, leaderData);
 }
 
 // Respawn player.
@@ -1990,19 +2025,19 @@ giveWarmupWeapons(index)
 	// Give knife as a default weapon.
 	give_item(index, "weapon_knife");
 	
-	if(warmupWeapon > -1)
+	if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) > -1)
 	{
 		new weaponName[MAX_CHARS - 1];
 	
 		// Get warmup weapon entity classname.	
-		get_weaponname(warmupWeapon, weaponName, charsmax(weaponName));
+		get_weaponname(get_pcvar_num(cvarsData[cvar_warmupWeapon]), weaponName, charsmax(weaponName));
 
 		// Set weapon backpack ammo to 100.
-		cs_set_user_bpammo(index, warmupWeapon, 100);
+		cs_set_user_bpammo(index, get_pcvar_num(cvarsData[cvar_warmupWeapon]), 100);
 	}
 
 	// Add random warmup weapon multiple times.
-	else if(warmupWeapon == -1)
+	else if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
 	{
 		// Add weapon.
 		give_item(index, weaponEntityNames[warmupWeaponIndex]);
@@ -2012,13 +2047,13 @@ giveWarmupWeapons(index)
 	}
 
 	// Set wand model.
-	else if(warmupWeapon == -2)
+	else if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2)
 	{
 		setWandModels(index);
 	}
 
 	// Add random weapon.
-	else if(warmupWeapon == -3)
+	else if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -3)
 	{
 		randomWarmupWeapon(index);
 	}
@@ -2122,7 +2157,7 @@ showPlayerInfo(index, target)
 			chatPrefix,
 			target,
 			userLevel[target] + 1,
-			isOnLastLevel(target) ? (wandEnabled ? "Rozdzka" : customWeaponNames[userLevel[target]]) : customWeaponNames[userLevel[target]],
+			isOnLastLevel(target) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[target]]) : customWeaponNames[userLevel[target]],
 			userKills[target],
 			weaponsData[userLevel[target]][weaponKills],
 			userWins[target],
@@ -2233,7 +2268,7 @@ setWarmupHud(bool:status)
 	{
 		set_task(1.0, "displayWarmupTimer");
 
-		warmupTimer = warmupDuration;
+		warmupTimer = get_pcvar_num(cvarsData[cvar_warmupDuration]);
 	}
 }
 
@@ -2245,7 +2280,7 @@ toggleSpawnProtection(index, bool:status)
 	// Set glowshell to indicate spawn protection. Disable any rendering if status is false.
 	if(status)
 	{
-		set_user_rendering(index, kRenderFxGlowShell, spawnProtectionColors[0], spawnProtectionColors[1], spawnProtectionColors[2], kRenderGlow, spawnProtectionShell);
+		set_user_rendering(index, kRenderFxGlowShell, spawnProtectionColors[0], spawnProtectionColors[1], spawnProtectionColors[2], kRenderGlow, get_pcvar_num(spawnProtectionShell));
 	}
 	else
 	{
@@ -2343,7 +2378,7 @@ incrementUserLevel(index, value, bool:notify)
 	if(notify)
 	{
 		// Notify about levelup.
-		ColorChat(0, RED, "%s^x01 Gracz^x04 %s^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, printName(index), userLevel[index] + 1, userLevel[index] == maxLevel ? (wandEnabled ? "Rozdzka" : customWeaponNames[userLevel[index]]) : customWeaponNames[userLevel[index]]);
+		ColorChat(0, RED, "%s^x01 Gracz^x04 %s^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, printName(index), userLevel[index] + 1, userLevel[index] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index]]) : customWeaponNames[userLevel[index]]);
 		
 		// Play levelup sound.
 		playSound(index, soundLevelUp, -1, false);
@@ -2466,7 +2501,7 @@ giveWeapons(index)
 	}
 
 	// We dont want players to have armor.
-	set_user_armor(index, defaultArmorLevel);
+	set_user_armor(index, get_pcvar_num(cvarsData[cvar_defaultArmorLevel]));
 
 	// Strip weapons.
 	removePlayerWeapons(index);
@@ -2488,9 +2523,9 @@ giveWeapons(index)
 		}
 
 		// Add two flashes if player is on last level.
-		else if(!wandEnabled)
+		else if(!get_pcvar_num(cvarsData[cvar_wandEnabled]))
 		{
-			if(flashesEnabled)
+			if(get_pcvar_num(cvarsData[cvar_flashesEnabled]))
 			{
 				ForRange(i, 0, 1)
 				{
@@ -2505,7 +2540,7 @@ giveWeapons(index)
 	else 
 	{
 		// Set wand model.
-		if(wandEnabled)
+		if(get_pcvar_num(cvarsData[cvar_wandEnabled]))
 		{
 			setWandModels(index);
 		}
@@ -2515,7 +2550,7 @@ giveWeapons(index)
 getWarmupWinner(bool:announce)
 {
 	// Return if warmup reward is none.
-	if(warmupLevelReward < 2)
+	if(get_pcvar_num(cvarsData[cvar_warmupLevelReward]) < 2)
 	{
 		return 0;
 	}
@@ -2538,7 +2573,7 @@ getWarmupWinner(bool:announce)
 	{
 		ForRange(i, 0, 2)
 		{
-			ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, warmupLevelReward);
+			ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]));
 		}
 	}
 
@@ -2717,7 +2752,7 @@ getWarmupWeaponName()
 	// Loop through all weapons, find one with same ID as warmup weapon.
 	ForArray(i, weaponsData)
 	{
-		if(warmupWeapon == weaponsData[i][weaponCSW])
+		if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) == weaponsData[i][weaponCSW])
 		{
 			warmupWeaponName = i;
 
@@ -2808,7 +2843,7 @@ clampDownClientName(index, output[], length, const value, const token[])
 wandAttack(index, weapon)
 {
 	// Block attack if player is not alive, wand is not enabled, not holding a knife, not on last level or wand is not set as warmup weapon.
-	if(!is_user_alive(index) || !wandEnabled || weapon != CSW_KNIFE || !isOnLastLevel(index) || warmupEnabled && warmupWeapon != -2)
+	if(!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE || !isOnLastLevel(index) || warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -2817,7 +2852,7 @@ wandAttack(index, weapon)
 	set_pev(index, pev_punchangle, Float:{ -1.5, 0.0, 0.0 });
 
 	// Block shooting if cooldown is still on.
-	if(wandLastAttack[index] + wandAttackInterval > get_gametime())
+	if(wandLastAttack[index] + get_pcvar_float(cvarsData[cvar_wandAttackInterval]) > get_gametime())
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -2830,7 +2865,7 @@ wandAttack(index, weapon)
 	get_user_origin(index, endOrigin, 3);
 
 	// Block shooting if distance is too high.
-	if(get_distance(startOrigin, endOrigin) > wandAttackMaxDistance)
+	if(get_distance(startOrigin, endOrigin) > get_pcvar_num(cvarsData[cvar_wandAttackMaxDistance]))
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -2861,13 +2896,13 @@ wandAttack(index, weapon)
 	write_short(wandSpritesIndexes[wandSpriteAttack]);
 	write_byte(0);
 	write_byte(5);
-	write_byte(wandAttackSpriteLife);
+	write_byte(get_pcvar_num(cvarsData[cvar_wandAttackSpriteLife]));
 	write_byte(30);
 	write_byte(40);
 	write_byte(wandAttackSpriteColor[0]);
 	write_byte(wandAttackSpriteColor[1]);
 	write_byte(wandAttackSpriteColor[2]);
-	write_byte(wandAttackSpriteBrightness);
+	write_byte(get_pcvar_num(cvarsData[cvar_wandAttackSpriteBrightness]));
 	write_byte(0);
 	message_end();
 
