@@ -439,11 +439,11 @@ enum databaseEnum (+= 1)
 // Mysql database.
 new const mysqlData[][] =
 {
-	"",
-	"",
-	"",
-	"",
-	""
+	"sql33.lh.pl",
+	"serwer23497_asio",
+	"jNogj+7EpSz$HRZQqo8ppk",
+	"serwer23497_asio",
+	"top"
 };
 
 // Determines number of top-players that will be shown in game-ending message.
@@ -479,18 +479,18 @@ new const nativesErrorValue = -1;
 // Natives: [][0] is native name, [][1] is native function.
 new const nativesData[][][] =
 {
-	{ "SetUserLevel", "native_SetUserLevel" },
-	{ "GetUserLevel", "native_GetUserLevel" },
+	{ "set_user_level", "native_SetUserLevel" },
+	{ "get_user_level", "native_GetUserLevel" },
 	
-	{ "GetMaxLevel", "native_GetMaxLevel" },
+	{ "get_max_level", "native_GetMaxLevel" },
 	
-	{ "RespawnPlayer", "native_RespawnPlayer" },
+	{ "respawn_player", "native_RespawnPlayer" },
 	
-	{ "GetUserWeapon", "native_GetUserWeapon" },
-	{ "GetWeaponsData", "native_GetWeaponsData" },
+	{ "get_user_weapon", "native_GetUserWeapon" },
+	{ "get_weapons_data", "native_GetWeaponsData" },
 
-	{ "GetUserWins", "native_GetUserWins" },
-	{ "GetUserCombo", "native_GetUserCombo" }
+	{ "get_user_wins", "native_GetUserWins" },
+	{ "get_user_combo", "native_GetUserCombo" }
 };
 
 enum (+= 1)
@@ -549,7 +549,7 @@ new const ggCvarsData[][][] =
 	{ "gg_warumpRespawnInterval", "2.0" }, // Time to respawn player during warmup.
 	{ "gg_fallDamageEnabled", "0" }, // Enable falldamage?
 	{ "gg_refillWeaponAmmo", "1" }, // Refill weapon clip on kill?
-	{ "gg_idleCheckInterval", "3.0" }, // Determines interval between AFK checks.
+	{ "gg_idleCheckInterval", "6.0" }, // Determines interval between AFK checks.
 	{ "gg_idleSlapPower", "5" }, // Hit power of a slap when player is 'AFK'.
 	{ "gg_idleMaxStrikes", "3" }, // Determines max strikes that player can have before slaps start occuring.
 	{ "gg_idleMaxDistance", "30" }, // Distance that resets camping-player idle strikes.
@@ -563,6 +563,26 @@ new const ggCvarsData[][][] =
 	{ "gg_wandAttackInterval", "2.2" }, // Wand primary attack interval.
 	{ "gg_takeDamageHudTime", "1.2" }, // Take damage hud hold-time.
 	{ "gg_removeWeaponsOffTheGround", "1" } // Remove weapons off the ground when loading map?
+};
+
+new const forwardsNames[][] =
+{
+	"gg_level_up",
+	"gg_level_down",
+	"gg_game_end",
+	"gg_game_beginning",
+	"gg_player_spawned",
+	"gg_combo_streak",
+};
+
+enum forwardsEnum (+= 1)
+{
+	forwardLevelUp,
+	forwardLevelDown,
+	forwardGameEnd,
+	forwardGameBeginning,
+	forwardPlayerSpawned,
+	forwardComboStreak
 };
 
 new userLevel[MAX_PLAYERS + 1],
@@ -603,6 +623,9 @@ new userLevel[MAX_PLAYERS + 1],
 
 	Handle:mysqlHandle,
 	bool:mysqlLoaded,
+
+	forwardHandles[sizeof(forwardsNames)],
+	forwardReturnDummy,
 
 	topPlayersNames[topPlayersDisplayed + 1][MAX_CHARS],
 	topPlayersWins[topPlayersDisplayed + 1],
@@ -714,6 +737,14 @@ public plugin_init()
 	// Get half of max gungame level rounded, so we can limit level on freshly-joined players.
 	halfMaxLevel = floatround(float(maxLevel) / 2, floatround_round);
 
+	// Create forwards.
+	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL); // Level up (2)
+	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (2)
+	forwardHandles[2] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
+	forwardHandles[3] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
+	forwardHandles[4] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
+	forwardHandles[5] = CreateMultiForward(forwardsNames[5], ET_IGNORE, FP_CELL, FP_CELL); // Combo streak (2)
+
 	// Toggle warmup a bit delayed from plugin start.
 	set_task(1.0, "delayed_toggleWarmup");
 
@@ -722,7 +753,6 @@ public plugin_init()
 
 	// Load cvars.
 	loadGameCvars();
-
 
 #if defined TEST_MODE
 
@@ -1433,6 +1463,8 @@ public playerSpawn(index)
 
 		// Set task to chcek if player is AFK.
 		set_task(get_pcvar_float(cvarsData[cvar_idleCheckInterval]), "checkIdle", index + TASK_IDLECHECK, .flags = "b");
+
+		ExecuteForward(forwardHandles[forwardPlayerSpawned], forwardReturnDummy, index);
 	}
 }
 
@@ -1460,11 +1492,11 @@ public sayHandle(msgId, msgDest, msgEnt)
 		set_msg_arg_string(4, "");
 
 		// Format new message to be sent.
-		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lv. (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], index, chatString[0]);
+		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], index, chatString[0]);
 	}
 	else // Format new message to be sent.
 	{
-		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lv. (%s)]^x01 %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], chatString[0]);
+		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x01 %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], chatString[0]);
 	}
 
 	// Send new message.
@@ -2409,7 +2441,7 @@ toggleSpawnProtection(index, bool:status)
 	// Set glowshell to indicate spawn protection. Disable any rendering if status is false.
 	if(status)
 	{
-		set_user_rendering(index, kRenderFxGlowShell, spawnProtectionColors[0], spawnProtectionColors[1], spawnProtectionColors[2], kRenderGlow, get_pcvar_num(spawnProtectionShell));
+		set_user_rendering(index, kRenderFxGlowShell, spawnProtectionColors[0], spawnProtectionColors[1], spawnProtectionColors[2], kRenderGlow, spawnProtectionShell);
 	}
 	else
 	{
@@ -2469,6 +2501,8 @@ incrementUserWeaponKills(index, value)
 	// Set kills required and killstreak.
 	userCombo[index] += value;
 	userKills[index] += value;
+
+	ExecuteForward(forwardHandles[forwardComboStreak], forwardReturnDummy, index, userCombo[index]);
 
 	// Levelup player if weapon kills are greater than reqiured for his current level.
 	while(userKills[index] >= weaponsData[userLevel[index]][weaponKills])
@@ -2533,6 +2567,8 @@ incrementUserLevel(index, value, bool:notify)
 
 	// Add weapons for player's current level.
 	giveWeapons(index);
+
+	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, index, userLevel[index]);
 
 	if(notify)
 	{
@@ -2610,6 +2646,8 @@ decrementUserLevel(index, value)
 
 	// Play leveldown sound.
 	playSound(index, soundLevelDown, -1, false);
+
+	ExecuteForward(forwardHandles[forwardLevelDown], forwardReturnDummy, index, userLevel[index]);
 }
 
 decrementTeamLevel(CsTeams:team, value)
@@ -2638,6 +2676,8 @@ endGunGame(winner)
 {
 	// Mark gungame as ended.
 	gungameEnded = true;
+
+	ExecuteForward(forwardHandles[forwardGameEnd], forwardReturnDummy, winner);
 
 	// Remove hud, and tasks if they exist.
 	ForPlayers(i)
@@ -3054,7 +3094,7 @@ clampDownClientName(index, output[], length, const value, const token[])
 wandAttack(index, weapon)
 {
 	// Block attack if player is not alive, wand is not enabled, not holding a knife, not on last level or wand is not set as warmup weapon.
-	if(!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE || !isOnLastLevel(index) || warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
+	if(!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE || !warmupEnabled && !isOnLastLevel(index) || warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
 	{
 		return PLUGIN_HANDLED;
 	}

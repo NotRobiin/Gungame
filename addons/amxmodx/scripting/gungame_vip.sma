@@ -11,10 +11,10 @@
 new const vipFlag[] = "t";
 
 // Added, not set.
-new const vipHealth[] = 30;
+new const vipHealth = 110;
 
 // Set.
-new const vipArmor[] = 50;
+new const vipArmor = 50;
 
 // Chat prefix.
 new const vipPrefix[] = "^x04[VIP]^x01";
@@ -233,7 +233,7 @@ public commandStartPre(index, uc_handle)
 
 		set_pev(index, pev_velocity, newVelocity);
 	}
-	else if(flags & FL_ONGROUND && userJumps[index]!=-1)
+	else if(flags & FL_ONGROUND && userJumps[index] != -1)
 	{
 		userJumps[index] = vipJumps;
 	}
@@ -330,10 +330,8 @@ public playerSpawn(index)
 		return;
 	}
 
-	set_user_health(index, vipHealth[userTeam - 1]);
-	set_user_armor(index, vipArmor[userTeam - 1]);
-
-	set_task(0.1, "update", index);
+	set_user_health(index, vipHealth);
+	set_user_armor(index, vipArmor);
 }
 
 public client_putinserver(index)

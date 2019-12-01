@@ -2,7 +2,7 @@
 #include <colorchat>
 
 #define PLUGIN "Map Manager"
-#define VERSION "2.5.115"
+#define VERSION "2.5.116"
 #define AUTHOR "Mistrick"
 
 #pragma semicolon 1

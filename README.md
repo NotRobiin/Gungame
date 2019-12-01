@@ -8,7 +8,7 @@ A mod where you start with (preferably) pistol and slowly upgrade to better weap
 - Map-chooser plugin that is located in the same repository
 
 ### Installation
-Default plugin installation, only two files required
+Default plugin installation.
 
 
 ### Configuration
