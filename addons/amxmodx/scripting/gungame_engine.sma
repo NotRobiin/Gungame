@@ -1282,10 +1282,17 @@ public playerDeathEvent()
 
 	if(killer == victim || !killer)
 	{
-		// Decement user level if he killed himself with grenade.
+		// Decement level if killed himself with grenade.
 		if(equal(weapon, "hegrenade"))
 		{
-			decrementUserWeaponKills(victim, 1, true);
+			if (gameMode == gameModeDeathMatch)
+			{
+				decrementUserWeaponKills(victim, 1, true);
+			}
+			else
+			{
+				decrementTeamWeaponKills(cs_get_user_team(victim), 1, true);
+			}
 		}
 
 		// Prevent weapon-drop to the floor.
@@ -1297,12 +1304,23 @@ public playerDeathEvent()
 		return;
 	}
 
-	if(userLevel[killer] == maxLevel)
+	new CsTeams:killerTeam = cs_get_user_team(killer);
+	new CsTeams:victimTeam = cs_get_user_team(victim);
+
+	if(gameMode == gameModeDeathMatch && userLevel[killer] == maxLevel)
 	{
 		// End gungame if user has reached max level + 1.
 		endGunGame(killer);
 		
 		return;
+	}
+	else if (gameMode == gameModeTeamDeathMatch)
+	{
+		if ((killerTeam == CS_TEAM_T && teamTTLevel == maxLevel) || (killerTeam == CS_TEAM_CT && teamCTLevel == maxLevel))
+		{
+			// End gungame if team has reached max level + 1.
+			endGunGame(killer);
+		}
 	}
 
 	// Respawn victim normally.
@@ -1325,23 +1343,47 @@ public playerDeathEvent()
 		return;
 	}
 
-	if(equal(weapon, "knife") && userLevel[killer] != maxLevel)
+	if (gameMode == gameModeDeathMatch)
 	{
-		if(userLevel[victim] > 1)
+		if(equal(weapon, "knife") && userLevel[killer] != maxLevel)
 		{
-			// Decrement victim level when killed with knife and his level is greater than 1.
-			decrementUserLevel(victim, 1);
+			if(userLevel[victim] > 1)
+			{
+				// Decrement victim level when killed with knife and his level is greater than 1.
+				decrementUserLevel(victim, 1);
 
-			// Notify player.
-			ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. Twoj poziom spadl do^x04 %i^x01.", chatPrefix, killer, userLevel[victim] + 1);
+				// Notify player.
+				ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. Twoj poziom spadl do^x04 %i^x01.", chatPrefix, killer, userLevel[victim] + 1);
+			}
+
+			// Increment killer's weapon kills by two instead of leveling up imediatly.
+			get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]) ? incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true) : incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
 		}
-
-		// Increment killer's weapon kills by two instead of leveling up imediatly.
-		get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]) ? incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true) : incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+		else
+		{
+			incrementUserWeaponKills(killer, 1);
+		}
 	}
-	else
+	else if (gameMode == gameModeTeamDeathMatch)
 	{
-		incrementUserWeaponKills(killer, 1);
+		if(equal(weapon, "knife") && ((killerTeam == CS_TEAM_T && teamTTLevel != maxLevel) || (killerTeam == CS_TEAM_CT && teamCTLevel != maxLevel)))
+		{
+			if((victimTeam == CS_TEAM_T && teamTTLevel > 1) || (victimTeam == CS_TEAM_CT && teamCTLevel > 1))
+			{
+				// Decrement victim's team level when killed with knife and victim's team level is greater than 1.
+				decrementTeamLevel(victimTeam, 1);
+
+				// Notify player.
+				ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. Poziom twojej druzyny spadl do^x04 %i^x01.", chatPrefix, killer, (victimTeam == CS_TEAM_T ? teamTTLevel + 1 : teamCTLevel + 1));
+			}
+
+			// Increment killer's weapon kills by two instead of leveling up imediatly.
+			get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]) ? incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true) : incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+		}
+		else
+		{
+			incrementTeamWeaponKills(killerTeam, 1);
+		}
 	}
 
 	// Ammo refill enabled?
@@ -2435,6 +2477,20 @@ incrementUserWeaponKills(index, value)
 	}
 }
 
+incrementTeamWeaponKills(CsTeams:team, value)
+{
+	client_print(0, print_chat, "incrementUserWeaponKills not yet implemented!");
+	// Set kills required and killstreak.
+	// userCombo[index] += value;
+	// userKills[index] += value;
+
+	// // Levelup player if weapon kills are greater than reqiured for his current level.
+	// while(userKills[index] >= weaponsData[userLevel[index]][weaponKills])
+	// {
+	// 	incrementUserLevel(index, 1, true);
+	// }
+}
+
 // Decrement weapon kills, take care of leveldown.
 decrementUserWeaponKills(index, value, bool:levelLose)
 {
@@ -2447,7 +2503,7 @@ decrementUserWeaponKills(index, value, bool:levelLose)
 // Decrement weapon kills, take care of leveldown.
 decrementTeamWeaponKills(CsTeams:team, value, bool:levelLose)
 {
-	if (levelLose && userKills[index] - value < 0)
+	if (levelLose && (team == CS_TEAM_T ? teamTTKills - value < 0 : teamCTKills - value < 0))
 	{
 		if (team == CS_TEAM_T)
 		{
@@ -2486,6 +2542,36 @@ incrementUserLevel(index, value, bool:notify)
 		// Play levelup sound.
 		playSound(index, soundLevelUp, -1, false);
 	}
+}
+
+incrementTeamLevel(CsTeams:team, value, bool:notify)
+{
+	// TODO: not yet implemented
+	client_print(0, print_chat, "incrementTeamLevel not implemented!");
+	// Set weapon kills based on current level required kills. Set new level if valid number.
+	// userKills[index] -= weaponsData[userLevel[index]][weaponKills];
+	// userLevel[index] = (userLevel[index] + value > maxLevel ? maxLevel : userLevel[index] + value);
+
+	// // Levelup effect.
+	// displayLevelupSprite(index);
+
+	// // Make sure player's kills are positive.
+	// if(userKills[index] < 0)
+	// {
+	// 	userKills[index] = 0;
+	// }
+
+	// // Add weapons for player's current level.
+	// giveWeapons(index);
+
+	// if(notify)
+	// {
+	// 	// Notify about levelup.
+	// 	ColorChat(0, RED, "%s^x01 Gracz^x04 %s^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, printName(index), userLevel[index] + 1, userLevel[index] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index]]) : customWeaponNames[userLevel[index]]);
+		
+	// 	// Play levelup sound.
+	// 	playSound(index, soundLevelUp, -1, false);
+	// }
 }
 
 displayLevelupSprite(index)
@@ -2531,8 +2617,8 @@ decrementTeamLevel(CsTeams:team, value)
 	if (team == CS_TEAM_T)
 	{
 		// Decrement user level, make sure their level is not negative.
-		teamTerroLevel = (teamTerroLevel - value < 0 ? 0 : teamTerroLevel - value);
-		teamTerroKills = 0;
+		teamTTLevel = (teamTTLevel - value < 0 ? 0 : teamTTLevel - value);
+		teamTTKills = 0;
 
 		// Play leveldown sound for whole team
 		playSoundForTeam(CS_TEAM_T, soundLevelDown, -1, false);
