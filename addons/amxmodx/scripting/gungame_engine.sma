@@ -488,48 +488,6 @@ new const nativesData[][][] =
 	{ "GetUserCombo", "native_GetUserCombo" }
 };
 
-new const cvarNames[][] =
-{
-	"gg_spawnProtectionTime",
-
-	"gg_respawnInterval",
-
-	"gg_flashesEnabled",
-
-	"gg_giveBackHeInterval",
-	"gg_giveBackFlashInterval",
-
-	"gg_warmupDuration",
-	"gg_warmupLevelReward",
-	"gg_warmupHealth",
-	"gg_warmupWeapon",
-	"gg_warumpRespawnInterval",
-
-	"gg_fallDamageEnabled",
-
-	"gg_refillWeaponAmmo",
-
-	"gg_idleCheckInterval",
-	"gg_idleSlapPower",
-	"gg_idleMaxStrikes",
-	"gg_idleMaxDistance",
-
-	"gg_defaultArmorLevel",
-
-	"gg_knifeKillInstantLevelup",
-	"gg_knifeKillReward",
-
-	"gg_wandEnabled",
-	"gg_wandAttackSpriteBrightness",
-	"gg_wandAttackSpriteLife",
-	"gg_wandAttackMaxDistance",
-	"gg_wandAttackInterval",
-
-	"gg_takeDamageHudTime",
-
-	"gg_removeWeaponsOffTheGround"
-};
-
 enum (+= 1)
 {
 	cvar_spawnProtectionTime,
@@ -627,10 +585,32 @@ public plugin_init()
 	register_plugin("GunGame", "v2.2", AUTHOR);
 
 	// Register cvars.
-	ForArray(i, cvarNames)
-	{
-		cvarsData[i] = register_cvar(cvarNames[i], "");
-	}
+	cvarsData[0] = register_cvar("gg_spawnProtectionTime", "1.5"); gg_spawnProtectionTime = "1.5" // Time in which player CAN get killed, but the killer will not be granted any weapon kills if victim is in spawn protection.
+	cvarsData[1] = register_cvar("gg_respawnInterval", "3.0"); // // Respawn time during GunGame.
+	cvarsData[2] = register_cvar("gg_flashesEnabled", "1"); // Determines wether to enable flashes on last level. Does not support wand.
+	cvarsData[3] = register_cvar("gg_giveBackHeInterval", "1.8"); // // Time between giving a player next HE grenade (during warmup & on HE weapon level).
+	cvarsData[4] = register_cvar("gg_giveBackFlashInterval", "4.5"); // // Time between giving a player next Flash grenade.
+	cvarsData[5] = register_cvar("gg_warmupDuration", "45"); // Time of warmup in seconds
+	cvarsData[6] = register_cvar("gg_warmupLevelReward", "3"); // Level that will be set to warmup winner. Value < 1 will disable notifications and picking warmup winner.
+	cvarsData[7] = register_cvar("gg_warmupHealth", "50"); // Health that players will be set to during warmup.
+	cvarsData[8] = register_cvar("gg_warmupWeapon", "-2"); // // Set that to CSW_ index, -1 to get random weapon, -2 to get wands (ignoring gg_wandEnabled value) or -3 to get random weapon for every player.
+	cvarsData[9] = register_cvar("gg_warumpRespawnInterval", "2.0"); // Time to respawn player during warmup.
+	cvarsData[10] = register_cvar("gg_fallDamageEnabled", "0"); // Enable falldamage?
+	cvarsData[11] = register_cvar("gg_refillWeaponAmmo", "1"); // Refill weapon clip on kill?
+	cvarsData[12] = register_cvar("gg_idleCheckInterval", "3.0"); // Determines interval between AFK checks.
+	cvarsData[13] = register_cvar("gg_idleSlapPower", "5"); // Hit power of a slap when player is 'AFK'.
+	cvarsData[14] = register_cvar("gg_idleMaxStrikes", "3"); // Determines max strikes that player can have before slaps start occuring.
+	cvarsData[15] = register_cvar("gg_idleMaxDistance", "30"); // Distance that resets camping-player idle strikes.
+	cvarsData[16] = register_cvar("gg_defaultArmorLevel", "0"); // Armor level for every player.
+	cvarsData[17] = register_cvar("gg_knifeKillInstantLevelup", "0"); // If that's set to true, knife will instantly give you gg_knifeKillReward levels. Otherwise gg_knifeKillReward means weapon kills.
+	cvarsData[18] = register_cvar("gg_knifeKillReward", "2"); // Knife kill reward value based on cvar_knifeKillInstantLevelup var.
+	cvarsData[19] = register_cvar("gg_wandEnabled", "1"); // Determines whether you want last level weapon to be knife (false) or wand (true).
+	cvarsData[20] = register_cvar("gg_wandAttackSpriteBrightness", "255"); // // Wand primary attack sprite brightness.
+	cvarsData[21] = register_cvar("gg_wandAttackSpriteLife", "4"); // Wand primary attack sprite life.
+	cvarsData[22] = register_cvar("gg_wandAttackMaxDistance", "550"); // Wand primary attack max distance.
+	cvarsData[23] = register_cvar("gg_wandAttackInterval", "2.2"); // Wand primary attack interval.
+	cvarsData[24] = register_cvar("gg_takeDamageHudTime", "1.2"); // Take damage hud hold-time.
+	cvarsData[25] = register_cvar("gg_removeWeaponsOffTheGround", "1"); // Remove weapons off the ground when loading map?
 
 	// Register Death and team assign events.
 	register_event("DeathMsg", "playerDeathEvent", "a");
