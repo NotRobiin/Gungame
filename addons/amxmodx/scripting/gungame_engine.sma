@@ -542,7 +542,7 @@ new const ggCvarsData[][][] =
 	{ "gg_flashesEnabled", "1" }, // Determines wether to enable flashes on last level. Does not support wand.
 	{ "gg_giveBackHeInterval", "1.8" }, // Time between giving a player next HE grenade (during warmup & on HE weapon level).
 	{ "gg_giveBackFlashInterval", "4.5" }, // Time between giving a player next Flash grenade.
-	{ "gg_warmupDuration", "45" }, // Time of warmup in seconds
+	{ "gg_warmupDuration", "10" }, // Time of warmup in seconds
 	{ "gg_warmupLevelReward", "3" }, // Level that will be set to warmup winner. Value < 1 will disable notifications and picking warmup winner.
 	{ "gg_warmupHealth", "50" }, // Health that players will be set to during warmup.
 	{ "gg_warmupWeapon", "-2" }, // Set that to CSW_ index, -1 to get random weapon, -2 to get wands (ignoring gg_wandEnabled value) or -3 to get random weapon for every player.
@@ -572,7 +572,7 @@ new const forwardsNames[][] =
 	"gg_game_end",
 	"gg_game_beginning",
 	"gg_player_spawned",
-	"gg_combo_streak",
+	"gg_combo_streak"
 };
 
 enum forwardsEnum (+= 1)
@@ -583,6 +583,24 @@ enum forwardsEnum (+= 1)
 	forwardGameBeginning,
 	forwardPlayerSpawned,
 	forwardComboStreak
+};
+
+new const gameModes[][] =
+{
+	"Normalny",
+	"Teamowy"
+};
+
+enum (+= 1)
+{
+	modeNormal,
+	modeTeamplay
+};
+
+new const teamNames[][] =
+{
+	"Terro",
+	"Anty-Terro"
 };
 
 new userLevel[MAX_PLAYERS + 1],
@@ -639,10 +657,13 @@ new userLevel[MAX_PLAYERS + 1],
 	wandLastAttack[MAX_PLAYERS + 1],
 
 	cvarsData[sizeof(ggCvarsData)],
-	
-	gameMode = 0,
-	deathMatchVotes = 0,
-	teamDeathMatchVotes = 0;
+
+	gameVotes[sizeof(gameModes)],
+	bool:gameVoteEnabled,
+	gameMode,
+
+	teamLevel[2],
+	teamKills[2];
 
 
 public plugin_init()
@@ -682,6 +703,7 @@ public plugin_init()
 
 	// Register item-add forward on player classname.
 	RegisterHam(Ham_AddPlayerItem, "player", "onAddItemToPlayer");
+
 
 	// Register greande think forward if HE explode time differs from default.
 	if(heGrenadeExplodeTime != defaultExplodeTime)
@@ -738,8 +760,8 @@ public plugin_init()
 	halfMaxLevel = floatround(float(maxLevel) / 2, floatround_round);
 
 	// Create forwards.
-	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL); // Level up (2)
-	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (2)
+	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level up (2)
+	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level down (2)
 	forwardHandles[2] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
 	forwardHandles[3] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
 	forwardHandles[4] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
@@ -1040,6 +1062,7 @@ public client_authorized(index)
 
 	// Respawn player.
 	set_task(2.0, "respawnPlayerOnJoin", index + TASK_RESPAWN_ON_JOIN);
+	set_task(3.0, "showGameVoteMenu", index);
 }
 
 // Remove hud tasks on disconnect.
@@ -1218,7 +1241,7 @@ public roundStart()
 public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 {
 	// Return if attacker isnt alive, self damage, no damage or players are on the same team.
-	if(!is_user_alive(attacker) || victim == attacker || !damage || !is_user_alive(victim) || get_user_team(attacker) == get_user_team(victim))
+	if(!is_user_alive(attacker) || victim == attacker || !damage || !is_user_alive(victim) || (gameMode == modeNormal && get_user_team(attacker) == get_user_team(victim)))
 	{
 		return HAM_IGNORED;
 	}
@@ -1315,13 +1338,13 @@ public playerDeathEvent()
 		// Decement level if killed himself with grenade.
 		if(equal(weapon, "hegrenade"))
 		{
-			if (gameMode == gameModeDeathMatch)
+			if(gameMode == modeNormal)
 			{
 				decrementUserWeaponKills(victim, 1, true);
 			}
 			else
 			{
-				decrementTeamWeaponKills(cs_get_user_team(victim), 1, true);
+				decrementTeamWeaponKills(get_user_team(victim), 1, true);
 			}
 		}
 
@@ -1334,22 +1357,28 @@ public playerDeathEvent()
 		return;
 	}
 
-	new CsTeams:killerTeam = cs_get_user_team(killer);
-	new CsTeams:victimTeam = cs_get_user_team(victim);
+	new killerTeam = get_user_team(killer),
+		victimTeam = get_user_team(victim);
 
-	if(gameMode == gameModeDeathMatch && userLevel[killer] == maxLevel)
+	if(gameMode == modeNormal && userLevel[killer] == maxLevel)
 	{
 		// End gungame if user has reached max level + 1.
 		endGunGame(killer);
 		
 		return;
 	}
-	else if (gameMode == gameModeTeamDeathMatch)
+	else if(gameMode == modeTeamplay)
 	{
-		if ((killerTeam == CS_TEAM_T && teamTTLevel == maxLevel) || (killerTeam == CS_TEAM_CT && teamCTLevel == maxLevel))
+		ForRange(i, 0, 1)
 		{
-			// End gungame if team has reached max level + 1.
+			if(teamLevel[i] != maxLevel)
+			{
+				continue;
+			}
+
 			endGunGame(killer);
+
+			return;
 		}
 	}
 
@@ -1373,46 +1402,39 @@ public playerDeathEvent()
 		return;
 	}
 
-	if (gameMode == gameModeDeathMatch)
+	if(equal(weapon, "knife") && (gameMode == modeNormal ? userLevel[killer] : teamLevel[killerTeam - 1]) != maxLevel)
 	{
-		if(equal(weapon, "knife") && userLevel[killer] != maxLevel)
+		if((gameMode == modeNormal ? userLevel[victim] : teamLevel[killerTeam - 1]) > 1)
 		{
-			if(userLevel[victim] > 1)
+			// Decrement victim level or team level when killed with knife and his level is greater than 1.
+			gameMode == modeNormal ? decrementUserLevel(victim, 1) : decrementTeamLevel(victimTeam, 1);
+
+			// Notify player.
+			ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", gameMode == modeNormal ? userLevel[victim] : teamLevel[killerTeam - 1]);
+		}
+
+		// Increment killer's weapon kills by two instead of leveling up imediatly.
+		if(gameMode == modeNormal)
+		{
+			if(get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
 			{
-				// Decrement victim level when killed with knife and his level is greater than 1.
-				decrementUserLevel(victim, 1);
-
-				// Notify player.
-				ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. Twoj poziom spadl do^x04 %i^x01.", chatPrefix, killer, userLevel[victim] + 1);
+				incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
 			}
-
-			// Increment killer's weapon kills by two instead of leveling up imediatly.
-			get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]) ? incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true) : incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
-		}
-		else
-		{
-			incrementUserWeaponKills(killer, 1);
-		}
-	}
-	else if (gameMode == gameModeTeamDeathMatch)
-	{
-		if(equal(weapon, "knife") && ((killerTeam == CS_TEAM_T && teamTTLevel != maxLevel) || (killerTeam == CS_TEAM_CT && teamCTLevel != maxLevel)))
-		{
-			if((victimTeam == CS_TEAM_T && teamTTLevel > 1) || (victimTeam == CS_TEAM_CT && teamCTLevel > 1))
+			else
 			{
-				// Decrement victim's team level when killed with knife and victim's team level is greater than 1.
-				decrementTeamLevel(victimTeam, 1);
-
-				// Notify player.
-				ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. Poziom twojej druzyny spadl do^x04 %i^x01.", chatPrefix, killer, (victimTeam == CS_TEAM_T ? teamTTLevel + 1 : teamCTLevel + 1));
+				incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
 			}
-
-			// Increment killer's weapon kills by two instead of leveling up imediatly.
-			get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]) ? incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true) : incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
 		}
-		else
+		else if(gameMode == modeTeamplay)
 		{
-			incrementTeamWeaponKills(killerTeam, 1);
+			if(get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
+			{
+				incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
+			}
+			else
+			{
+				incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+			}
 		}
 	}
 
@@ -1858,16 +1880,18 @@ public displayHud(taskIndex)
 		return;
 	}
 
-	new leader = getGameLeader(), leaderData[MAX_CHARS * 3], nextWeapon[25];
+	new leader = getGameLeader(),
+		leaderData[MAX_CHARS * 3],
+		nextWeapon[25];
 
 	// Format leader's data if available.
-	if(!leader)
+	if(leader <= 0)
 	{
 		formatex(leaderData, charsmax(leaderData), "^nLider: Brak");
 	}
 	else
 	{
-		formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]", printName(leader), userLevel[leader] + 1, userLevel[leader] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[leader]], userKills[leader], weaponsData[userLevel[leader]][weaponKills]);
+		formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]", gameMode == modeNormal ? printName(leader) : teamNames[leader], gameMode == modeNormal ? userLevel[leader] + 1 : teamLevel[leader] + 1, userLevel[leader] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[leader]], userKills[leader], weaponsData[userLevel[leader]][weaponKills]);
 	}
 
 	// Format next weapon name if available, change knife to wand if enabled so.
@@ -1882,13 +1906,24 @@ public displayHud(taskIndex)
 
 	// Display hud.
 	set_hudmessage(hudColors[0], hudColors[1], hudColors[2], -1.0, 0.02, 0, 6.0, hudDisplayInterval + 0.1, 0.0, 0.0);
-	ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s", userLevel[index] + 1, sizeof weaponsData, isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], userKills[index], weaponsData[userLevel[index]][weaponKills], userCombo[index], nextWeapon, leaderData);
+	if(gameMode == modeNormal)
+	{
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s", userLevel[index] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], userKills[index], weaponsData[userLevel[index]][weaponKills], userCombo[index], nextWeapon, leaderData);
+	}
+	else
+	{
+		new userTeam = get_user_team(index) - 1;
+
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s", teamLevel[userTeam] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], teamKills[userTeam], weaponsData[userLevel[index]][weaponKills], nextWeapon, leaderData);
+	}
 }
 
 // Respawn player.
 public respawnPlayerOnJoin(taskIndex)
 {
-	respawnPlayer(taskIndex - TASK_RESPAWN_ON_JOIN, 0.1);
+	new index = taskIndex - TASK_RESPAWN_ON_JOIN;
+
+	respawnPlayer(index, 0.1);
 }
 
 /*
@@ -2328,14 +2363,36 @@ playSound(index, soundType, soundIndex, bool:emitSound)
 		soundIndex = randomizeSoundIndex(soundType);
 	}
 
-	// Emit sound directly from entity? 
-	if(emitSound)
+	if(team)
 	{
-		emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
+		ForPlayers(i)
+		{
+			if(get_user_team(i) != team)
+			{
+				continue;
+			}
+
+			if(emitSound)
+			{
+				emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
+			}
+			else
+			{
+				client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
+			}
+		}
 	}
 	else
 	{
-		client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
+		// Emit sound directly from entity? 
+		if(emitSound)
+		{
+			emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
+		}
+		else
+		{
+			client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
+		}
 	}
 }
 
@@ -2379,15 +2436,20 @@ toggleWarmup(bool:status)
 	// Warmup set to disabled?
 	if(!warmupEnabled)
 	{
-		// Get warmup winner based on kills.
-		new winner = getWarmupWinner(true);
+		finishGameVote();
 
-		// Set task to reward winner after game restart.
-		if(is_user_connected(winner))
+		if(gameMode == modeNormal)
 		{
-			set_task(2.0, "rewardWarmupWinner", winner + TASK_REWARDWINNER);
+			// Get warmup winner based on kills.
+			new winner = getWarmupWinner(true);
+
+			// Set task to reward winner after game restart.
+			if(is_user_connected(winner))
+			{
+				set_task(2.0, "rewardWarmupWinner", winner + TASK_REWARDWINNER);
+			}
 		}
-		
+
 		// Restart the game.
 		set_cvar_num("sv_restartround", 1);
 
@@ -2408,10 +2470,12 @@ toggleWarmup(bool:status)
 		// Remove hud tasks.
 		ForPlayers(i)
 		{
-			if(is_user_connected(i) && task_exists(i + TASK_DISPLAYHUD))
+			if(!is_user_connected(i) || task_exists(i + TASK_DISPLAYHUD))
 			{
-				remove_task(i + TASK_DISPLAYHUD);
+				continue;
 			}
+			
+			remove_task(i + TASK_DISPLAYHUD);
 		}
 
 		// Get random weapon, only if its not a knife.
@@ -2419,6 +2483,8 @@ toggleWarmup(bool:status)
 
 		// Play warmup start sound.
 		playSound(0, soundWarmup, -1, true);
+
+		setGameVote();
 	}
 }
 
@@ -2511,27 +2577,40 @@ incrementUserWeaponKills(index, value)
 	}
 }
 
-incrementTeamWeaponKills(CsTeams:team, value)
+incrementTeamWeaponKills(team, value)
 {
-	client_print(0, print_chat, "incrementUserWeaponKills not yet implemented!");
-	// Set kills required and killstreak.
-	// userCombo[index] += value;
-	// userKills[index] += value;
+	teamKills[team - 1] += value;
 
-	// // Levelup player if weapon kills are greater than reqiured for his current level.
-	// while(userKills[index] >= weaponsData[userLevel[index]][weaponKills])
-	// {
-	// 	incrementUserLevel(index, 1, true);
-	// }
+	while(teamKills[team - 1] >= weaponsData[teamLevel[team - 1]][weaponKills])
+	{
+		incrementTeamLevel(team, 1, true);
+	}
 }
 
 // Decrement weapon kills, take care of leveldown.
 decrementUserWeaponKills(index, value, bool:levelLose)
 {
-	if(levelLose && userKills[index] - value < 0)
+	userKills[index] -= value;
+
+	if(levelLose && userKills[index] < 0)
 	{
 		decrementUserLevel(index, 1);
 	}
+
+	if(userKills[index] < 0)
+	{
+		userKills[index] = 0;
+	}
+}
+
+decrementTeamWeaponKills(team, value, bool:levelLose)
+{
+	if(levelLose && teamKills[team - 1] - value < 0)
+	{
+		return;
+	}
+
+	decrementTeamLevel(team, 1);
 }
 
 // Decrement weapon kills, take care of leveldown.
@@ -2568,7 +2647,7 @@ incrementUserLevel(index, value, bool:notify)
 	// Add weapons for player's current level.
 	giveWeapons(index);
 
-	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, index, userLevel[index]);
+	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, index, userLevel[index], -1);
 
 	if(notify)
 	{
@@ -2580,34 +2659,34 @@ incrementUserLevel(index, value, bool:notify)
 	}
 }
 
-incrementTeamLevel(CsTeams:team, value, bool:notify)
+incrementTeamLevel(team, value, bool:notify)
 {
-	// TODO: not yet implemented
-	client_print(0, print_chat, "incrementTeamLevel not implemented!");
 	// Set weapon kills based on current level required kills. Set new level if valid number.
-	// userKills[index] -= weaponsData[userLevel[index]][weaponKills];
-	// userLevel[index] = (userLevel[index] + value > maxLevel ? maxLevel : userLevel[index] + value);
+	teamKills[team - 1] = 0;
+	teamLevel[team - 1] = (teamLevel[team - 1] + value > maxLevel ? maxLevel : teamLevel[team - 1] + value);
 
-	// // Levelup effect.
-	// displayLevelupSprite(index);
+	ForPlayers(i)
+	{
+		// Skip not connected and opposite-team players.
+		if(!is_user_connected(i) || get_user_team(i) != team)
+		{
+			continue;
+		}
 
-	// // Make sure player's kills are positive.
-	// if(userKills[index] < 0)
-	// {
-	// 	userKills[index] = 0;
-	// }
+		// Levelup effect.
+		displayLevelupSprite(i);
 
-	// // Add weapons for player's current level.
-	// giveWeapons(index);
+		// Add weapons.
+		giveWeapons(i);
+	}
 
-	// if(notify)
-	// {
-	// 	// Notify about levelup.
-	// 	ColorChat(0, RED, "%s^x01 Gracz^x04 %s^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, printName(index), userLevel[index] + 1, userLevel[index] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index]]) : customWeaponNames[userLevel[index]]);
-		
-	// 	// Play levelup sound.
-	// 	playSound(index, soundLevelUp, -1, false);
-	// }
+	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, -1, teamLevel[team - 1], team);
+
+	if(notify)
+	{
+		// Notify about levelup.
+		ColorChat(0, RED, "%s^x01 Druzyna^x04 %s^x01 awansowala na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, teamNames[team - 1], teamLevel[team - 1] + 1, teamLevel[team - 1] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[teamLevel[team - 1]]) : customWeaponNames[teamLevel[team - 1]]);
+	}
 }
 
 displayLevelupSprite(index)
@@ -2751,6 +2830,8 @@ giveWeapons(index)
 		return;
 	}
 
+	new userTeam = get_user_team(index) - 1;
+
 	// We dont want players to have armor.
 	set_user_armor(index, get_pcvar_num(cvarsData[cvar_defaultArmorLevel]));
 
@@ -2761,29 +2842,14 @@ giveWeapons(index)
 	give_item(index, "weapon_knife");
 
 	// Add wand if player is on last level and such option is enabled.
-	if(userLevel[index] != maxLevel)
+	if((gameMode == modeNormal ? userLevel[index] : teamLevel[userTeam]) != maxLevel)
 	{
 		// Add weapon couple of times to make sure backpack ammo is right.
-		if(userLevel[index] != maxLevel)
-		{
-			new csw = get_weaponid(weaponEntityNames[userLevel[index]]);
+		new csw = get_weaponid(weaponEntityNames[userLevel[index]]);
 
-			give_item(index, weaponEntityNames[userLevel[index]]);
+		give_item(index, weaponEntityNames[userLevel[index]]);
 
-			cs_set_user_bpammo(index, csw, 100);
-		}
-
-		// Add two flashes if player is on last level.
-		else if(!get_pcvar_num(cvarsData[cvar_wandEnabled]))
-		{
-			if(get_pcvar_num(cvarsData[cvar_flashesEnabled]))
-			{
-				ForRange(i, 0, 1)
-				{
-					give_item(index, "weapon_flashbang");
-				}
-			}
-		}
+		cs_set_user_bpammo(index, csw, 100);
 
 		// Deploy primary weapon.
 		engclient_cmd(index, weaponEntityNames[userLevel[index]]);
@@ -2794,6 +2860,17 @@ giveWeapons(index)
 		if(get_pcvar_num(cvarsData[cvar_wandEnabled]))
 		{
 			setWandModels(index);
+		}
+		else
+		{
+			// Add two flashes.
+			if(get_pcvar_num(cvarsData[cvar_flashesEnabled]))
+			{
+				ForRange(i, 0, 1)
+				{
+					give_item(index, "weapon_flashbang");
+				}
+			}
 		}
 	}
 }
@@ -2849,26 +2926,40 @@ getWeaponsName(iterator, weaponIndex, string[], length)
 getGameLeader()
 {
 	new highest;
-
-	// Loop through all players, get one with highest level and kills.
-	ForPlayers(i)
+	
+	if(gameMode == modeNormal)
 	{
-		if(!is_user_connected(i))
-		{
-			continue;
-		}
-		
-		if(userLevel[i] > userLevel[highest])
-		{
-			highest = i;
-		}
+		highest = 0;
 
-		else if(userLevel[i] == userLevel[highest])
+		// Loop through all players, get one with highest level and kills.
+		ForPlayers(i)
 		{
-			if(userKills[i] > userKills[highest])
+			if(!is_user_connected(i))
+			{
+				continue;
+			}
+			
+			if(userLevel[i] > userLevel[highest])
 			{
 				highest = i;
 			}
+
+			else if(userLevel[i] == userLevel[highest])
+			{
+				if(userKills[i] > userKills[highest])
+				{
+					highest = i;
+				}
+			}
+		}
+	}
+	else if(gameMode == modeTeamplay)
+	{
+		highest = teamLevel[0] == teamLevel[1] ? -1 : (teamLevel[1] > teamLevel[0] ? 1 : 0);
+
+		if(highest == -1)
+		{
+			highest = teamKills[0] == teamKills[1] ? -1 : (teamKills[1] > teamKills[0] ? 1 : 0);
 		}
 	}
 
@@ -3099,9 +3190,6 @@ wandAttack(index, weapon)
 		return PLUGIN_HANDLED;
 	}
 
-	// Set punchangle whenever player attacks.
-	set_pev(index, pev_punchangle, Float:{ -1.5, 0.0, 0.0 });
-
 	// Block shooting if cooldown is still on.
 	if(wandLastAttack[index] + get_pcvar_float(cvarsData[cvar_wandAttackInterval]) > get_gametime())
 	{
@@ -3177,6 +3265,9 @@ wandAttack(index, weapon)
 	{
 		return PLUGIN_HANDLED;
 	}
+
+	// Set punchangle whenever player attacks.
+	set_pev(index, pev_punchangle, Float:{ -1.5, 0.0, 0.0 });
 
 	// Log last attack.
 	wandLastAttack[index] = floatround(get_gametime());
@@ -3426,7 +3517,14 @@ public setMaxLevel(index)
 
 public addLevel(index)
 {
-	incrementUserLevel(index, 1, true);
+	if(gameMode == modeNormal)
+	{
+		incrementUserLevel(index, 1, true);
+	}
+	else
+	{
+		incrementTeamLevel(get_user_team(index), 1, true);
+	}
 }
 
 public addKills(index)
@@ -3454,60 +3552,89 @@ public warmupFunction(index)
 #endif
 
 /*
-		[ CHANGELOG ]
-
-DATE:				ACTIONS:
-
-2018-12-(03-04)		Baisc stuff; client variables (name, kills, level etc.), arrays with weapon data, arrays with weapon names, basic actions / functions; leveling up, getting weapon kills, showing basic info,
-					HUD, setting up weapons-data arrays properly, weapons-data list menu, gungame start & end + proper chat/hud info, damage and kills management, first fixes, properly setitng up custom
-					weapon names array, first tests. Work time: about 4 hours.
-
-2018-12-04			More specified HUD info, fixed user and weapon leveling, added chat & hud leveling-up info, created a propper gungame ending, first optimalistaions, cleaning up code, further tests,
-					screen fade, getting gungame winner, managing player's data (kills, level, name), managing client_connect/client_disconccnect data, further optimalisation improves etc. Work time: about 3 hours.
-
-2018-12-(05-06)		Much better over-all plugin perfomance, optimalising, setting up const variables, setting up plugin setup part with const variables, managing greande messages, chat, prefxes, managing HE, knife
-					and every other special-treatement weapon to work properly, added a fuck ton of tasks with proper task-indexing, player-indexing and time-based operations, created a propper ending message with
-					saving data to nvault, reading data from nvault, fixed leveling-system, fixed self-kill bug, added a fuck ton of optimalisations (including short-name-variables, functions speeding up whole HUD,
-					and other frequently-used algorythms, created a propper database key based on player's name), and many other - smaller changes. Work time: around 8 hours.
-
-2018-12-09			User combo + its management, fixed nvault data-save algorythm, optimalised every variable with static easy-to-change define of max players, kill info (killer's health and name), take damage hud
-					management + current damage given info, saved user short name in other way to avoid perfomance issues, many small changes. Work time: 2 hours.
-
-2018-12-14			Removed bomb on spawn, blocked weapon drop on death, further optimalisations, created tested and debugged /info {name} command, changes to death-events, changed names of many variables to
-					easier to read ones, replaced static Ham events registering with ForRange loops /w const variables. Code is no longer scrambled, every section has its place and every function/public/task has been
-					assigned to it's section. Further fixes and code management. Whole code is now easy to set on the upper part of code. Sound management + precache + def. sounds. Work time: 8 hours.
-
-2018-12-15			Added onTeamAssign event and player respawn management after joining server/choosing team. Small fixes/optimalisations. Fixed spawn-kill protection. Fixed damage system. Work time: 1 hour.
-
-2018-12-16			Fixed sounds management, added defaultSoundCommand const and changed playSound function's code a bit to cooporate with one of two commands. Work time: 30 minutes.
-
-2018-12-19			Optimalised code a bit, a lot of stuff is now easy-to-change and automated. Made some memory optimalisations. Fixed bugged timerTick sound, when timer was 0 or lower. Fixed user rendering.
-					Fixed warmup weapons bugging with tasks, and did a recheck of if statements wherever it was necessary. Improved top-players menu. Further small fixes. Fixed disappearing when set_user_rendering
-					was applied to player, that was spawned a second ago. Work time: 2 hours.
-
-2018-12-20			Fixed multi chat message when using /info command. Fixed grenades handling (now it cannot be bugged anymore). Further code improvements + refactoring code a bit to clamp down file size a bit.
-					Major code refactoring and cleaning up. Work time: 3 hours.
-
-2018-12-21			Changed database type from nvault to mysql. Optimalised code a ton. Dead & alive can now chat (to prevent player sending message right after death). First VIP code. Created top players command,
-					fixed database requests, created top players mysql requests and motd. Work time: 5 hours.
-
-2019-01-03			Added natives support, got rid of multiple variables, added macrodefinition TEST_MODE and it's handling, added removing weapons off the ground, cleaned up multiple functions, added missing comments,
-					fixed onTeamAssign forward, handled natives properly, added weapon damage system. Work time: --.
-
-2019-01-(05-6)		Added wand, tested it, added/fixed multiple code comments, small fixes, cleaned up code, multiple smaller changes, assigned multiple smaller functions, handled grenade time changes, cleaned up consts
-					did re-check of literlly every funciton on server, play-tested mode on 3 maps. Work time: --.
-
-2019-01-29			Recoded some parts of engine to move to AMXX 1.9, added multiple comments, added multiple functions, changed most of functions to private, fixed smaller bugs. Work time: 40 minutes.
-
-2019-02-02			Recoded most of engine to be compatibile with AMXX 1.9, cleaned up code a bit, fixed message arguments function, added weapon bp ammo on warmup and propper GG, added optional weapon-ammo refill,
-					added optional no-falldamage, fixed hud display when warmup weapon mode == -3 or -2, fixed weapon class names, cleaned up plugin_init. Work time: 1 hour.
-
-2019-02-26			Added parenthases in every if/for/while etc. statement, fixed some minor bugs/typos.
-
-		[ TO DO LIST ]
-
-	VIP
-
-		[ KNOWN BUGS ]
-
+		[ Game mode ]
 */
+
+setGameVote()
+{
+	ForArray(i, gameModes)
+	{
+		gameVotes[i] = 0;
+	}
+
+	gameVoteEnabled = true;
+
+	ForPlayers(i)
+	{
+		if(!is_user_connected(i))
+		{
+			continue;
+		}
+
+		showGameVoteMenu(i);
+	}
+}
+
+public showGameVoteMenu(index)
+{
+	if(!gameVoteEnabled)
+	{
+		return PLUGIN_HANDLED;
+	}
+
+	new menuIndex = menu_create("Wybierz tryb gry:", "showGameVoteMenu_handler");
+
+	ForArray(i, gameModes)
+	{
+		menu_additem(menuIndex, gameModes[i]);
+	}
+
+	menu_display(index, menuIndex);
+
+	return PLUGIN_HANDLED;
+}
+
+public showGameVoteMenu_handler(index, menuIndex, item)
+{
+	menu_destroy(menuIndex);
+	
+	if(item == MENU_EXIT || gameVoteEnabled)
+	{
+		return PLUGIN_HANDLED;
+	}
+
+	gameVotes[item]++;
+
+	ColorChat(index, RED, "%s^x01 Wybrales tryb:^x04 %s^x01.", chatPrefix, gameModes[item]);
+
+	return PLUGIN_HANDLED;
+}
+
+public finishGameVote()
+{
+	gameVoteEnabled = false;
+
+	new bool:tie;
+
+	ForArray(i, gameModes)
+	{
+		if(gameVotes[i] < gameVotes[gameMode])
+		{
+			continue;
+		}
+
+		if(gameVotes[i] == gameVotes[gameMode] && gameVotes[i])
+		{
+			tie = true;
+		}
+
+		gameMode = i;
+	}
+
+	if(tie)
+	{
+		gameMode = random_num(0, sizeof(gameModes) - 1);
+	}
+
+	ColorChat(0, RED, "%s^x01 %sygral tryb:^x04 %s^x01.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode]);
+}
