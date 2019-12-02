@@ -58,46 +58,46 @@ enum (+= 1)
 {
 	weaponCSW = 0,
 	weaponKills,
-	weaponDamage
+	weaponTeamKills
 };
 
-// Main data array. [0] is weapon CSW_ index. [1] is kills required to level-up. [2] is damage multiplier (30 = 30%, 110 = 110%).
+// Main data array. [0] is weapon CSW_ index. [1] is kills required to level-up. [2] is kills required to level-up as a team.
 new const weaponsData[][] =
 {
-	{ CSW_GLOCK18, 2, 100 },
-	{ CSW_USP, 2, 100 },
-	{ CSW_P228, 2, 100 },
+	{ CSW_GLOCK18, 2, 15 },
+	{ CSW_USP, 2, 15 },
+	{ CSW_P228, 2, 15 },
 
-	{ CSW_FIVESEVEN, 2, 100 },
-	{ CSW_DEAGLE, 2, 100 },
-	{ CSW_ELITE, 2, 100 },
+	{ CSW_FIVESEVEN, 2, 15 },
+	{ CSW_DEAGLE, 2, 15 },
+	{ CSW_ELITE, 2, 15 },
 	
-	{ CSW_M3, 3, 100 },
-	{ CSW_XM1014, 3, 100 },
-	{ CSW_TMP, 3, 100 },
+	{ CSW_M3, 3, 15 },
+	{ CSW_XM1014, 3, 15 },
+	{ CSW_TMP, 3, 15 },
 	
-	{ CSW_MAC10, 3, 100 },
-	{ CSW_UMP45, 3, 100 },
-	{ CSW_MP5NAVY, 3, 100 },
+	{ CSW_MAC10, 3, 15 },
+	{ CSW_UMP45, 3, 15 },
+	{ CSW_MP5NAVY, 3, 15 },
 	
-	{ CSW_P90, 4, 100 },
-	{ CSW_GALIL, 4, 100 },
-	{ CSW_FAMAS, 3, 100 },
+	{ CSW_P90, 4, 15 },
+	{ CSW_GALIL, 4, 15 },
+	{ CSW_FAMAS, 3, 15 },
 	
-	{ CSW_AK47, 4, 100 },
-	{ CSW_SCOUT, 2, 100 },
-	{ CSW_M4A1, 4, 100 },
+	{ CSW_AK47, 4, 15 },
+	{ CSW_SCOUT, 2, 15 },
+	{ CSW_M4A1, 4, 15 },
 
-	{ CSW_SG552, 4, 100 },
-	{ CSW_AUG, 4, 100 },
-	{ CSW_AWP, 4, 100 },
+	{ CSW_SG552, 4, 15 },
+	{ CSW_AUG, 4, 15 },
+	{ CSW_AWP, 4, 15 },
 
-	{ CSW_G3SG1, 2, 100 },
-	{ CSW_SG550, 2, 100 },
-	{ CSW_M249, 2, 100 },
+	{ CSW_G3SG1, 2, 15 },
+	{ CSW_SG550, 2, 15 },
+	{ CSW_M249, 2, 15 },
 
-	{ CSW_HEGRENADE, 3, 100 },
-	{ CSW_KNIFE, 1, 100 }
+	{ CSW_HEGRENADE, 3, 6 },
+	{ CSW_KNIFE, 1, 5 }
 };
 
 // Custom weapon names (used in HUD, ending-message etc).
@@ -1252,9 +1252,6 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 		return HAM_SUPERCEDE;
 	}
 
-	// Set damage multiplier.
-	SetHamParamFloat(4, damage * (weaponsData[userLevel[attacker]][weaponDamage] / 100.0));
-
 	// Show damage info in hud.
 	set_hudmessage(takeDamageHudColor[0], takeDamageHudColor[1], takeDamageHudColor[2], 0.8, 0.4, 0, 6.0, get_pcvar_float(cvarsData[cvar_takeDamageHudTime]), 0.0, 0.0);
 	ShowSyncHudMsg(attacker, hudObjects[hudObjectDamage], "%i^n", floatround(damage, floatround_round));
@@ -1505,7 +1502,7 @@ public sayHandle(msgId, msgDest, msgEnt)
 
 	// Get message arguments.
 	get_msg_arg_string(2, chatString[0], charsmax(chatString[]));
-	
+
 	formatex(weaponName, charsmax(weaponName), (userLevel[index] == maxLevel && get_pcvar_num(cvarsData[cvar_wandEnabled])) ? "Rozdzka" : customWeaponNames[userLevel[index]]);
 
 	if(equal(chatString[0], "#Cstrike_Chat_All"))
@@ -1678,7 +1675,7 @@ public listWeaponsMenu(index)
 	ForArray(i, weaponsData)
 	{
 		// Add item to menu.
-		menu_additem(menuIndex, fmt("[%s - %i lv. - %i]", i == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[i]) : customWeaponNames[i], i + 1, weaponsData[i][weaponKills]));
+		menu_additem(menuIndex, fmt("[%s - %i lv. - %i (%i)]", i == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[i]) : customWeaponNames[i], i + 1, weaponsData[i][weaponKills], weaponsData[i][weaponTeamKills]));
 	}
 
 	// Display menu to player.
@@ -1913,7 +1910,7 @@ public displayHud(taskIndex)
 				userLevel[leader] + 1,
 				userLevel[leader] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[leader]],
 				userKills[leader],
-				weaponsData[userLevel[leader]][weaponKills]);
+				weaponsData[userLevel[leader]][gameMode == modeNormal ? weaponKills : weaponTeamKills]);
 	}
 
 	// Format next weapon name if available, change knife to wand if enabled so.
@@ -1936,7 +1933,7 @@ public displayHud(taskIndex)
 	{
 		new userTeam = get_user_team(index) - 1;
 
-		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s", teamLevel[userTeam] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], teamKills[userTeam], weaponsData[userLevel[index]][weaponKills], nextWeapon, leaderData);
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s", teamLevel[userTeam] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], teamKills[userTeam], weaponsData[userLevel[index]][weaponTeamKills], nextWeapon, leaderData);
 	}
 }
 
@@ -2339,7 +2336,7 @@ showPlayerInfo(index, target)
 			userLevel[target] + 1,
 			isOnLastLevel(target) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[target]]) : customWeaponNames[userLevel[target]],
 			userKills[target],
-			weaponsData[userLevel[target]][weaponKills],
+			weaponsData[userLevel[target]][gameMode == modeNormal ? weaponKills : weaponTeamKills],
 			userWins[target],
 			get_user_flags(target) & VIP_FLAG ? "VIP" : "Brak");
 	}
@@ -2603,7 +2600,7 @@ incrementTeamWeaponKills(team, value)
 {
 	teamKills[team - 1] += value;
 
-	while(teamKills[team - 1] >= weaponsData[teamLevel[team - 1]][weaponKills])
+	while(teamKills[team - 1] >= weaponsData[teamLevel[team - 1]][weaponTeamKills])
 	{
 		incrementTeamLevel(team, 1, true);
 	}
