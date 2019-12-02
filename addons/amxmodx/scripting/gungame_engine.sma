@@ -2876,6 +2876,7 @@ giveWeapons(index)
 	// Strip weapons.
 	removePlayerWeapons(index);
 
+
 	// Add wand if player is on last level and such option is enabled.
 	if(userLevel[index] != maxLevel)
 	{
@@ -2891,9 +2892,15 @@ giveWeapons(index)
 
 		// Deploy primary weapon.
 		engclient_cmd(index, weaponEntityNames[userLevel[index]]);
+
+		// Add knife last so the primary weapon gets drawn out (dont switch to powerful weapon fix).
+		give_item(index, "weapon_knife");
 	}
 	else 
 	{
+		// Add knife first, so the models can be set.
+		give_item(index, "weapon_knife");
+
 		// Set wand model.
 		if(get_pcvar_num(cvarsData[cvar_wandEnabled]))
 		{
@@ -2911,9 +2918,6 @@ giveWeapons(index)
 			}
 		}
 	}
-
-	// Add knife.
-	give_item(index, "weapon_knife");
 }
 
 getWarmupWinner(bool:announce)
