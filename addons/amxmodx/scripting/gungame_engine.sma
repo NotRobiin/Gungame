@@ -1402,9 +1402,9 @@ public playerDeathEvent()
 		return;
 	}
 
-	if(equal(weapon, "knife") && (gameMode == modeNormal ? userLevel[killer] : teamLevel[killerTeam - 1]) != maxLevel)
+	if(equal(weapon, "knife") && userLevel[killer] != maxLevel)
 	{
-		if((gameMode == modeNormal ? userLevel[victim] : teamLevel[killerTeam - 1]) > 1)
+		if(userLevel[victim] > 1)
 		{
 			// Decrement victim level or team level when killed with knife and his level is greater than 1.
 			gameMode == modeNormal ? decrementUserLevel(victim, 1) : decrementTeamLevel(victimTeam, 1);
@@ -1905,17 +1905,22 @@ public displayHud(taskIndex)
 	}
 	else
 	{
-		formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]", gameMode == modeNormal ? printName(leader) : teamNames[leader], gameMode == modeNormal ? userLevel[leader] + 1 : teamLevel[leader] + 1, userLevel[leader] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[leader]], userKills[leader], weaponsData[userLevel[leader]][weaponKills]);
+		formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]",
+				gameMode == modeNormal ? printName(leader) : teamNames[leader],
+				userLevel[leader] + 1,
+				userLevel[leader] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[leader]],
+				userKills[leader],
+				weaponsData[userLevel[leader]][weaponKills]);
 	}
 
 	// Format next weapon name if available, change knife to wand if enabled so.
 	if(userLevel[index] == sizeof weaponsData - 2)
 	{
-		formatex(nextWeapon, charsmax(nextWeapon), "%s", get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index] + 1]);
+		formatex(nextWeapon, charsmax(nextWeapon), get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index] + 1]);
 	}
 	else
 	{
-		formatex(nextWeapon, charsmax(nextWeapon), "%s", isOnLastLevel(index) ? "Brak" : customWeaponNames[userLevel[index] + 1]);
+		formatex(nextWeapon, charsmax(nextWeapon), isOnLastLevel(index) ? "Brak" : customWeaponNames[userLevel[index] + 1]);
 	}
 
 	// Display hud.
@@ -2619,7 +2624,24 @@ decrementUserWeaponKills(index, value, bool:levelLose)
 
 decrementTeamWeaponKills(team, value, bool:levelLose)
 {
-	if(levelLose && teamKills[team - 1] - value < 0)
+	teamKills[team - 1] -= value;
+
+	if(teamKills[team - 1] < 0)
+	{
+		teamKills[team - 1] = 0;
+	}
+
+	ForPlayers(i)
+	{
+		if(!is_user_connected(i) || get_user_team(i) != team)
+		{
+			continue;
+		}
+
+		userKills[i] = teamKills[team - 1];
+	}
+
+	if(!levelLose)
 	{
 		return;
 	}
@@ -2751,18 +2773,19 @@ decrementTeamLevel(CsTeams:team, value)
 		teamTTLevel = (teamTTLevel - value < 0 ? 0 : teamTTLevel - value);
 		teamTTKills = 0;
 
-		// Play leveldown sound for whole team
-		playSoundForTeam(CS_TEAM_T, soundLevelDown, -1, false);
-	}
-	else if (team == CS_TEAM_CT)
+	ForPlayers(i)
 	{
-		// Decrement team level, make sure their level is not negative.
-		teamCTLevel = (teamCTLevel - value < 0 ? 0 : teamCTLevel - value);
-		teamCTKills = 0;
+		if(!is_user_connected(i) || cs_get_user_team(i) != team)
+		{
+			continue;
+		}
 
-		// Play leveldown sound.
-		playSoundForTeam(CS_TEAM_CT, soundLevelDown, -1, false);
+		userLevel[i] = teamLevel[team - 1];
+		userKills[i] = teamKills[team - 1];
 	}
+
+	// Play leveldown sound.
+	playSoundForTeam(team, soundLevelDown, -1, false);
 }
 
 endGunGame(winner)
@@ -2844,8 +2867,6 @@ giveWeapons(index)
 		return;
 	}
 
-	new userTeam = get_user_team(index) - 1;
-
 	// We dont want players to have armor.
 	set_user_armor(index, get_pcvar_num(cvarsData[cvar_defaultArmorLevel]));
 
@@ -2853,12 +2874,12 @@ giveWeapons(index)
 	removePlayerWeapons(index);
 
 	// Add wand if player is on last level and such option is enabled.
-	if((gameMode == modeNormal ? userLevel[index] : teamLevel[userTeam]) != maxLevel)
+	if(userLevel[index] != maxLevel)
 	{
 		// Add weapon couple of times to make sure backpack ammo is right.
-		new csw = get_weaponid(weaponEntityNames[gameMode == modeNormal ? userLevel[index] : teamLevel[userTeam]]);
+		new csw = get_weaponid(weaponEntityNames[userLevel[index]]);
 
-		give_item(index, weaponEntityNames[gameMode == modeNormal ? userLevel[index] : teamLevel[userTeam]]);
+		give_item(index, weaponEntityNames[userLevel[index]]);
 
 		cs_set_user_bpammo(index, csw, 100);
 
