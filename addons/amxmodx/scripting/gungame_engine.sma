@@ -605,10 +605,6 @@ new const teamNames[][] =
 
 new userLevel[MAX_PLAYERS + 1],
 	userKills[MAX_PLAYERS + 1],
-	teamTTLevel,
-	teamTTKills,
-	teamCTLevel,
-	teamCTKills,
 	userName[MAX_PLAYERS + 1][MAX_CHARS],
 	userShortName[MAX_PLAYERS + 1][MAX_CHARS],
 	userTimeToRespawn[MAX_PLAYERS + 1],
@@ -1404,7 +1400,14 @@ public playerDeathEvent()
 		if(userLevel[victim] > 1)
 		{
 			// Decrement victim level or team level when killed with knife and his level is greater than 1.
-			gameMode == modeNormal ? decrementUserLevel(victim, 1) : decrementTeamLevel(victimTeam, 1);
+			if (gameMode == modeNormal)
+			{
+				decrementUserLevel(victim, 1);
+			}
+			else
+			{
+				decrementTeamLevel(victimTeam, 1);
+			}
 
 			// Notify player.
 			ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", gameMode == modeNormal ? userLevel[victim] : teamLevel[killerTeam - 1]);
@@ -1946,55 +1949,6 @@ public respawnPlayerOnJoin(taskIndex)
 }
 
 /*
-		[ Mode Choosing ]
-*/
-
-// Init game mode voting
-public gameModeVote(taskIndex)
-{
-	new time = 5; // todo: add time cvar
-	new menu = menu_create("Jaki mod gramy ?", "gameModeVoteHandler");
-	menu_additem(menu, "Deathmatch");
-	menu_additem(menu, "TeamDeathMatch");
-	menu_display(0, menu, 0, time);
-
-	set_task(float(time), "gameModeVoteFinished");
-}
-
-// Vote Handler
-public gameModeVoteHandler(id, menu, item)
-{
-	if (item == 0)
-	{
-		deathMatchVotes++;
-	}
-	else
-	{
-		teamDeathMatchVotes++;
-	}
-}
-
-// Voting finished - set game mode
-public gameModeVoteFinished()
-{
-	if (deathMatchVotes > teamDeathMatchVotes)
-	{
-		gameMode = gameModeDeathMatch;
-		ColorChat(0, RED, "Wygral tryb DeathMatch");
-	}
-	else if (teamDeathMatchVotes > deathMatchVotes)
-	{
-		gameMode = gameModeTeamDeathMatch;
-		ColorChat(0, RED, "Wygral tryb TeamDeathMatch");
-	}
-	else
-	{
-		gameMode = random_num(0, 1);
-		ColorChat(0, RED, "Rowna liczba glosow! Wylosowano tryb: %s", (gameMode == 0 ? "DeathMatch" : "TeamDeathMatch"));
-	}
-}
-
-/*
 		[ Database ]
 */
 
@@ -2382,40 +2336,18 @@ playSound(index, soundType, soundIndex, bool:emitSound)
 		soundIndex = randomizeSoundIndex(soundType);
 	}
 
-	if(team)
+	// Emit sound directly from entity?
+	if(emitSound)
 	{
-		ForPlayers(i)
-		{
-			if(get_user_team(i) != team)
-			{
-				continue;
-			}
-
-			if(emitSound)
-			{
-				emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
-			}
-			else
-			{
-				client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
-			}
-		}
+		emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
 	}
 	else
 	{
-		// Emit sound directly from entity? 
-		if(emitSound)
-		{
-			emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
-		}
-		else
-		{
-			client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
-		}
+		client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
 	}
 }
 
-playSoundForTeam(CsTeams:team, soundType, soundIndex, bool:emitSound)
+playSoundForTeam(team, soundType, soundIndex, bool:emitSound)
 {
 	// Sound index is set to random?
 	if(soundIndex < 0)
@@ -2428,7 +2360,7 @@ playSoundForTeam(CsTeams:team, soundType, soundIndex, bool:emitSound)
 	{
 		ForPlayers(index)
 		{
-			if (cs_get_user_team(index) == team)
+			if (get_user_team(index) == team)
 			{
 				emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
 			}
@@ -2438,7 +2370,7 @@ playSoundForTeam(CsTeams:team, soundType, soundIndex, bool:emitSound)
 	{
 		ForPlayers(index)
 		{
-			if (cs_get_user_team(index) == team)
+			if (get_user_team(index) == team)
 			{
 				client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
 			}
@@ -2622,6 +2554,7 @@ decrementUserWeaponKills(index, value, bool:levelLose)
 	}
 }
 
+// Decrement weapon kills, take care of leveldown.
 decrementTeamWeaponKills(team, value, bool:levelLose)
 {
 	teamKills[team - 1] -= value;
@@ -2647,22 +2580,6 @@ decrementTeamWeaponKills(team, value, bool:levelLose)
 	}
 
 	decrementTeamLevel(team, 1);
-}
-
-// Decrement weapon kills, take care of leveldown.
-decrementTeamWeaponKills(CsTeams:team, value, bool:levelLose)
-{
-	if (levelLose && (team == CS_TEAM_T ? teamTTKills - value < 0 : teamCTKills - value < 0))
-	{
-		if (team == CS_TEAM_T)
-		{
-			decrementTeamLevel(CS_TEAM_T, 1);
-		}
-		else if (team == CS_TEAM_CT)
-		{
-			decrementTeamLevel(CS_TEAM_CT, 1);
-		}
-	}
 }
 
 incrementUserLevel(index, value, bool:notify)
@@ -2768,17 +2685,14 @@ decrementUserLevel(index, value)
 	ExecuteForward(forwardHandles[forwardLevelDown], forwardReturnDummy, index, userLevel[index]);
 }
 
-decrementTeamLevel(CsTeams:team, value)
+decrementTeamLevel(team, value)
 {
-	if (team == CS_TEAM_T)
-	{
-		// Decrement user level, make sure their level is not negative.
-		teamTTLevel = (teamTTLevel - value < 0 ? 0 : teamTTLevel - value);
-		teamTTKills = 0;
+	teamLevel[team - 1] = (teamLevel[team - 1] - value < 0 ? 0 : teamLevel[team - 1] - value);
+	teamKills[team - 1] = 0;
 
 	ForPlayers(i)
 	{
-		if(!is_user_connected(i) || cs_get_user_team(i) != team)
+		if(!is_user_connected(i) || get_user_team(i) != team)
 		{
 			continue;
 		}
@@ -3642,8 +3556,10 @@ public showGameVoteMenu(index)
 		menu_additem(menuIndex, gameModes[i]);
 	}
 
-	menu_display(index, menuIndex);
+	menu_display(index, menuIndex, 0, warmupTimer);
 
+	menu_setprop(menuIndex, MPROP_EXIT, MEXIT_NEVER);
+	
 	return PLUGIN_HANDLED;
 }
 
@@ -3651,7 +3567,7 @@ public showGameVoteMenu_handler(index, menuIndex, item)
 {
 	menu_destroy(menuIndex);
 	
-	if(item == MENU_EXIT || !gameVoteEnabled)
+	if(!gameVoteEnabled)
 	{
 		return PLUGIN_HANDLED;
 	}
