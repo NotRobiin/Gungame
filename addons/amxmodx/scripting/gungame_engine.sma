@@ -1500,10 +1500,13 @@ public sayHandle(msgId, msgDest, msgEnt)
 		return PLUGIN_CONTINUE;
 	}
 
-	new chatString[2][192];
+	new chatString[2][192],
+		weaponName[33];
 
 	// Get message arguments.
 	get_msg_arg_string(2, chatString[0], charsmax(chatString[]));
+	
+	formatex(weaponName, charsmax(weaponName), (userLevel[index] == maxLevel && get_pcvar_num(cvarsData[cvar_wandEnabled])) ? "Rozdzka" : customWeaponNames[userLevel[index]]);
 
 	if(equal(chatString[0], "#Cstrike_Chat_All"))
 	{
@@ -1516,22 +1519,22 @@ public sayHandle(msgId, msgDest, msgEnt)
 		// Format new message to be sent.
 		if(gameMode == modeNormal)
 		{
-			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], index, chatString[0]);
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, weaponName, index, chatString[0]);
 		}
 		else
 		{
-			formatex(chatString[1], charsmax(chatString[]), "^x04[%s]^x03 %n^x01 :  %s", customWeaponNames[teamLevel[get_user_team(index) - 1]], index, chatString[0]);
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%s]^x03 %n^x01 :  %s", weaponName, index, chatString[0]);
 		}
 	}
 	else // Format new message to be sent.
 	{
 		if(gameMode == modeNormal)
 		{
-			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x01 %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], chatString[0]);
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x01 %s", userLevel[index] + 1, weaponName, chatString[0]);
 		}
 		else
 		{
-			formatex(chatString[1], charsmax(chatString[]), "^x04[%s]^x01 %s", customWeaponNames[teamLevel[get_user_team(index) - 1]], chatString[0]);
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%s]^x01 %s", weaponName, chatString[0]);
 		}
 	}
 
