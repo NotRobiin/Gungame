@@ -599,8 +599,8 @@ enum (+= 1)
 
 new const teamNames[][] =
 {
-	"Terro",
-	"Anty-Terro"
+	"TT",
+	"CT"
 };
 
 new userLevel[MAX_PLAYERS + 1],
@@ -1514,11 +1514,25 @@ public sayHandle(msgId, msgDest, msgEnt)
 		set_msg_arg_string(4, "");
 
 		// Format new message to be sent.
-		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], index, chatString[0]);
+		if(gameMode == modeNormal)
+		{
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], index, chatString[0]);
+		}
+		else
+		{
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%s]^x03 %n^x01 :  %s", customWeaponNames[teamLevel[get_user_team(index) - 1]], index, chatString[0]);
+		}
 	}
 	else // Format new message to be sent.
 	{
-		formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x01 %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], chatString[0]);
+		if(gameMode == modeNormal)
+		{
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x01 %s", userLevel[index] + 1, customWeaponNames[userLevel[index]], chatString[0]);
+		}
+		else
+		{
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%s]^x01 %s", customWeaponNames[teamLevel[get_user_team(index) - 1]], chatString[0]);
+		}
 	}
 
 	// Send new message.
@@ -2838,16 +2852,13 @@ giveWeapons(index)
 	// Strip weapons.
 	removePlayerWeapons(index);
 
-	// Add knife.
-	give_item(index, "weapon_knife");
-
 	// Add wand if player is on last level and such option is enabled.
 	if((gameMode == modeNormal ? userLevel[index] : teamLevel[userTeam]) != maxLevel)
 	{
 		// Add weapon couple of times to make sure backpack ammo is right.
-		new csw = get_weaponid(weaponEntityNames[userLevel[index]]);
+		new csw = get_weaponid(weaponEntityNames[gameMode == modeNormal ? userLevel[index] : teamLevel[userTeam]]);
 
-		give_item(index, weaponEntityNames[userLevel[index]]);
+		give_item(index, weaponEntityNames[gameMode == modeNormal ? userLevel[index] : teamLevel[userTeam]]);
 
 		cs_set_user_bpammo(index, csw, 100);
 
@@ -2873,6 +2884,9 @@ giveWeapons(index)
 			}
 		}
 	}
+
+	// Add knife.
+	give_item(index, "weapon_knife");
 }
 
 getWarmupWinner(bool:announce)
