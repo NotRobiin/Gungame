@@ -7,7 +7,7 @@ enum (+= 1)
 {
 	weaponCSW,
 	weaponKills,
-	weaponDamage
+	weaponTeamKills
 };
 
 /*
