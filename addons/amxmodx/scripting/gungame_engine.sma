@@ -2709,6 +2709,9 @@ incrementTeamLevel(team, value, bool:notify)
 			continue;
 		}
 
+		userLevel[i] = teamLevel[team - 1];
+		userKills[i] = teamKills[team - 1];
+
 		// Levelup effect.
 		displayLevelupSprite(i);
 
@@ -3071,8 +3074,7 @@ getPlayerByName(name[])
 getPlayerByTopLevel(array[], count)
 {
 	new highestLevels[MAX_PLAYERS + 1],
-		counter,
-		clientLevel;
+		counter;
 
 	ForPlayers(index)
 	{
@@ -3081,16 +3083,14 @@ getPlayerByTopLevel(array[], count)
 			continue;
 		}
 
-		clientLevel = userLevel[index] + 1;
-
 		for(new i = count - 1; i >= 0; i--)
 		{
-			if(highestLevels[i] < clientLevel && i)
+			if(highestLevels[i] < userLevel[index] + 1 && i)
 			{
 				continue;
 			}
 
-			if(highestLevels[i] >= clientLevel && i < count - 1)
+			if(highestLevels[i] >= userLevel[index] + 1 && i < count - 1)
 			{
 				counter = i + 1;
 			}
@@ -3112,7 +3112,7 @@ getPlayerByTopLevel(array[], count)
 				array[j + 1] = array[j];
 			}
 
-			highestLevels[counter] = clientLevel;
+			highestLevels[counter] = userLevel[index] + 1;
 			array[counter] = index;
 		}
 	}
