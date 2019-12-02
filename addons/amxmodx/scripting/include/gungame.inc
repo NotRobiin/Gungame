@@ -120,7 +120,7 @@ forward gg_game_end(winner);
 /*
 	Called when gungame beings, and warmup ends.
 
-	@param warmupWinner	Valid (1-32) player index. 0 if warmup ended with no winner.
+	@param warmupWinner	Valid (1-32) player index. 0 if warmup ended with no winner. -1 if there's no winner because of game mode.
 */
 forward gg_game_beginning(warmupWinner);
 
