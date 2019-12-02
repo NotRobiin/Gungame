@@ -3605,5 +3605,5 @@ public finishGameVote()
 		gameMode = random_num(0, sizeof(gameModes) - 1);
 	}
 
-	ColorChat(0, RED, "%s^x01 %sygral tryb:^x04 %s%s.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode], tie ? "" : fmt("^x01 (zdobyl ^x04%1.f procent^x01 glosow)", gameVotes[gameMode] / (gameVotes[0] + gameVotes[1]) * 100.0));
+	ColorChat(0, RED, "%s^x01 %sygral tryb:^x04 %s%s.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode], tie && (gameVotes[0] + gameVotes[1]) ? "" : fmt("^x01 (zdobyl ^x04%1.f procent^x01 glosow)", gameVotes[gameMode] / (gameVotes[0] + gameVotes[1]) * 100.0));
 }
