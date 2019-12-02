@@ -1280,7 +1280,7 @@ public weaponDeploy(entity)
 		weapon = cs_get_weapon_id(entity);
 
 	// Return if player isnt alive or its not a warmup with wands.
-	if(!warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2 || !is_user_alive(index) || userLevel[index] != maxLevel || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE)
+	if(warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2 || !is_user_alive(index) || userLevel[index] != maxLevel || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE)
 	{
 		return;
 	}
@@ -2884,7 +2884,10 @@ giveWeapons(index)
 
 		give_item(index, weaponEntityNames[userLevel[index]]);
 
-		cs_set_user_bpammo(index, csw, 100);
+		if(csw != CSW_HEGRENADE && csw != CSW_KNIFE)
+		{
+			cs_set_user_bpammo(index, csw, 100);
+		}
 
 		// Deploy primary weapon.
 		engclient_cmd(index, weaponEntityNames[userLevel[index]]);
@@ -3545,9 +3548,20 @@ stock removePlayerWeapons(index)
 
 public setMaxLevel(index)
 {
-	userLevel[index] = sizeof weaponsData - 3;
+	if(gameMode == modeNormal)
+	{
+		userLevel[index] = sizeof weaponsData - 3;
+		
+		incrementUserLevel(index, 1, true);
+	}
+	else
+	{
+		new team = get_user_team(index);
 
-	incrementUserLevel(index, 1, true);
+		teamLevel[team - 1] = sizeof(weaponsData) - 3;
+
+		incrementTeamLevel(team, 1, true);
+	}
 }
 
 public addLevel(index)
@@ -3633,7 +3647,7 @@ public showGameVoteMenu_handler(index, menuIndex, item)
 {
 	menu_destroy(menuIndex);
 	
-	if(item == MENU_EXIT || gameVoteEnabled)
+	if(item == MENU_EXIT || !gameVoteEnabled)
 	{
 		return PLUGIN_HANDLED;
 	}
