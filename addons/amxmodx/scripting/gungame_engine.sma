@@ -661,7 +661,7 @@ new userLevel[MAX_PLAYERS + 1],
 
 	gameVotes[sizeof(gameModes)],
 	bool:gameVoteEnabled,
-	gameMode,
+	gameMode = -1,
 
 	teamLevel[2],
 	teamKills[2];
@@ -808,7 +808,7 @@ public plugin_natives()
 
 public native_SetUserLevel(plugin, params)
 {
-	if(params != 2)
+	if (params != 2)
 	{
 		return nativesErrorValue;
 	}
@@ -844,7 +844,7 @@ public native_SetUserLevel(plugin, params)
 
 public native_GetUserLevel(plugin, params)
 {
-	if(params != 1)
+	if (params != 1)
 	{
 		return nativesErrorValue;
 	}
@@ -863,7 +863,7 @@ public native_GetUserLevel(plugin, params)
 
 public native_SetTeamLevel(plugin, params)
 {
-	if(params != 3)
+	if (params != 3)
 	{
 		return false;
 	}
@@ -871,7 +871,7 @@ public native_SetTeamLevel(plugin, params)
 	new team = get_param(1);
 
 	// Return false if team is invalid.
-	if(team < 1 || team > 2)
+	if (team < 1 || team > 2)
 	{
 		return false;
 	}
@@ -879,7 +879,7 @@ public native_SetTeamLevel(plugin, params)
 	new level = get_param(2);
 
 	// Return false if level is invalid.
-	if(level < 0 || level > sizeof(weaponsData) - 1)
+	if (level < 0 || level > sizeof(weaponsData) - 1)
 	{
 		return false;
 	}
@@ -888,11 +888,11 @@ public native_SetTeamLevel(plugin, params)
 
 	teamLevel[team - 1] = level;
 
-	if(includeMembers)
+	if (includeMembers)
 	{
 		ForPlayers(i)
 		{
-			if(!is_user_connected(i) || get_user_team(i) != team)
+			if (!is_user_connected(i) || get_user_team(i) != team)
 			{
 				continue;
 			}
@@ -906,7 +906,7 @@ public native_SetTeamLevel(plugin, params)
 
 public native_GetTeamLevel(plugin, params)
 {
-	if(params != 1)
+	if (params != 1)
 	{
 		return nativesErrorValue;
 	}
@@ -914,7 +914,7 @@ public native_GetTeamLevel(plugin, params)
 	new team = get_param(1);
 
 	// Return -1 if team is invalid.
-	if(team < 1 || team > 2)
+	if (team < 1 || team > 2)
 	{
 		return -1;
 	}
@@ -924,7 +924,7 @@ public native_GetTeamLevel(plugin, params)
 
 public native_GetUserWeaponKills(plugin, params)
 {
-	if(params != 1)
+	if (params != 1)
 	{
 		return nativesErrorValue;
 	}
@@ -943,7 +943,7 @@ public native_GetUserWeaponKills(plugin, params)
 // Return max level.
 public native_GetMaxLevel(plugin, params)
 {
-	if(params != 1)
+	if (params != 1)
 	{
 		return nativesErrorValue;
 	}
@@ -953,7 +953,7 @@ public native_GetMaxLevel(plugin, params)
 
 public native_RespawnPlayer(plugin, params)
 {
-	if(params != 2)
+	if (params != 2)
 	{
 		return nativesErrorValue;
 	}
@@ -988,7 +988,7 @@ public native_RespawnPlayer(plugin, params)
 
 public native_GetUserWeapon(plugin, params)
 {
-	if(params != 1)
+	if (params != 1)
 	{
 		return nativesErrorValue;
 	}
@@ -1006,7 +1006,7 @@ public native_GetUserWeapon(plugin, params)
 
 public native_GetWeaponsData(plugin, params)
 {
-	if(params != 2)
+	if (params != 2)
 	{
 		return nativesErrorValue;
 	}
@@ -1040,7 +1040,7 @@ public native_GetWeaponsData(plugin, params)
 
 public native_GetUserWins(plugin, params)
 {
-	if(params != 1)
+	if (params != 1)
 	{
 		return nativesErrorValue;
 	}
@@ -1057,7 +1057,7 @@ public native_GetUserWins(plugin, params)
 
 public native_GetUserCombo(plugin, params)
 {
-	if(params != 1)
+	if (params != 1)
 	{
 		return nativesErrorValue;
 	}
@@ -2149,7 +2149,7 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 	new iterator;
 
 	// Load top players while there are any.
-	while(SQL_MoreResults(query))
+	while (SQL_MoreResults(query))
 	{
 		// Get top player name.
 		SQL_ReadResult(query, 0, topPlayersNames[iterator], charsmax(topPlayersNames[]));
@@ -2383,7 +2383,7 @@ removeWeaponsOffGround()
 	// Remove all weapons off the ground.
 	ForArray(i, droppedWeaponsClassnames)
 	{
-		while((entity = find_ent_by_class(entity, droppedWeaponsClassnames[i])))
+		while ((entity = find_ent_by_class(entity, droppedWeaponsClassnames[i])))
 		{
 			remove_entity(entity);
 		}
@@ -2641,7 +2641,7 @@ incrementUserWeaponKills(index, value)
 	ExecuteForward(forwardHandles[forwardComboStreak], forwardReturnDummy, index, userCombo[index]);
 
 	// Levelup player if weapon kills are greater than reqiured for his current level.
-	while(userKills[index] >= weaponsData[userLevel[index]][weaponKills])
+	while (userKills[index] >= weaponsData[userLevel[index]][weaponKills])
 	{
 		incrementUserLevel(index, 1, true);
 	}
@@ -2651,7 +2651,7 @@ incrementTeamWeaponKills(team, value)
 {
 	teamKills[team - 1] += value;
 
-	while(teamKills[team - 1] >= weaponsData[teamLevel[team - 1]][weaponTeamKills])
+	while (teamKills[team - 1] >= weaponsData[teamLevel[team - 1]][weaponTeamKills])
 	{
 		incrementTeamLevel(team, 1, true);
 	}
@@ -3681,10 +3681,10 @@ public showGameVoteMenu(index)
 		menu_additem(menuIndex, gameModes[i]);
 	}
 
-	menu_display(index, menuIndex, 0, warmupTimer);
-
 	// Disable exit option.
 	menu_setprop(menuIndex, MPROP_EXIT, MEXIT_NEVER);
+
+	menu_display(index, menuIndex, 0, warmupTimer);
 	
 	return PLUGIN_HANDLED;
 }
@@ -3711,11 +3711,21 @@ public finishGameVote()
 {
 	gameVoteEnabled = false;
 
-	new bool:tie;
+	new bool:tie,
+		sumOfVotes;
 
 	// Handle game mode votes.
 	ForArray(i, gameModes)
 	{
+		sumOfVotes += gameVotes[i];
+
+		if (gameMode == -1)
+		{
+			gameMode = i;
+
+			continue;
+		}
+
 		if (gameVotes[i] < gameVotes[gameMode])
 		{
 			continue;
@@ -3729,13 +3739,22 @@ public finishGameVote()
 		gameMode = i;
 	}
 
-	// If there isnt a definitive winner, get one randomly.
+	// If there is no definitive winner, get one randomly.
 	if (tie)
 	{
 		gameMode = random_num(0, sizeof(gameModes) - 1);
 	}
 
-	ColorChat(0, RED, "%s^x01 %sygral tryb:^x04 %s%s.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode], tie && (gameVotes[0] + gameVotes[1])	 ? "" : fmt("^x01 (zdobyl ^x04%1.f procent^x01 glosow)", gameVotes[gameMode] / (gameVotes[0] + gameVotes[1]) * 100.0));
+	new message[191];
+
+	formatex(message, charsmax(message), "%s^x01 %sygral tryb:^x04 %s.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode]);
+
+	if (sumOfVotes)
+	{
+		format(message, charsmax(message), "%s ^x01Zdobyl^x04 %i procent^x01 glosow.", message, floatround(float(gameVotes[gameMode]) / float(sumOfVotes) * 100.0));
+	}
+
+	ColorChat(0, RED, message);
 
 	ExecuteForward(forwardHandles[forwardGameModeChosen], forwardReturnDummy, gameMode);
 }
