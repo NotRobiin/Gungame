@@ -30,6 +30,28 @@ native gg_set_user_level(index, level);
 native gg_get_user_level(index);
 
 /*
+	Sets team level.
+
+	@param team		1 - TT, 2 - CT
+	@param level		0 - (max level - 1)
+	@param includeMembers		Adjust level of players in team?
+
+	@return		True on success, false otherwise.
+
+*/
+native gg_set_team_level(team, level, bool:includeMembers = true);
+
+/*
+	Returns team level.
+
+	@param team		1 - TT, 2 - CT
+	
+	@return		Team level or -1 if invalid team was given.
+
+*/
+native gg_get_team_level(team);
+
+/*
 	Gets size of weapons array - 1, which is max level. 
 
 	@return			Max possible gungame level.
