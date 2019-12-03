@@ -479,18 +479,21 @@ new const nativesErrorValue = -1;
 // Natives: [][0] is native name, [][1] is native function.
 new const nativesData[][][] =
 {
-	{ "set_user_level", "native_SetUserLevel" },
-	{ "get_user_level", "native_GetUserLevel" },
-	
-	{ "get_max_level", "native_GetMaxLevel" },
-	
-	{ "respawn_player", "native_RespawnPlayer" },
-	
-	{ "get_user_weapon", "native_GetUserWeapon" },
-	{ "get_weapons_data", "native_GetWeaponsData" },
+	{ "gg_set_user_level", "native_SetUserLevel" },
+	{ "gg_get_user_level", "native_GetUserLevel" },
 
-	{ "get_user_wins", "native_GetUserWins" },
-	{ "get_user_combo", "native_GetUserCombo" }
+	{ "gg_set_team_level", "native_SetTeamLevel" },
+	{ "gg_get_team_level", "native_GetTeamLevel" },
+	
+	{ "gg_get_max_level", "native_GetMaxLevel" },
+	
+	{ "gg_respawn_player", "native_RespawnPlayer" },
+	
+	{ "gg_get_user_weapon", "native_GetUserWeapon" },
+	{ "gg_get_weapons_data", "native_GetWeaponsData" },
+
+	{ "gg_get_user_wins", "native_GetUserWins" },
+	{ "gg_get_user_combo", "native_GetUserCombo" }
 };
 
 enum (+= 1)
@@ -802,6 +805,11 @@ public plugin_natives()
 
 public native_SetUserLevel(plugin, params)
 {
+	if(params != 2)
+	{
+		return nativesErrorValue;
+	}
+
 	// Get targeted player index.
 	new index = get_param(1);
 
@@ -833,6 +841,11 @@ public native_SetUserLevel(plugin, params)
 
 public native_GetUserLevel(plugin, params)
 {
+	if(params != 1)
+	{
+		return nativesErrorValue;
+	}
+
 	// Get targeted player index.
 	new index = get_param(1);
 
@@ -845,8 +858,74 @@ public native_GetUserLevel(plugin, params)
 	return userLevel[index];
 }
 
+public native_SetTeamLevel(plugin, params)
+{
+	if(params != 3)
+	{
+		return false;
+	}
+
+	new team = get_param(1);
+
+	// Return false if team is invalid.
+	if(team < 1 || team > 2)
+	{
+		return false;
+	}
+
+	new level = get_param(2);
+
+	// Return false if level is invalid.
+	if(level < 0 || level > sizeof(weaponsData) - 1)
+	{
+		return false;
+	}
+
+	new bool:includeMembers = bool:get_param(3);
+
+	teamLevel[team - 1] = level;
+
+	if(includeMembers)
+	{
+		ForPlayers(i)
+		{
+			if(!is_user_connected(i) || get_user_team(i) != team)
+			{
+				continue;
+			}
+
+			userLevel[i] = level;
+		}
+	}
+
+	return true;
+}
+
+public native_GetTeamLevel(plugin, params)
+{
+	if(params != 1)
+	{
+		return nativesErrorValue;
+	}
+
+	new team = get_param(1);
+
+	// Return -1 if team is invalid.
+	if(team < 1 || team > 2)
+	{
+		return -1;
+	}
+
+	return teamLevel[team - 1];
+}
+
 public native_GetUserWeaponKills(plugin, params)
 {
+	if(params != 1)
+	{
+		return nativesErrorValue;
+	}
+
 	new index = get_param(1);
 
 	if (isPlayerConnected(index) == nativesErrorValue)
@@ -861,11 +940,22 @@ public native_GetUserWeaponKills(plugin, params)
 // Return max level.
 public native_GetMaxLevel(plugin, params)
 {
+	if(params != 1)
+	{
+		return nativesErrorValue;
+	}
+
 	return maxLevel;
 }
 
 public native_RespawnPlayer(plugin, params)
 {
+	if(params != 2)
+	{
+		return nativesErrorValue;
+	}
+
+
 	new index = get_param(1);
 
 	if (isPlayerConnected(index) == nativesErrorValue)
@@ -895,6 +985,11 @@ public native_RespawnPlayer(plugin, params)
 
 public native_GetUserWeapon(plugin, params)
 {
+	if(params != 1)
+	{
+		return nativesErrorValue;
+	}
+
 	new index = get_param(1);
 
 	if (isPlayerConnected(index) == nativesErrorValue)
@@ -908,6 +1003,11 @@ public native_GetUserWeapon(plugin, params)
 
 public native_GetWeaponsData(plugin, params)
 {
+	if(params != 2)
+	{
+		return nativesErrorValue;
+	}
+
 	new index = get_param(1);
 
 	if (isPlayerConnected(index) == nativesErrorValue)
@@ -937,6 +1037,11 @@ public native_GetWeaponsData(plugin, params)
 
 public native_GetUserWins(plugin, params)
 {
+	if(params != 1)
+	{
+		return nativesErrorValue;
+	}
+
 	new index = get_param(1);
 
 	if (isPlayerConnected(index) == nativesErrorValue)
@@ -949,6 +1054,11 @@ public native_GetUserWins(plugin, params)
 
 public native_GetUserCombo(plugin, params)
 {
+	if(params != 1)
+	{
+		return nativesErrorValue;
+	}
+
 	new index = get_param(1);
 
 	if (isPlayerConnected(index) == nativesErrorValue)
@@ -2693,9 +2803,11 @@ decrementUserLevel(index, value)
 
 decrementTeamLevel(team, value)
 {
+	// Decrement team level and kills, make sure level is not negative.
 	teamLevel[team - 1] = (teamLevel[team - 1] - value < 0 ? 0 : teamLevel[team - 1] - value);
 	teamKills[team - 1] = 0;
 
+	// Update level and kills of players in the team.
 	ForPlayers(i)
 	{
 		if (!is_user_connected(i) || get_user_team(i) != team)
@@ -3256,6 +3368,7 @@ wandAttack(index, weapon)
 	static Float:victimVelocity[3];
 	pev(victim, pev_velocity, victimVelocity);
 
+	// Slow down victim.
 	victimVelocity[0] *= 0.7;
 	victimVelocity[1] *= 0.7;
 	victimVelocity[2] *= 0.7;
@@ -3530,6 +3643,7 @@ public warmupFunction(index)
 
 setGameVote()
 {
+	// Set votes to zero.
 	ForArray(i, gameModes)
 	{
 		gameVotes[i] = 0;
@@ -3537,6 +3651,7 @@ setGameVote()
 
 	gameVoteEnabled = true;
 
+	// Show game mode vote menu to all players.
 	ForPlayers(i)
 	{
 		if (!is_user_connected(i))
@@ -3557,6 +3672,7 @@ public showGameVoteMenu(index)
 
 	new menuIndex = menu_create("Wybierz tryb gry:", "showGameVoteMenu_handler");
 
+	// Add game mode names to the menu.
 	ForArray(i, gameModes)
 	{
 		menu_additem(menuIndex, gameModes[i]);
@@ -3564,6 +3680,7 @@ public showGameVoteMenu(index)
 
 	menu_display(index, menuIndex, 0, warmupTimer);
 
+	// Disable exit option.
 	menu_setprop(menuIndex, MPROP_EXIT, MEXIT_NEVER);
 	
 	return PLUGIN_HANDLED;
@@ -3573,11 +3690,13 @@ public showGameVoteMenu_handler(index, menuIndex, item)
 {
 	menu_destroy(menuIndex);
 	
+	// Block player's vote if voting is not enabled.
 	if (!gameVoteEnabled)
 	{
 		return PLUGIN_HANDLED;
 	}
 
+	// Add vote.
 	gameVotes[item]++;
 
 	ColorChat(index, RED, "%s^x01 Wybrales tryb:^x04 %s^x01.", chatPrefix, gameModes[item]);
@@ -3591,6 +3710,7 @@ public finishGameVote()
 
 	new bool:tie;
 
+	// Handle game mode votes.
 	ForArray(i, gameModes)
 	{
 		if (gameVotes[i] < gameVotes[gameMode])
@@ -3606,6 +3726,7 @@ public finishGameVote()
 		gameMode = i;
 	}
 
+	// If there isnt a definitive winner, get one randomly.
 	if (tie)
 	{
 		gameMode = random_num(0, sizeof(gameModes) - 1);
