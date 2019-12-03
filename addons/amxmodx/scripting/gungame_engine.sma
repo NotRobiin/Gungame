@@ -575,7 +575,8 @@ new const forwardsNames[][] =
 	"gg_game_end",
 	"gg_game_beginning",
 	"gg_player_spawned",
-	"gg_combo_streak"
+	"gg_combo_streak",
+	"gg_game_mode_chosen"
 };
 
 enum forwardsEnum (+= 1)
@@ -585,7 +586,8 @@ enum forwardsEnum (+= 1)
 	forwardGameEnd,
 	forwardGameBeginning,
 	forwardPlayerSpawned,
-	forwardComboStreak
+	forwardComboStreak,
+	forwardGameModeChosen
 };
 
 new const gameModes[][] =
@@ -765,6 +767,7 @@ public plugin_init()
 	forwardHandles[3] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
 	forwardHandles[4] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
 	forwardHandles[5] = CreateMultiForward(forwardsNames[5], ET_IGNORE, FP_CELL, FP_CELL); // Combo streak (2)
+	forwardHandles[6] = CreateMultiForward(forwardsNames[6], ET_IGNORE, FP_CELL); // Game mode chosen (1)
 
 	// Toggle warmup a bit delayed from plugin start.
 	set_task(1.0, "delayed_toggleWarmup");
@@ -3733,4 +3736,6 @@ public finishGameVote()
 	}
 
 	ColorChat(0, RED, "%s^x01 %sygral tryb:^x04 %s%s.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode], tie && (gameVotes[0] + gameVotes[1])	 ? "" : fmt("^x01 (zdobyl ^x04%1.f procent^x01 glosow)", gameVotes[gameMode] / (gameVotes[0] + gameVotes[1]) * 100.0));
+
+	ExecuteForward(forwardHandles[forwardGameModeChosen], forwardReturnDummy, gameMode);
 }
