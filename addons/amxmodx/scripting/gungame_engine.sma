@@ -3714,17 +3714,12 @@ public finishGameVote()
 	new bool:tie,
 		sumOfVotes;
 
+	gameMode = 0;
+
 	// Handle game mode votes.
 	ForArray(i, gameModes)
 	{
 		sumOfVotes += gameVotes[i];
-
-		if (gameMode == -1)
-		{
-			gameMode = i;
-
-			continue;
-		}
 
 		if (gameVotes[i] < gameVotes[gameMode])
 		{
@@ -3740,7 +3735,7 @@ public finishGameVote()
 	}
 
 	// If there is no definitive winner, get one randomly.
-	if (tie || gameMode == -1)
+	if (tie)
 	{
 		gameMode = random_num(0, sizeof(gameModes) - 1);
 	}
