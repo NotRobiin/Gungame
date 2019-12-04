@@ -3684,7 +3684,7 @@ public showGameVoteMenu(index)
 	// Disable exit option.
 	menu_setprop(menuIndex, MPROP_EXIT, MEXIT_NEVER);
 
-	menu_display(index, menuIndex, 0, warmupTimer);
+	menu_display(index, menuIndex);
 	
 	return PLUGIN_HANDLED;
 }
@@ -3694,7 +3694,7 @@ public showGameVoteMenu_handler(index, menuIndex, item)
 	menu_destroy(menuIndex);
 	
 	// Block player's vote if voting is not enabled.
-	if (!gameVoteEnabled)
+	if (item == MENU_EXIT || !gameVoteEnabled)
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -3740,7 +3740,7 @@ public finishGameVote()
 	}
 
 	// If there is no definitive winner, get one randomly.
-	if (tie)
+	if (tie || gameMode == -1)
 	{
 		gameMode = random_num(0, sizeof(gameModes) - 1);
 	}
