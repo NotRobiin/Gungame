@@ -8,7 +8,7 @@
 #include <fun>
 
 // Do not change that, thank you
-#define AUTHOR "Wicked - amxx.pl/user/60210-wicked/"
+#define AUTHOR "Wicked - amxx.pl/user/60210-wicked/ | Ogen Dogen  - amxx.pl/user/21503-ogen-dogen/"
 
 // Used in custom mapchooser.
 native showMapVoteMenu();
