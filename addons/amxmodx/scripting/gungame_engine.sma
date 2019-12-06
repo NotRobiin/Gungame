@@ -31,7 +31,7 @@ native bool:gg_get_user_vip(index);
 
 #define ForTeam(%1,%2) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++) if(is_user_connected(%1) && get_user_team(%1) == %2)
 #define ForPlayers(%1) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++)
-#define ForArray(%1,%2) for(new %1 = 0; %1 < sizeof %2; %1++)
+#define ForArray(%1,%2) for(new %1 = 0; %1 < sizeof(%2); %1++)
 #define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
 
 // Handle name length.
@@ -519,6 +519,7 @@ enum (+= 1)
 	cvar_defaultArmorLevel,
 
 	cvar_knifeKillInstantLevelup,
+	cvar_knifeKillLevelDown_teamplay,
 	cvar_knifeKillReward,
 
 	cvar_wandEnabled,
@@ -562,6 +563,7 @@ new const ggCvarsData[][][] =
 	{ "gg_defaultArmorLevel", "0" }, // Armor level for every player.
 	
 	{ "gg_knifeKillInstantLevelup", "0" }, // If that's set to true, knife will instantly give you gg_knifeKillReward levels. Otherwise gg_knifeKillReward means weapon kills.
+	{ "gg_knifeKillLevelDown_teamplay", "1" }, // Allow to level down when knifed in teamplay?
 	{ "gg_knifeKillReward", "2" }, // Knife kill reward value based on cvar_knifeKillInstantLevelup var.
 	
 	{ "gg_wandEnabled", "1" }, // Determines whether you want last level weapon to be knife (false) or wand (true).
@@ -744,13 +746,13 @@ public plugin_init()
 	}
 
 	// Block some commands.
-	registerCommands(blockedCommands, sizeof blockedCommands, "blockCommandUsage");
+	registerCommands(blockedCommands, sizeof(blockedCommands), "blockCommandUsage");
 
 	// Register weapon list commands.
-	registerCommands(listWeaponsCommands, sizeof listWeaponsCommands, "listWeaponsMenu");
+	registerCommands(listWeaponsCommands, sizeof(listWeaponsCommands), "listWeaponsMenu");
 
 	// Register top player menu commands.
-	registerCommands(topPlayersMotdCommands, sizeof topPlayersMotdCommands, "topPlayersMotdHandler");
+	registerCommands(topPlayersMotdCommands, sizeof(topPlayersMotdCommands), "topPlayersMotdHandler");
 	
 	// Create hud objects.
 	ForRange(i, 0, charsmax(hudObjects))
@@ -762,7 +764,7 @@ public plugin_init()
 	register_clcmd("say", "sayCustomCommandHandle");
 
 	// Get gungame max level.
-	maxLevel = sizeof weaponsData - 1;
+	maxLevel = sizeof(weaponsData) - 1;
 
 	// Get half of max gungame level rounded, so we can limit level on freshly-joined players.
 	halfMaxLevel = floatround(float(maxLevel) / 2, floatround_round);
@@ -1512,7 +1514,7 @@ public playerDeathEvent()
 
 	if (equal(weapon, "knife") && userLevel[killer] != maxLevel)
 	{
-		if (userLevel[victim] > 1)
+		if (userLevel[victim])
 		{
 			// Decrement victim level or team level when killed with knife and his level is greater than 1.
 			if (gameMode == modeNormal)
@@ -1525,7 +1527,7 @@ public playerDeathEvent()
 			}
 
 			// Notify player.
-			ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", gameMode == modeNormal ? userLevel[victim] : teamLevel[killerTeam - 1]);
+			ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", teamLevel[victimTeam]);
 		}
 
 		// Increment killer's weapon kills by two instead of leveling up imediatly.
@@ -1644,6 +1646,7 @@ public sayHandle(msgId, msgDest, msgEnt)
 	// Get message arguments.
 	get_msg_arg_string(2, chatString[0], charsmax(chatString[]));
 
+	// Replace "knife" with "wand".
 	formatex(weaponName, charsmax(weaponName), (userLevel[index] == maxLevel && get_pcvar_num(cvarsData[cvar_wandEnabled])) ? "Rozdzka" : customWeaponNames[userLevel[index]]);
 
 	if (equal(chatString[0], "#Cstrike_Chat_All"))
@@ -2055,7 +2058,7 @@ public displayHud(taskIndex)
 	}
 
 	// Format next weapon name if available, change knife to wand if enabled so.
-	if (userLevel[index] == sizeof weaponsData - 2)
+	if (userLevel[index] == sizeof(weaponsData) - 2)
 	{
 		formatex(nextWeapon, charsmax(nextWeapon), get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index] + 1]);
 	}
@@ -2568,7 +2571,7 @@ toggleWarmup(bool:status)
 		}
 
 		// Get random weapon, only if its not a knife.
-		warmupWeaponIndex = random_num(0, sizeof customWeaponNames - 2);
+		warmupWeaponIndex = random_num(0, sizeof(customWeaponNames) - 2);
 
 		// Play warmup start sound.
 		playSound(0, soundWarmup, -1, true);
@@ -3227,7 +3230,7 @@ randomWarmupWeapon(index)
 
 	new csw,
 		weaponClassname[MAX_CHARS - 1],
-		weaponsArrayIndex = random_num(0, sizeof weaponsData - 2);
+		weaponsArrayIndex = random_num(0, sizeof(weaponsData) - 2);
 
 	// Get random index from weaponsData array.
 	csw = weaponsData[weaponsArrayIndex][0];
@@ -3592,7 +3595,7 @@ public setMaxLevel(index)
 {
 	if (gameMode == modeNormal)
 	{
-		userLevel[index] = sizeof weaponsData - 3;
+		userLevel[index] = sizeof(weaponsData) - 3;
 		
 		incrementUserLevel(index, 1, true);
 	}
