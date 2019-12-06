@@ -28,9 +28,10 @@ native showMapVoteMenu();
 // Used in loops and to determine static array sizes (+1).
 #define MAX_PLAYERS 32
 
+#define ForTeam(%1,%2) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++) if(is_user_connected(%1) && get_user_team(%1) == %2)
 #define ForPlayers(%1) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++)
-#define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
 #define ForArray(%1,%2) for(new %1 = 0; %1 < sizeof %2; %1++)
+#define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
 
 // Handle name length.
 #define printName(%1) (strlen(userName[%1]) > maxNicknameLength ? userShortName[%1] : userName[%1])
@@ -516,6 +517,7 @@ enum (+= 1)
 	cvar_fallDamageEnabled,
 
 	cvar_refillWeaponAmmo,
+	cvar_refillWeaponAmmo_teamplay,
 
 	cvar_idleCheckInterval,
 	cvar_idleSlapPower,
@@ -541,30 +543,43 @@ enum (+= 1)
 new const ggCvarsData[][][] =
 {
 	{ "gg_spawnProtectionTime", "1.5" }, // Time in which player CAN get killed, but the killer will not be granted any weapon kills if victim is in spawn protection.
+	
 	{ "gg_respawnInterval", "3.0" }, // Respawn time during GunGame.
+	
 	{ "gg_flashesEnabled", "1" }, // Determines wether to enable flashes on last level. Does not support wand.
+	
 	{ "gg_giveBackHeInterval", "1.8" }, // Time between giving a player next HE grenade (during warmup & on HE weapon level).
 	{ "gg_giveBackFlashInterval", "4.5" }, // Time between giving a player next Flash grenade.
+	
 	{ "gg_warmupDuration", "10" }, // Time of warmup in seconds
 	{ "gg_warmupLevelReward", "3" }, // Level that will be set to warmup winner. Value < 1 will disable notifications and picking warmup winner.
 	{ "gg_warmupHealth", "50" }, // Health that players will be set to during warmup.
 	{ "gg_warmupWeapon", "-2" }, // Set that to CSW_ index, -1 to get random weapon, -2 to get wands (ignoring gg_wandEnabled value) or -3 to get random weapon for every player.
 	{ "gg_warumpRespawnInterval", "2.0" }, // Time to respawn player during warmup.
+	
 	{ "gg_fallDamageEnabled", "0" }, // Enable falldamage?
+	
 	{ "gg_refillWeaponAmmo", "1" }, // Refill weapon clip on kill?
+	{ "gg_refillWeaponAmmo_teamplay", "1" }, // Enabled on teamplay? 0 - disabled, 1 - enabled, refill whole team ammo, 2 - personal refill
+	
 	{ "gg_idleCheckInterval", "6.0" }, // Determines interval between AFK checks.
 	{ "gg_idleSlapPower", "5" }, // Hit power of a slap when player is 'AFK'.
 	{ "gg_idleMaxStrikes", "3" }, // Determines max strikes that player can have before slaps start occuring.
 	{ "gg_idleMaxDistance", "30" }, // Distance that resets camping-player idle strikes.
+	
 	{ "gg_defaultArmorLevel", "0" }, // Armor level for every player.
+	
 	{ "gg_knifeKillInstantLevelup", "0" }, // If that's set to true, knife will instantly give you gg_knifeKillReward levels. Otherwise gg_knifeKillReward means weapon kills.
 	{ "gg_knifeKillReward", "2" }, // Knife kill reward value based on cvar_knifeKillInstantLevelup var.
+	
 	{ "gg_wandEnabled", "1" }, // Determines whether you want last level weapon to be knife (false) or wand (true).
 	{ "gg_wandAttackSpriteBrightness", "255" }, // Wand primary attack sprite brightness.
 	{ "gg_wandAttackSpriteLife", "4" }, // Wand primary attack sprite life.
 	{ "gg_wandAttackMaxDistance", "550" }, // Wand primary attack max distance.
 	{ "gg_wandAttackInterval", "2.2" }, // Wand primary attack interval.
+	
 	{ "gg_takeDamageHudTime", "1.2" }, // Take damage hud hold-time.
+	
 	{ "gg_removeWeaponsOffTheGround", "1" } // Remove weapons off the ground when loading map?
 };
 
@@ -890,13 +905,8 @@ public native_SetTeamLevel(plugin, params)
 
 	if (includeMembers)
 	{
-		ForPlayers(i)
+		ForTeam(i, team)
 		{
-			if (!is_user_connected(i) || get_user_team(i) != team)
-			{
-				continue;
-			}
-
 			userLevel[i] = level;
 		}
 	}
@@ -1552,9 +1562,29 @@ public playerDeathEvent()
 	}
 
 	// Ammo refill enabled?
-	if (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
+	if (gameMode == modeNormal)
 	{
-		refillAmmo(killer);
+		if (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
+		{
+			refillAmmo(killer);
+		}
+	}
+	else
+	{
+		new refill = get_pcvar_num(cvarsData[cvar_refillWeaponAmmo_teamplay]);
+
+		switch(refill)
+		{
+			case 1:
+			{
+				ForTeam(i, killerTeam)
+				{
+					refillAmmo(i);
+				}
+			}
+
+			case 2: { refillAmmo(killer); }
+		}
 	}
 
 	// Prevent weapon-drop to the floor.
@@ -2471,22 +2501,16 @@ playSoundForTeam(team, soundType, soundIndex, bool:emitSound)
 	// Emit sound directly from entity?
 	if (emitSound)
 	{
-		ForPlayers(index)
+		ForTeam(i, team)
 		{
-			if (get_user_team(index) == team)
-			{
-				emit_sound(index, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
-			}
+			emit_sound(i, CHAN_AUTO, soundsData[soundType][soundIndex], soundsVolumeData[soundType][soundIndex], ATTN_NORM, (1 << 8), PITCH_NORM);
 		}
 	}
 	else
 	{
-		ForPlayers(index)
+		ForTeam(i, team)
 		{
-			if (get_user_team(index) == team)
-			{
-				client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
-			}
+			client_cmd(i, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][soundIndex]);
 		}
 	}
 }
@@ -2683,13 +2707,8 @@ decrementTeamWeaponKills(team, value, bool:levelLose)
 		teamKills[team - 1] = 0;
 	}
 
-	ForPlayers(i)
+	ForTeam(i, team)
 	{
-		if (!is_user_connected(i) || get_user_team(i) != team)
-		{
-			continue;
-		}
-
 		userKills[i] = teamKills[team - 1];
 	}
 
@@ -2737,14 +2756,8 @@ incrementTeamLevel(team, value, bool:notify)
 	teamKills[team - 1] = 0;
 	teamLevel[team - 1] = (teamLevel[team - 1] + value > maxLevel ? maxLevel : teamLevel[team - 1] + value);
 
-	ForPlayers(i)
+	ForTeam(i, team)
 	{
-		// Skip not connected and opposite-team players.
-		if (!is_user_connected(i) || get_user_team(i) != team)
-		{
-			continue;
-		}
-
 		userLevel[i] = teamLevel[team - 1];
 		userKills[i] = teamKills[team - 1];
 
@@ -2811,13 +2824,8 @@ decrementTeamLevel(team, value)
 	teamKills[team - 1] = 0;
 
 	// Update level and kills of players in the team.
-	ForPlayers(i)
+	ForTeam(i, team)
 	{
-		if (!is_user_connected(i) || get_user_team(i) != team)
-		{
-			continue;
-		}
-
 		userLevel[i] = teamLevel[team - 1];
 		userKills[i] = teamKills[team - 1];
 	}
