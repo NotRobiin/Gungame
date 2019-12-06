@@ -630,6 +630,7 @@ new userLevel[MAX_PLAYERS + 1],
 	bool:userFalling[MAX_PLAYERS + 1],
 	userWarmupWeapon[MAX_PLAYERS + 1] = { -1, ... },
 	userWarmupCustomWeaponIndex[MAX_PLAYERS + 1] = { -1, ... },
+	userAllowedWeapons[MAX_PLAYERS + 1],
 
 	weaponNames[sizeof(weaponsData)][MAX_CHARS - 1],
 	weaponEntityNames[sizeof(weaponsData)][MAX_CHARS],
@@ -724,7 +725,18 @@ public plugin_init()
 	// Register knife deployement for model-changes if wand is enabled.
 	if (get_pcvar_num(cvarsData[cvar_wandEnabled]))
 	{
-		RegisterHam(Ham_Item_Deploy, wandBaseEntity, "weaponDeploy", true);
+		RegisterHam(Ham_Item_Deploy, wandBaseEntity, "knifeDeploy", true);
+	}
+
+	new weaponClassname[24];
+	new const excludedWeapons = (CSW_KNIFE | CSW_C4);
+
+	ForRange(i, 1, 30)
+	{
+		if (!(excludedWeapons & 1 << i) && get_weaponname(i, weaponClassname, charsmax(weaponClassname)))
+		{
+			RegisterHam(Ham_Item_Deploy, weaponClassname, "weaponDeploy");
+		}
 	}
 
 	// Register collision event on every weapon registered in gungame.
@@ -1385,6 +1397,29 @@ public heGrenadeThink(entity)
 }
 
 public weaponDeploy(entity)
+{
+	new index = pev(entity, pev_owner),
+		weapon = cs_get_weapon_id(entity);
+
+	if (!is_user_connected(index) || is_user_bot(index))
+	{
+		return;
+	}
+
+	if (!((1 << weapon) & userAllowedWeapons[index]))
+	{
+		// Take away the weapon.
+		if(!strip_user_weapon(index, weapon))
+		{
+			// Switch to knife if weapon was not taken.
+			engclient_cmd(index, "weapon_knife");
+		}
+
+		return;
+	}
+}
+
+public knifeDeploy(entity)
 {
 	new index = pev(entity, pev_owner),
 		weapon = cs_get_weapon_id(entity);
@@ -2917,6 +2952,8 @@ giveWeapons(index)
 	// Strip weapons.
 	removePlayerWeapons(index);
 
+	userAllowedWeapons[index] = CSW_KNIFE;
+
 	// Add wand if player is on last level and such option is enabled.
 	if (userLevel[index] != maxLevel)
 	{
@@ -2924,6 +2961,8 @@ giveWeapons(index)
 		new csw = get_weaponid(weaponEntityNames[userLevel[index]]);
 
 		give_item(index, weaponEntityNames[userLevel[index]]);
+
+		userAllowedWeapons[index] |= weaponsData[userLevel[index]][weaponCSW];
 
 		if (csw != CSW_HEGRENADE && csw != CSW_KNIFE && csw != CSW_FLASHBANG)
 		{
@@ -2936,7 +2975,7 @@ giveWeapons(index)
 		// Add knife last so the primary weapon gets drawn out (dont switch to powerful weapon fix).
 		give_item(index, "weapon_knife");
 	}
-	else 
+	else
 	{
 		// Add knife first, so the models can be set.
 		give_item(index, "weapon_knife");
@@ -2951,6 +2990,8 @@ giveWeapons(index)
 			// Add two flashes.
 			if (get_pcvar_num(cvarsData[cvar_flashesEnabled]))
 			{
+				userAllowedWeapons[index] |= CSW_FLASHBANG;
+
 				ForRange(i, 0, 1)
 				{
 					give_item(index, "weapon_flashbang");
@@ -3480,6 +3521,59 @@ wandAttack(index, weapon)
 	return PLUGIN_CONTINUE;
 }
 
+stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = true)
+{
+	if(!weaponSlot)
+	{
+		static const weaponsSlots[] = { -1, 2, -1, 1, 4, 1, 5, 1, 1, 4, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 4, 2, 1, 1, 3, 1 };
+		
+		weaponSlot = weaponsSlots[weaponCsw];
+	}
+
+	const XTRA_OFS_PLAYER = 5;
+	const m_rgpPlayerItems_Slot0 = 367;
+	const XTRA_OFS_WEAPON = 4;
+	const m_pNext = 42;
+	const m_iId = 43;
+	const m_pActiveItem = 373;
+
+	new weapon = get_pdata_cbase(index, m_rgpPlayerItems_Slot0 + weaponSlot, XTRA_OFS_PLAYER);
+
+	while(weapon)
+	{
+		// Break if we got the weapon right away.
+		if(get_pdata_int(weapon, m_iId, XTRA_OFS_WEAPON) == weaponCsw)
+		{
+			break;
+		}
+
+		// Assign new entity.
+		weapon = get_pdata_cbase(weapon, m_pNext, XTRA_OFS_WEAPON);
+	}
+
+	if(weapon)
+	{
+		if(switchWeapon && get_pdata_cbase(index, m_pActiveItem, XTRA_OFS_PLAYER) == weapon)
+		{
+			ExecuteHamB(Ham_Weapon_RetireWeapon, weapon);
+		}
+
+		if(ExecuteHamB(Ham_RemovePlayerItem, index, weapon))
+		{
+			// Honestly dont know what is the point of this one.
+			user_has_weapon(index, weaponCsw, 0);
+
+			// Kill weapon entity.
+			ExecuteHamB(Ham_Item_Kill, weapon);
+
+			// Weapon removed successfully.
+			return true;
+		}
+	}
+
+	// Weapon not found.
+	return false;
+}
 
 stock registerCommands(const array[][], arraySize, function[])
 {
