@@ -1571,10 +1571,9 @@ public playerDeathEvent()
 	}
 	else
 	{
-		new refill = get_pcvar_num(cvarsData[cvar_refillWeaponAmmo_teamplay]);
-
-		switch(refill)
+		switch(get_pcvar_num(cvarsData[cvar_refillWeaponAmmo_teamplay]))
 		{
+			// Refill whole team ammo.
 			case 1:
 			{
 				ForTeam(i, killerTeam)
@@ -1583,7 +1582,11 @@ public playerDeathEvent()
 				}
 			}
 
-			case 2: { refillAmmo(killer); }
+			// Refil just killer ammo
+			case 2:
+			{
+				refillAmmo(killer);
+			}
 		}
 	}
 
@@ -3759,7 +3762,6 @@ public finishGameVote()
 				continue;
 			}
 			
-
 			formatex(message, charsmax(message), "%s^x01 %sygral tryb:^x04 %s.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode]);
 
 			if (sumOfVotes)
