@@ -12,6 +12,7 @@
 
 // Used in custom mapchooser.
 native showMapVoteMenu();
+native bool:gg_get_user_vip(index);
 
 #pragma semicolon 1
 #pragma compress 1
@@ -35,9 +36,6 @@ native showMapVoteMenu();
 
 // Handle name length.
 #define printName(%1) (strlen(userName[%1]) > maxNicknameLength ? userShortName[%1] : userName[%1])
-
-// Just for lookup command purposes, not actual VIP.
-#define VIP_FLAG ADMIN_LEVEL_H
 
 // Task indexes.
 enum (+= 2500)
@@ -97,7 +95,7 @@ new const weaponsData[][] =
 	{ CSW_SG550, 2, 15 },
 	{ CSW_M249, 2, 15 },
 
-	{ CSW_HEGRENADE, 3, 6 },
+	{ CSW_HEGRENADE, 3, 3 },
 	{ CSW_KNIFE, 1, 5 }
 };
 
@@ -2432,7 +2430,7 @@ showPlayerInfo(index, target)
 			userKills[target],
 			weaponsData[userLevel[target]][gameMode == modeNormal ? weaponKills : weaponTeamKills],
 			userWins[target],
-			get_user_flags(target) & VIP_FLAG ? "VIP" : "Brak");
+			gg_get_user_vip(target) ? "VIP" : "Brak");
 	}
 	else
 	{
