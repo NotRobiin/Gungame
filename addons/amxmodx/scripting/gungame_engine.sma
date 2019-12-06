@@ -1203,7 +1203,7 @@ public setEntityModel(entity, model[])
 	}
 
 	// Clamp down matches a bit.
-	if (model[7] != 'w' || model[8] != '_')
+	if (!equal(model[7], "w_", 2))
 	{
 		return;
 	}
@@ -1227,7 +1227,7 @@ public setEntityModel(entity, model[])
 	}
 			
 	// Set tasks to give grenade back after it has exploded. 
-	if (model[9] == 'h' && model[10] == 'e')
+	if (equal(model[9], "he", 2))
 	{
 		if (weaponsData[userLevel[owner]][weaponCSW] == CSW_HEGRENADE || get_pcvar_num(cvarsData[cvar_warmupWeapon]) == CSW_HEGRENADE && warmupEnabled)
 		{
@@ -1239,7 +1239,7 @@ public setEntityModel(entity, model[])
 			set_pev(entity, pev_dmgtime, get_gametime() + heGrenadeExplodeTime);
 		}
 	}
-	else if (model[9] == 'f' && model[10] == 'l' && weaponsData[userLevel[owner]][weaponCSW] == CSW_KNIFE)
+	else if (equal(model[9], "fl", 2) && weaponsData[userLevel[owner]][weaponCSW] == CSW_KNIFE)
 	{
 		set_task(get_pcvar_float(cvarsData[cvar_giveBackFlashInterval]), "giveFlashGrenade", owner + TASK_GIVEGRENADE);
 	}
@@ -3644,28 +3644,6 @@ public warmupFunction(index)
 		[ Game mode ]
 */
 
-setGameVote()
-{
-	// Set votes to zero.
-	ForArray(i, gameModes)
-	{
-		gameVotes[i] = 0;
-	}
-
-	gameVoteEnabled = true;
-
-	// Show game mode vote menu to all players.
-	ForPlayers(i)
-	{
-		if (!is_user_connected(i))
-		{
-			continue;
-		}
-
-		showGameVoteMenu(i);
-	}
-}
-
 public showGameVoteMenu(index)
 {
 	if (!gameVoteEnabled)
@@ -3707,6 +3685,28 @@ public showGameVoteMenu_handler(index, menuIndex, item)
 	return PLUGIN_HANDLED;
 }
 
+setGameVote()
+{
+	// Set votes to zero.
+	ForArray(i, gameModes)
+	{
+		gameVotes[i] = 0;
+	}
+
+	gameVoteEnabled = true;
+
+	// Show game mode vote menu to all players.
+	ForPlayers(i)
+	{
+		if (!is_user_connected(i))
+		{
+			continue;
+		}
+
+		showGameVoteMenu(i);
+	}
+}
+
 public finishGameVote()
 {
 	gameVoteEnabled = false;
@@ -3740,16 +3740,28 @@ public finishGameVote()
 		gameMode = random_num(0, sizeof(gameModes) - 1);
 	}
 
-	new message[191];
-
-	formatex(message, charsmax(message), "%s^x01 %sygral tryb:^x04 %s.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode]);
-
-	if (sumOfVotes)
+	if (get_playersnum())
 	{
-		format(message, charsmax(message), "%s ^x01Zdobyl^x04 %i procent^x01 glosow.", message, floatround(float(gameVotes[gameMode]) / float(sumOfVotes) * 100.0));
-	}
+		new message[191];
 
-	ColorChat(0, RED, message);
+		ForPlayers(i)
+		{
+			if (!is_user_connected(i))
+			{
+				continue;
+			}
+			
+
+			formatex(message, charsmax(message), "%s^x01 %sygral tryb:^x04 %s.", chatPrefix, tie ? "Droga losowania w" : "W", gameModes[gameMode]);
+
+			if (sumOfVotes)
+			{
+				format(message, charsmax(message), "%s ^x01Zdobyl^x04 %i procent^x01 glosow.", message, floatround(float(gameVotes[gameMode]) / float(sumOfVotes) * 100.0));
+			}
+
+			ColorChat(i, RED, message);	
+		}
+	}
 
 	ExecuteForward(forwardHandles[forwardGameModeChosen], forwardReturnDummy, gameMode);
 }
