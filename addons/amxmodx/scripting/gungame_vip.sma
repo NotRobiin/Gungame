@@ -75,8 +75,9 @@ new const vipModel[][][] =
 
 new const nativesData[][][] =
 {
-	{ "get_user_vip", "native_get_user_vip", 0 },
-	{ "set_user_vip", "native_set_user_vip", 0 }
+	{ "gg_get_user_vip", "native_get_user_vip", 0 },
+	{ "gg_set_user_vip", "native_set_user_vip", 0 },
+	{ "gg_get_vip_flag", "native_get_vip_flag", 0 }
 };
 
 new bool:userVip[33],
@@ -163,8 +164,12 @@ public plugin_end()
 
 public native_get_user_vip(plugin, params)
 {
-	if(params < 1)
+	new const requiredParams = 1;
+
+	if(params < requiredParams)
 	{
+		log_amx("ERROR: native ^"gg_get_user_vip^" has invalid amount of params: %i (required %i). Plugin: %s", params, requiredParams, plugin);
+		
 		return false;
 	}
 
@@ -180,21 +185,39 @@ public native_get_user_vip(plugin, params)
 
 public native_set_user_vip(plugin, params)
 {
-	if(params < 2)
+	new const requiredParams = 2;
+
+	if(params < requiredParams)
 	{
-		log_amx("ERROR: native ^"set_user_vip^" has invalid amount of params: %i (required %i). Plugin: %s", params, 2, plugin);
+		log_amx("ERROR: native ^"gg_set_user_vip^" has invalid amount of params: %i (required %i). Plugin: %s", params, requiredParams, plugin);
 		
-		return;
+		return false;
 	}
 
 	new index = get_param(1);
 
 	if(!is_user_connected(index))
 	{
-		return;
+		return false;
 	}
 
 	userVip[index] = bool:(get_param(2));
+
+	return true;
+}
+
+public native_get_vip_flag(plugin, params)
+{
+	new const requiredParams = 0;
+
+	if(params)
+	{
+		log_amx("ERROR: native ^"gg_get_vip_flag^" has invalid amount of params: %i (required: %i). Plugin: %s", params, requiredParams, plugin);
+
+		return -1;
+	}
+
+	return read_flags(vipFlag);
 }
 
 public vipMotd(index)
