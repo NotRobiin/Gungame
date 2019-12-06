@@ -186,12 +186,6 @@ const Float:defaultExplodeTime = 3.0;
 // Modified HE explode time (set to defaultExplodeTime to disable).
 new const Float:heGrenadeExplodeTime = 1.1;
 
-// Game type enums
-enum (+= 1)
-{
-	gameModeDeathMatch = 0,
-	gameModeTeamDeathMatch
-};
 
 // Hud objects enum.
 enum (+= 1)
@@ -2922,7 +2916,6 @@ giveWeapons(index)
 	// Strip weapons.
 	removePlayerWeapons(index);
 
-
 	// Add wand if player is on last level and such option is enabled.
 	if (userLevel[index] != maxLevel)
 	{
@@ -2931,7 +2924,7 @@ giveWeapons(index)
 
 		give_item(index, weaponEntityNames[userLevel[index]]);
 
-		if (csw != CSW_HEGRENADE && csw != CSW_KNIFE)
+		if (csw != CSW_HEGRENADE && csw != CSW_KNIFE && csw != CSW_FLASHBANG)
 		{
 			cs_set_user_bpammo(index, csw, 100);
 		}
