@@ -530,7 +530,9 @@ enum (+= 1)
 
 	cvar_takeDamageHudTime,
 	
-	cvar_removeWeaponsOffTheGround
+	cvar_removeWeaponsOffTheGround,
+
+	cvar_bombEnabled
 };
 
 new const ggCvarsData[][][] =
@@ -574,7 +576,9 @@ new const ggCvarsData[][][] =
 	
 	{ "gg_takeDamageHudTime", "1.2" }, // Take damage hud hold-time.
 	
-	{ "gg_removeWeaponsOffTheGround", "1" } // Remove weapons off the ground when loading map?
+	{ "gg_removeWeaponsOffTheGround", "1" }, // Remove weapons off the ground when loading map?
+
+	{ "gg_bombEnabled", "1" } // Enable bomb?
 };
 
 new const forwardsNames[][] =
@@ -729,7 +733,7 @@ public plugin_init()
 	}
 
 	new weaponClassname[24];
-	new const excludedWeapons = (CSW_KNIFE | CSW_C4);
+	new const excludedWeapons = (CSW_KNIFE);//(CSW_KNIFE | CSW_C4);
 
 	ForRange(i, 1, 30)
 	{
@@ -1281,7 +1285,7 @@ public primaryAttack(entity)
 
 public onAddItemToPlayer(index, weaponEntity)
 {
-	if (cs_get_weapon_id(weaponEntity) != CSW_C4)
+	if (cs_get_weapon_id(weaponEntity) != CSW_C4 || !get_pcvar_num(cvarsData[cvar_bombEnabled]))
 	{
 		return HAM_IGNORED;
 	}
@@ -1471,6 +1475,9 @@ public playerDeathEvent()
 	
 	// Set killstreak to 0.
 	userCombo[victim] = 0;
+
+	// Reset user allowed weapons.
+	userAllowedWeapons[victim] = 0;
 	
 	new killer = read_data(1),
 		weapon[12];
@@ -2952,7 +2959,14 @@ giveWeapons(index)
 	// Strip weapons.
 	removePlayerWeapons(index);
 
+	// Reset player allowed weapons and add knife.
 	userAllowedWeapons[index] = CSW_KNIFE;
+
+	// Handle bomb.
+	if(get_pcvar_num(cvarsData[cvar_bombEnabled]) && get_user_team(index) == 1)
+	{
+		userAllowedWeapons[index] |= CSW_C4;
+	}
 
 	// Add wand if player is on last level and such option is enabled.
 	if (userLevel[index] != maxLevel)
@@ -2962,6 +2976,7 @@ giveWeapons(index)
 
 		give_item(index, weaponEntityNames[userLevel[index]]);
 
+		// Add weapon to allowed to carry by player.
 		userAllowedWeapons[index] |= weaponsData[userLevel[index]][weaponCSW];
 
 		if (csw != CSW_HEGRENADE && csw != CSW_KNIFE && csw != CSW_FLASHBANG)
