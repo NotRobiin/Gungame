@@ -2273,7 +2273,7 @@ insertUserData(index)
 	// Format request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
 		"INSERT INTO `%s` \
-		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills` \
+		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
 		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots]);
 
 	log_amx("Sending data: %s", mysqlRequest);
