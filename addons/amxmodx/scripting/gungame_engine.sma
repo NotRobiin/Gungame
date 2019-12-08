@@ -530,9 +530,7 @@ enum (+= 1)
 
 	cvar_takeDamageHudTime,
 	
-	cvar_removeWeaponsOffTheGround,
-
-	cvar_bombEnabled
+	cvar_removeWeaponsOffTheGround
 };
 
 new const ggCvarsData[][][] =
@@ -576,9 +574,7 @@ new const ggCvarsData[][][] =
 	
 	{ "gg_takeDamageHudTime", "1.2" }, // Take damage hud hold-time.
 	
-	{ "gg_removeWeaponsOffTheGround", "1" }, // Remove weapons off the ground when loading map?
-
-	{ "gg_bombEnabled", "1" } // Enable bomb?
+	{ "gg_removeWeaponsOffTheGround", "1" } // Remove weapons off the ground when loading map?
 };
 
 new const forwardsNames[][] =
@@ -1285,7 +1281,7 @@ public primaryAttack(entity)
 
 public onAddItemToPlayer(index, weaponEntity)
 {
-	if (cs_get_weapon_id(weaponEntity) != CSW_C4 || !get_pcvar_num(cvarsData[cvar_bombEnabled]))
+	if (cs_get_weapon_id(weaponEntity) != CSW_C4)
 	{
 		return HAM_IGNORED;
 	}
@@ -2961,12 +2957,6 @@ giveWeapons(index)
 
 	// Reset player allowed weapons and add knife.
 	userAllowedWeapons[index] = CSW_KNIFE;
-
-	// Handle bomb.
-	if(get_pcvar_num(cvarsData[cvar_bombEnabled]) && get_user_team(index) == 1)
-	{
-		userAllowedWeapons[index] |= CSW_C4;
-	}
 
 	// Add wand if player is on last level and such option is enabled.
 	if (userLevel[index] != maxLevel)
