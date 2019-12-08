@@ -2254,7 +2254,7 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 	}
 }
 
-public saveWinsData(index)
+public saveUserData(index)
 {
 	new mysqlRequest[MAX_CHARS * 5];
 
@@ -2991,8 +2991,16 @@ endGunGame(winner)
 	// Reward winner.
 	userStats[winner][statsWins]++;
 
-	// Save winner to database.
-	saveWinsData(winner);
+	// Save players data to database.
+	ForPlayers(i)
+	{
+		if(!is_user_connected(i))
+		{
+			continue;
+		}
+
+		saveUserData(i);
+	}
 
 	// Format win message.
 	formatex(winMessage, charsmax(winMessage), "%s^nTopowi gracze:^n^n^n^n", chatPrefix);
