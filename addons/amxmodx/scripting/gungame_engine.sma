@@ -35,7 +35,7 @@ native bool:gg_get_user_vip(index);
 #define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
 
 // Handle name length.
-#define printName(%1) (strlen(userName[%1]) > maxNicknameLength ? userShortName[%1] : userName[%1])
+#define printName(%1) (strlen(userData[%1][dataName]) > maxNicknameLength ? userData[%1][dataShortName] : userData[%1][dataName])
 
 // Task indexes.
 enum (+= 2500)
@@ -617,28 +617,47 @@ new const teamNames[][] =
 	"CT"
 };
 
-enum statsEnumerator (+=1)
+enum userDataEnumerator
 {
-	statsWins,
-	statsKills,
-	statsKnifeKills,
-	statsHeadshots
+	dataLevel,
+	dataWeaponKills,
+	dataName[MAX_CHARS],
+	dataShortName[MAX_CHARS],
+	dataSafeName[MAX_CHARS],
+	dataTimeToRespawn,
+	bool:dataSpawnProtection,
+	dataCombo,
+	dataLastOrigin[3],
+	dataIdleStrikes,
+	bool:dataFalling,
+	dataWarmupWeapon,
+	dataWarmupCustomWeaponIndex,
+	dataAllowedWeapons,
+	dataWins,
+	dataKills,
+	dataKnifeKills,
+	dataHeadshots
 };
 
-new userLevel[MAX_PLAYERS + 1],
-	userKills[MAX_PLAYERS + 1],
-	userName[MAX_PLAYERS + 1][MAX_CHARS],
-	userShortName[MAX_PLAYERS + 1][MAX_CHARS],
-	userTimeToRespawn[MAX_PLAYERS + 1],
-	bool:userSpawnProtection[MAX_PLAYERS + 1],
-	userCombo[MAX_PLAYERS + 1],
-	userLastOrigin[MAX_PLAYERS + 1][3],
-	userIdleStrikes[MAX_PLAYERS + 1],
-	bool:userFalling[MAX_PLAYERS + 1],
-	userWarmupWeapon[MAX_PLAYERS + 1] = { -1, ... },
-	userWarmupCustomWeaponIndex[MAX_PLAYERS + 1] = { -1, ... },
-	userAllowedWeapons[MAX_PLAYERS + 1],
-	userStats[MAX_PLAYERS + 1][statsEnumerator],
+enum topInfo
+{
+	bool:topDataLoaded,
+	topMotdCode[MAX_CHARS * 50],
+	topMotdLength,
+	topMotdName,
+	bool:topMotdCreated
+};
+
+enum topPlayersEnumerator
+{
+	topNames[MAX_CHARS],
+	topWins,
+	topKills,
+	topKnifeKills,
+	topHeadshots
+};
+
+new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	weaponNames[sizeof(weaponsData)][MAX_CHARS - 1],
 	weaponEntityNames[sizeof(weaponsData)][MAX_CHARS],
@@ -664,13 +683,8 @@ new userLevel[MAX_PLAYERS + 1],
 	forwardHandles[sizeof(forwardsNames)],
 	forwardReturnDummy,
 
-	topPlayersNames[topPlayersDisplayed + 1][MAX_CHARS],
-	topPlayersStats[topPlayersDisplayed + 1][statsEnumerator],
-	bool:topPlayersDataLoaded,
-	topPlayersMotdCode[MAX_CHARS * 50],
-	topPlayersMotdLength,
-	topPlayersMotdName[MAX_CHARS],
-	bool:topPlayersMotdCreated,
+	topPlayers[topPlayersDisplayed + 1][topPlayersEnumerator],
+	topData[topInfo],
 
 	wandSpritesIndexes[sizeof(wandSprites)],
 	wandLastAttack[MAX_PLAYERS + 1],
@@ -867,7 +881,7 @@ public native_SetUserLevel(plugin, params)
 	}
 
 	// Set level.
-	userLevel[index] = level;
+	userData[index][dataLevel] = level;
 
 	return 1;
 }
@@ -888,7 +902,7 @@ public native_GetUserLevel(plugin, params)
 	}
 
 	// Return user level.
-	return userLevel[index];
+	return userData[index][dataLevel];
 }
 
 public native_SetTeamLevel(plugin, params)
@@ -922,7 +936,7 @@ public native_SetTeamLevel(plugin, params)
 	{
 		ForTeam(i, team)
 		{
-			userLevel[i] = level;
+			userData[i][dataLevel] = level;
 		}
 	}
 
@@ -962,7 +976,7 @@ public native_GetUserWeaponKills(plugin, params)
 	}
 
 	// Return weapon kills.
-	return userKills[index];
+	return userData[index][dataWeaponKills];
 }
 
 // Return max level.
@@ -1026,7 +1040,7 @@ public native_GetUserWeapon(plugin, params)
 	}
 
 	// Return user current weapon.
-	return weaponsData[userLevel[index]][0];
+	return weaponsData[userData[index][dataLevel]][0];
 }
 
 public native_GetWeaponsData(plugin, params)
@@ -1060,7 +1074,7 @@ public native_GetWeaponsData(plugin, params)
 	}
 
 	// Return weapons data.
-	return weaponsData[userLevel[index]][value];
+	return weaponsData[userData[index][dataLevel]][value];
 }
 
 public native_GetUserWins(plugin, params)
@@ -1077,7 +1091,7 @@ public native_GetUserWins(plugin, params)
 		return nativesErrorValue;
 	}
 
-	return userStats[index][statsWins];
+	return userData[index][dataWins];
 }
 
 public native_GetUserCombo(plugin, params)
@@ -1094,7 +1108,7 @@ public native_GetUserCombo(plugin, params)
 		return nativesErrorValue;
 	}
 
-	return userCombo[index];
+	return userData[index][dataCombo];
 }
 
 /*
@@ -1170,16 +1184,16 @@ public client_putinserver(index)
 	}
 
 	// Get player's name once, so we dont do that every time we need that data.
-	get_user_name(index, userName[index], charsmax(userName[]));
+	get_user_name(index, userData[index][dataName], MAX_CHARS - 1);
 
 	// Clamp down player's name so we can use that to prevent char-overflow in HUD etc.
-	clampDownClientName(index, userShortName[index], charsmax(userShortName[]), maxNicknameLength, nicknameReplaceToken);
+	clampDownClientName(index, userData[index][dataShortName], MAX_CHARS - 1, maxNicknameLength, nicknameReplaceToken);
 
 	// Load mysql data.
 	getUserData(index);
 
 	// Preset user level to 0.
-	userLevel[index] = 0;
+	userData[index][dataLevel] = 0;
 
 	// Dont calculate level if gungame has ended.
 	if (gungameEnded)
@@ -1191,8 +1205,8 @@ public client_putinserver(index)
 		newLevel = (lowestLevel > 0 ? lowestLevel : 0 > halfMaxLevel ? halfMaxLevel : newLevel);
 
 	// Set user level to current lowest or half of max level if current lowest is greater than half.
-	userLevel[index] = newLevel;
-	userKills[index] = 0;
+	userData[index][dataLevel] = newLevel;
+	userData[index][dataWeaponKills] = 0;
 
 	// Respawn player.
 	set_task(2.0, "respawnPlayerOnJoin", index + TASK_RESPAWN_ON_JOIN);
@@ -1209,9 +1223,9 @@ public client_disconnect(index)
 // Get user's name again when changed.
 public clientInfoChanged(index)
 {
-	get_user_name(index, userName[index], charsmax(userName[]));
+	get_user_name(index, userData[index][dataName], MAX_CHARS - 1);
 
-	clampDownClientName(index, userShortName[index], charsmax(userShortName[]), maxNicknameLength, nicknameReplaceToken);
+	clampDownClientName(index, userData[index][dataShortName], MAX_CHARS - 1, maxNicknameLength, nicknameReplaceToken);
 }
 
 // Prevent picking up weapons of off the ground.
@@ -1255,7 +1269,7 @@ public setEntityModel(entity, model[])
 	// Set tasks to give grenade back after it has exploded. 
 	if (equal(model[9], "he", 2))
 	{
-		if (weaponsData[userLevel[owner]][weaponCSW] == CSW_HEGRENADE || get_pcvar_num(cvarsData[cvar_warmupWeapon]) == CSW_HEGRENADE && warmupEnabled)
+		if (weaponsData[userData[owner][dataLevel]][weaponCSW] == CSW_HEGRENADE || get_pcvar_num(cvarsData[cvar_warmupWeapon]) == CSW_HEGRENADE && warmupEnabled)
 		{
 			set_task(get_pcvar_float(cvarsData[cvar_giveBackHeInterval]), "giveHeGrenade", owner + TASK_GIVEGRENADE);
 		}
@@ -1265,7 +1279,7 @@ public setEntityModel(entity, model[])
 			set_pev(entity, pev_dmgtime, get_gametime() + heGrenadeExplodeTime);
 		}
 	}
-	else if (equal(model[9], "fl", 2) && weaponsData[userLevel[owner]][weaponCSW] == CSW_KNIFE)
+	else if (equal(model[9], "fl", 2) && weaponsData[userData[owner][dataLevel]][weaponCSW] == CSW_KNIFE)
 	{
 		set_task(get_pcvar_float(cvarsData[cvar_giveBackFlashInterval]), "giveFlashGrenade", owner + TASK_GIVEGRENADE);
 	}
@@ -1300,7 +1314,7 @@ public onAddItemToPlayer(index, weaponEntity)
 	}
 
 	// User is allowed to carry that weapon?
-	if (userAllowedWeapons[index] & csw)
+	if (userData[index][dataAllowedWeapons] & csw)
 	{
 		return HAM_IGNORED;
 	}
@@ -1331,13 +1345,13 @@ public client_PreThink(index)
 	}
 
 	// Set falling status based on current velocity.
-	userFalling[index] = bool:(entity_get_float(index, EV_FL_flFallVelocity) > 350.00);
+	userData[index][dataFalling] = bool:(entity_get_float(index, EV_FL_flFallVelocity) > 350.00);
 }
 
 public client_PostThink(index)
 {
 	// Return if player is not alive, is hltv, is bot or is not falling.
-	if (!get_pcvar_num(cvarsData[cvar_fallDamageEnabled]) || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index) || !userFalling[index])
+	if (!get_pcvar_num(cvarsData[cvar_fallDamageEnabled]) || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index) || !userData[index][dataFalling])
 	{
 		return;
 	}
@@ -1428,7 +1442,7 @@ public weaponDeploy(entity)
 		return;
 	}
 
-	if (!((1 << weapon) & userAllowedWeapons[index]))
+	if (!((1 << weapon) & userData[index][dataAllowedWeapons]))
 	{
 		// Take away the weapon.
 		if (!strip_user_weapon(index, weapon))
@@ -1447,7 +1461,7 @@ public knifeDeploy(entity)
 		weapon = cs_get_weapon_id(entity);
 
 	// Return if player isnt alive or its not a warmup with wands.
-	if (warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2 || !is_user_alive(index) || userLevel[index] != maxLevel || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE)
+	if (warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2 || !is_user_alive(index) || userData[index][dataLevel] != maxLevel || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE)
 	{
 		return;
 	}
@@ -1492,10 +1506,10 @@ public playerDeathEvent()
 	removeHud(victim);
 	
 	// Set killstreak to 0.
-	userCombo[victim] = 0;
+	userData[victim][dataCombo] = 0;
 
 	// Reset user allowed weapons.
-	userAllowedWeapons[victim] = 0;
+	userData[victim][dataAllowedWeapons] = 0;
 	
 	new killer = read_data(1),
 		weapon[12];
@@ -1530,7 +1544,7 @@ public playerDeathEvent()
 	new killerTeam = get_user_team(killer),
 		victimTeam = get_user_team(victim);
 
-	if (gameMode == modeNormal && userLevel[killer] == maxLevel)
+	if (gameMode == modeNormal && userData[killer][dataLevel] == maxLevel)
 	{
 		// End gungame if user has reached max level + 1.
 		endGunGame(killer);
@@ -1555,7 +1569,7 @@ public playerDeathEvent()
 	// Respawn victim normally.
 	respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
 
-	if (userSpawnProtection[victim])
+	if (userData[victim][dataSpawnProtection])
 	{
 		// Remove protection task if present.
 		if (task_exists(victim + TASK_SPAWNPROTECTION))
@@ -1575,20 +1589,20 @@ public playerDeathEvent()
 	// Update stats.
 	if (read_data(3))
 	{
-		userStats[killer][statsHeadshots]++;
+		userData[killer][dataHeadshots]++;
 	}
 	
 	// Update stats.
-	userStats[killer][statsKills]++;
+	userData[killer][dataKills]++;
 
 	if (equal(weapon, "knife"))
 	{
 		// Update stats.
-		userStats[killer][statsKnifeKills]++;
+		userData[killer][dataKnifeKills]++;
 
-		if (userLevel[killer] != maxLevel)
+		if (userData[killer][dataLevel] != maxLevel)
 		{
-			if (userLevel[victim])
+			if (userData[victim][dataLevel])
 			{
 				// Decrement victim level or team level when killed with knife and his level is greater than 1.
 				if (gameMode == modeNormal)
@@ -1745,7 +1759,7 @@ public sayHandle(msgId, msgDest, msgEnt)
 	get_msg_arg_string(2, chatString[0], charsmax(chatString[]));
 
 	// Replace "knife" with "wand".
-	formatex(weaponName, charsmax(weaponName), (userLevel[index] == maxLevel && get_pcvar_num(cvarsData[cvar_wandEnabled])) ? "Rozdzka" : customWeaponNames[userLevel[index]]);
+	formatex(weaponName, charsmax(weaponName), (userData[index][dataLevel] == maxLevel && get_pcvar_num(cvarsData[cvar_wandEnabled])) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]);
 
 	if (equal(chatString[0], "#Cstrike_Chat_All"))
 	{
@@ -1758,7 +1772,7 @@ public sayHandle(msgId, msgDest, msgEnt)
 		// Format new message to be sent.
 		if (gameMode == modeNormal)
 		{
-			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x03 %n^x01 :  %s", userLevel[index] + 1, weaponName, index, chatString[0]);
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x03 %n^x01 :  %s", userData[index][dataLevel] + 1, weaponName, index, chatString[0]);
 		}
 		else
 		{
@@ -1769,7 +1783,7 @@ public sayHandle(msgId, msgDest, msgEnt)
 	{
 		if (gameMode == modeNormal)
 		{
-			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x01 %s", userLevel[index] + 1, weaponName, chatString[0]);
+			formatex(chatString[1], charsmax(chatString[]), "^x04[%i Lvl (%s)]^x01 %s", userData[index][dataLevel] + 1, weaponName, chatString[0]);
 		}
 		else
 		{
@@ -1887,12 +1901,12 @@ public displayWarmupTimer()
 		{
 			ForPlayers(i)
 			{
-				if (!is_user_alive(i) || is_user_hltv(i) || is_user_bot(i) || userWarmupWeapon[i] == -1)
+				if (!is_user_alive(i) || is_user_hltv(i) || is_user_bot(i) || userData[i][dataWarmupWeapon] == -1)
 				{
 					continue;
 				}
 
-				ShowSyncHudMsg(i, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupTimer, customWeaponNames[userWarmupCustomWeaponIndex[i]]);
+				ShowSyncHudMsg(i, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupTimer, customWeaponNames[userData[i][dataWarmupCustomWeaponIndex]]);
 			}
 		}
 		else
@@ -1937,7 +1951,7 @@ public listWeaponsMenu_handler(id, menu, item)
 public topPlayersMotdHandler(index)
 {
 	// Return if top players data was not loaded yet.
-	if (!topPlayersDataLoaded)
+	if (!topData[topDataLoaded])
 	{
 		ColorChat(index, RED, "%s^x01 Topka nie zostala jeszcze zaladowana.", chatPrefix);
 	
@@ -1948,13 +1962,13 @@ public topPlayersMotdHandler(index)
 	}
 
 	// Create top players motd if this is the first time someone has used command on this map.
-	if (!topPlayersMotdCreated)
+	if (!topData[topMotdCreated])
 	{
 		createTopPlayersMotd();
 	}
 
 	// Display motd.
-	show_motd(index, topPlayersMotdCode, topPlayersMotdName);
+	show_motd(index, topData[topMotdCode], topData[topMotdName]);
 
 	return PLUGIN_CONTINUE;
 }
@@ -1973,13 +1987,13 @@ public rewardWarmupWinner(taskIndex)
 	new winner = taskIndex - TASK_REWARDWINNER;
 
 	// Return if user is not connected or his level is somehow incorrect. 
-	if (!is_user_connected(winner) || userLevel[winner] >= get_pcvar_num(cvarsData[cvar_warmupLevelReward]))
+	if (!is_user_connected(winner) || userData[winner][dataLevel] >= get_pcvar_num(cvarsData[cvar_warmupLevelReward]))
 	{
 		return;
 	}
 
 	// Add reward.
-	incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]) - userLevel[winner] - 1, false);
+	incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]) - userData[winner][dataLevel] - 1, false);
 }
 
 public giveHeGrenade(taskIndex)
@@ -1987,7 +2001,7 @@ public giveHeGrenade(taskIndex)
 	new index = taskIndex - TASK_GIVEGRENADE;
 
 	// Return if player is not alive or this type of grenade is none of his weapons.
-	if (!is_user_alive(index) || !warmupEnabled && weaponsData[userLevel[index]][weaponCSW] != CSW_HEGRENADE || warmupEnabled && warmupWeaponIndex == CSW_HEGRENADE)
+	if (!is_user_alive(index) || !warmupEnabled && weaponsData[userData[index][dataLevel]][weaponCSW] != CSW_HEGRENADE || warmupEnabled && warmupWeaponIndex == CSW_HEGRENADE)
 	{
 		return;
 	}
@@ -2001,7 +2015,7 @@ public giveFlashGrenade(taskIndex)
 	new index = taskIndex - TASK_GIVEGRENADE;
 
 	// Return if player is not alive or flash grenade is none of his allowed weapons.
-	if (!is_user_alive(index) || weaponsData[userLevel[index]][weaponCSW] != CSW_KNIFE)
+	if (!is_user_alive(index) || weaponsData[userData[index][dataLevel]][weaponCSW] != CSW_KNIFE)
 	{
 		return;
 	}
@@ -2039,30 +2053,33 @@ public checkIdle(taskIndex)
 	// Get user position.
 	get_user_origin(index, currentOrigin);
 
-	if (!userLastOrigin[index][0] && !userLastOrigin[index][1] && !userLastOrigin[index][2])
+	if (!userData[index][dataLastOrigin][0] && !userData[index][dataLastOrigin][1] && !userData[index][dataLastOrigin][2])
 	{
 		// Handle position update.
 		ForRange(i, 0, 2)
 		{
-			userLastOrigin[index][i] = currentOrigin[i];
+			userData[index][dataLastOrigin][i] = currentOrigin[i];
 		}
 
 		return;
 	}
 
 	// Get distance from last position to current position.
-	new distance = get_distance(userLastOrigin[index], currentOrigin);
+	new lastOrigin[3];
+	copy(lastOrigin, sizeof(lastOrigin), userData[index][dataLastOrigin]); // Workaround with const argument in get_distance.
+
+	new distance = get_distance(lastOrigin, currentOrigin);
 
 	// Handle position update.
 	ForRange(i, 0, 2)
 	{
-		userLastOrigin[index][i] = currentOrigin[i];
+		userData[index][dataLastOrigin][i] = currentOrigin[i];
 	}
 
 	if (distance < get_pcvar_num(cvarsData[cvar_idleMaxDistance]))
 	{
 		// Slap player if he's camping, make sure not to kill him.
-		if (++userIdleStrikes[index] >= get_pcvar_num(cvarsData[cvar_idleMaxStrikes]))
+		if (++userData[index][dataIdleStrikes] >= get_pcvar_num(cvarsData[cvar_idleMaxStrikes]))
 		{
 			ForRange(i, 0, 1)
 			{
@@ -2073,12 +2090,12 @@ public checkIdle(taskIndex)
 	else
 	{
 		// Set user strikes back to 0.
-		userIdleStrikes[index] = 0;
+		userData[index][dataIdleStrikes] = 0;
 		
 		// Set user last position to 0.
 		ForRange(i, 0, 2)
 		{
-			userLastOrigin[index][i] = 0;
+			userData[index][dataLastOrigin][i] = 0;
 		}
 	}
 }
@@ -2124,10 +2141,10 @@ public respawnNotify(taskIndex)
 	}
 
 	// Print respawn-time info.
-	client_print(index, print_center, "Odrodzenie za: %i", userTimeToRespawn[index]);
+	client_print(index, print_center, "Odrodzenie za: %i", userData[index][dataTimeToRespawn]);
 
 	// Decrease respawn time.
-	userTimeToRespawn[index]--;
+	userData[index][dataTimeToRespawn]--;
 }
 
 public displayHud(taskIndex)
@@ -2150,22 +2167,35 @@ public displayHud(taskIndex)
 	}
 	else
 	{
-		formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]",
-				gameMode == modeNormal ? printName(leader) : teamNames[leader],
-				userLevel[leader] + 1,
-				userLevel[leader] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[leader]],
-				userKills[leader],
-				weaponsData[userLevel[leader]][gameMode == modeNormal ? weaponKills : weaponTeamKills]);
+		// We dont talk about that. Ever.
+		if(gameMode == modeNormal)
+		{
+			formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]",
+					printName(leader),
+					userData[leader][dataLevel] + 1,
+					userData[leader][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[leader][dataLevel]],
+					userData[leader][dataWeaponKills],
+					weaponsData[userData[leader][dataLevel]][weaponKills]);
+		}
+		else
+		{
+			formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]",
+					teamNames[leader],
+					userData[leader][dataLevel] + 1,
+					userData[leader][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[leader][dataLevel]],
+					userData[leader][dataWeaponKills],
+					weaponsData[userData[leader][dataLevel]][weaponTeamKills]);
+		}
 	}
 
 	// Format next weapon name if available, change knife to wand if enabled so.
-	if (userLevel[index] == sizeof(weaponsData) - 2)
+	if (userData[index][dataLevel] == sizeof(weaponsData) - 2)
 	{
-		formatex(nextWeapon, charsmax(nextWeapon), get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index] + 1]);
+		formatex(nextWeapon, charsmax(nextWeapon), get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel] + 1]);
 	}
 	else
 	{
-		formatex(nextWeapon, charsmax(nextWeapon), isOnLastLevel(index) ? "Brak" : customWeaponNames[userLevel[index] + 1]);
+		formatex(nextWeapon, charsmax(nextWeapon), isOnLastLevel(index) ? "Brak" : customWeaponNames[userData[index][dataLevel] + 1]);
 	}
 
 	// Display hud.
@@ -2173,13 +2203,13 @@ public displayHud(taskIndex)
 	
 	if (gameMode == modeNormal)
 	{
-		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s", userLevel[index] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], userKills[index], weaponsData[userLevel[index]][weaponKills], userCombo[index], nextWeapon, leaderData);
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s", userData[index][dataLevel] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]], userData[index][dataWeaponKills], weaponsData[userData[index][dataLevel]][weaponKills], userData[index][dataCombo], nextWeapon, leaderData);
 	}
 	else
 	{
 		new userTeam = get_user_team(index) - 1;
 
-		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s", teamLevel[userTeam] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], teamKills[userTeam], weaponsData[userLevel[index]][weaponTeamKills], nextWeapon, leaderData);
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s", teamLevel[userTeam] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]], teamKills[userTeam], weaponsData[userData[index][dataLevel]][weaponTeamKills], nextWeapon, leaderData);
 	}
 }
 
@@ -2261,10 +2291,10 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 
 	if (SQL_NumRows(query))
 	{
-		userStats[index][statsWins] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "wins"));
-		userStats[index][statsKnifeKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "knife_kills"));
-		userStats[index][statsHeadshots] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "headshot_kills"));
-		userStats[index][statsKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "kills"));
+		userData[index][dataWins] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "wins"));
+		userData[index][dataKnifeKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "knife_kills"));
+		userData[index][dataHeadshots] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "headshot_kills"));
+		userData[index][dataKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "kills"));
 	}
 	else
 	{
@@ -2285,7 +2315,7 @@ insertUserData(index)
 	formatex(mysqlRequest, charsmax(mysqlRequest),
 		"INSERT INTO `%s` \
 		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
-		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots]);
+		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
 
 	// Send request.
 	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
@@ -2309,7 +2339,7 @@ updateUserData(index)
 			`kills` = %i,\
 			`headshot_kills` = %i \
 		WHERE \
-			`name` = '%n';", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots], index);
+			`name` = '%n';", mysqlData[databaseTableName], index, userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots], index);
 
 	// Send request.
 	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
@@ -2340,13 +2370,13 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 	while (SQL_MoreResults(query))
 	{
 		// Get top player name.
-		SQL_ReadResult(query, SQL_FieldNameToNum(query, "name"), topPlayersNames[iterator], charsmax(topPlayersNames[]));
+		SQL_ReadResult(query, SQL_FieldNameToNum(query, "name"), topPlayers[iterator][topNames], MAX_CHARS - 1);
 		
 		// Assign his info to variables.
-		topPlayersStats[iterator][statsWins] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "wins"));
-		topPlayersStats[iterator][statsKnifeKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "knife_kills"));
-		topPlayersStats[iterator][statsHeadshots] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "headshot_kills"));
-		topPlayersStats[iterator][statsKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "kills"));
+		topPlayers[iterator][topWins] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "wins"));
+		topPlayers[iterator][topKnifeKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "knife_kills"));
+		topPlayers[iterator][topHeadshots] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "headshot_kills"));
+		topPlayers[iterator][topKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "kills"));
 
 		// Iterate loop.
 		iterator++;
@@ -2356,7 +2386,7 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 	}
 
 	// Database laoded successfully.
-	topPlayersDataLoaded = true;
+	topData[topDataLoaded] = true;
 
 	// Create motd.
 	createTopPlayersMotd();
@@ -2376,7 +2406,7 @@ loadGameCvars()
 
 bool:isOnLastLevel(index)
 {
-	return bool:(userLevel[index] == maxLevel);
+	return bool:(userData[index][dataLevel] == maxLevel);
 }
 
 // To be used in natives only.
@@ -2404,28 +2434,28 @@ createTopPlayersMotd()
 	// Add HTML code to string in a loop.
 	ForArray(i, topPlayersMotdHTML)
 	{
-		topPlayersMotdLength += formatex(topPlayersMotdCode[topPlayersMotdLength], charsmax(topPlayersMotdCode), topPlayersMotdHTML[i]);
+		topData[topMotdLength] += formatex(topData[topMotdCode][topData[topMotdLength]], charsmax(topData[topMotdCode]), topPlayersMotdHTML[i]);
 	}
 
 	ForRange(i, 0, topPlayersDisplayed - 1)
 	{
 		// Continue if player has no wins at all.
-		if (!topPlayersStats[i][statsWins])
+		if (!topPlayers[i][topWins])
 		{
 			continue;
 		}
 
 		// Add HTML to motd.
-		topPlayersMotdLength += formatex(topPlayersMotdCode[topPlayersMotdLength], charsmax(topPlayersMotdCode),
-			"<tr><td><b><h4>%d</h4></b><td><h4>%s</h4><td><h4>%d</h4><td><td><h4>%d</h4></td></tr>", i + 1, topPlayersNames[i], topPlayersStats[i][statsWins], topPlayersStats[i][statsKnifeKills]);
+		topData[topMotdLength] += formatex(topData[topMotdCode][topData[topMotdLength]], charsmax(topData[topMotdCode]),
+			"<tr><td><b><h4>%d</h4></b><td><h4>%s</h4><td><h4>%d</h4><td><td><h4>%d</h4></td></tr>", i + 1, topPlayers[i][topNames], topPlayers[i][topWins], topPlayers[i][topKnifeKills]);
 		
 		playersDisplayed++;
 	}
 
 	// Format motd title.
-	formatex(topPlayersMotdName, charsmax(topPlayersMotdName), "Top %i graczy GunGame", playersDisplayed);
+	formatex(topData[topMotdName], charsmax(topData[topMotdName]), "Top %i graczy GunGame", playersDisplayed);
 
-	topPlayersMotdCreated = true;
+	topData[topMotdCreated] = true;
 }
 
 removeIdleCheck(index)
@@ -2439,11 +2469,11 @@ removeIdleCheck(index)
 		// Set last user position to 0 to prevent bugs with respawning close to death-place.
 		ForRange(i, 0, 2)
 		{
-			userLastOrigin[index][i] = 0;
+			userData[index][dataLastOrigin][i] = 0;
 		}
 	
 		// Set AFK-strikes to zero.
-		userIdleStrikes[index] = 0;
+		userData[index][dataIdleStrikes] = 0;
 	}
 }
 
@@ -2592,11 +2622,11 @@ showPlayerInfo(index, target)
 			"%s^x01 Gracz ^x04%n^x01 jest na poziomie^x04 %i^x01 [^x04%s^x01 - ^x04%i^x01/^x04%i^x01]. Wygral ^x04%i^x01 razy. Status uslugi:^x04 %s^x01.",
 			chatPrefix,
 			target,
-			userLevel[target] + 1,
-			isOnLastLevel(target) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[target]]) : customWeaponNames[userLevel[target]],
-			userKills[target],
-			weaponsData[userLevel[target]][gameMode == modeNormal ? weaponKills : weaponTeamKills],
-			userStats[target][statsWins],
+			userData[target][dataLevel] + 1,
+			isOnLastLevel(target) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[target][dataLevel]]) : customWeaponNames[userData[target][dataLevel]],
+			userData[target][dataWeaponKills],
+			weaponsData[userData[target][dataLevel]][gameMode == modeNormal ? weaponKills : weaponTeamKills],
+			userData[target][dataWins],
 			gg_get_user_vip(target) ? "VIP" : "Brak");
 	}
 	else
@@ -2758,7 +2788,7 @@ setWarmupHud(bool:status)
 toggleSpawnProtection(index, bool:status)
 {
 	// Toggle spawn protection on index.
-	userSpawnProtection[index] = status;
+	userData[index][dataSpawnProtection] = status;
 
 	// Set glowshell to indicate spawn protection. Disable any rendering if status is false.
 	if (status)
@@ -2806,7 +2836,7 @@ respawnPlayer(index, Float:time)
 	new intTime = floatround(time, floatround_round);
 
 	// Set user respawn time to integer value.
-	userTimeToRespawn[index] = intTime;
+	userData[index][dataTimeToRespawn] = intTime;
 
 	// Set tasks to notify about timeleft to respawn.
 	ForRange(i, 0, intTime - 1)
@@ -2821,13 +2851,13 @@ respawnPlayer(index, Float:time)
 incrementUserWeaponKills(index, value)
 {
 	// Set kills required and killstreak.
-	userCombo[index] += value;
-	userKills[index] += value;
+	userData[index][dataCombo] += value;
+	userData[index][dataWeaponKills] += value;
 
-	ExecuteForward(forwardHandles[forwardComboStreak], forwardReturnDummy, index, userCombo[index]);
+	ExecuteForward(forwardHandles[forwardComboStreak], forwardReturnDummy, index, userData[index][dataCombo]);
 
 	// Levelup player if weapon kills are greater than reqiured for his current level.
-	while (userKills[index] >= weaponsData[userLevel[index]][weaponKills])
+	while (userData[index][dataWeaponKills] >= weaponsData[userData[index][dataLevel]][weaponKills])
 	{
 		incrementUserLevel(index, 1, true);
 	}
@@ -2846,16 +2876,16 @@ incrementTeamWeaponKills(team, value)
 // Decrement weapon kills, take care of leveldown.
 decrementUserWeaponKills(index, value, bool:levelLose)
 {
-	userKills[index] -= value;
+	userData[index][dataWeaponKills] -= value;
 
-	if (levelLose && userKills[index] < 0)
+	if (levelLose && userData[index][dataWeaponKills] < 0)
 	{
 		decrementUserLevel(index, 1);
 	}
 
-	if (userKills[index] < 0)
+	if (userData[index][dataWeaponKills] < 0)
 	{
-		userKills[index] = 0;
+		userData[index][dataWeaponKills] = 0;
 	}
 }
 
@@ -2871,7 +2901,7 @@ decrementTeamWeaponKills(team, value, bool:levelLose)
 
 	ForTeam(i, team)
 	{
-		userKills[i] = teamKills[team - 1];
+		userData[i][dataWeaponKills] = teamKills[team - 1];
 	}
 
 	if (!levelLose)
@@ -2885,27 +2915,27 @@ decrementTeamWeaponKills(team, value, bool:levelLose)
 incrementUserLevel(index, value, bool:notify)
 {
 	// Set weapon kills based on current level required kills. Set new level if valid number.
-	userKills[index] -= weaponsData[userLevel[index]][weaponKills];
-	userLevel[index] = (userLevel[index] + value > maxLevel ? maxLevel : userLevel[index] + value);
+	userData[index][dataWeaponKills] -= weaponsData[userData[index][dataLevel]][weaponKills];
+	userData[index][dataLevel] = (userData[index][dataLevel] + value > maxLevel ? maxLevel : userData[index][dataLevel] + value);
 
 	// Levelup effect.
 	displayLevelupSprite(index);
 
 	// Make sure player's kills are positive.
-	if (userKills[index] < 0)
+	if (userData[index][dataWeaponKills] < 0)
 	{
-		userKills[index] = 0;
+		userData[index][dataWeaponKills] = 0;
 	}
 
 	// Add weapons for player's current level.
 	giveWeapons(index);
 
-	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, index, userLevel[index], -1);
+	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, index, userData[index][dataLevel], -1);
 
 	if (notify)
 	{
 		// Notify about levelup.
-		ColorChat(0, RED, "%s^x01 Gracz^x04 %s^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, printName(index), userLevel[index] + 1, userLevel[index] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[index]]) : customWeaponNames[userLevel[index]]);
+		ColorChat(0, RED, "%s^x01 Gracz^x04 %s^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, printName(index), userData[index][dataLevel] + 1, userData[index][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]) : customWeaponNames[userData[index][dataLevel]]);
 		
 		// Play levelup sound.
 		playSound(index, soundLevelUp, -1, false);
@@ -2920,8 +2950,8 @@ incrementTeamLevel(team, value, bool:notify)
 
 	ForTeam(i, team)
 	{
-		userLevel[i] = teamLevel[team - 1];
-		userKills[i] = teamKills[team - 1];
+		userData[i][dataLevel] = teamLevel[team - 1];
+		userData[i][dataWeaponKills] = teamKills[team - 1];
 
 		// Levelup effect.
 		displayLevelupSprite(i);
@@ -2970,13 +3000,13 @@ displayLevelupSprite(index)
 decrementUserLevel(index, value)
 {
 	// Decrement user level, make sure his level is not negative.
-	userLevel[index] = (userLevel[index] - value < 0 ? 0 : userLevel[index] - value);
-	userKills[index] = 0;
+	userData[index][dataLevel] = (userData[index][dataLevel] - value < 0 ? 0 : userData[index][dataLevel] - value);
+	userData[index][dataWeaponKills] = 0;
 
 	// Play leveldown sound.
 	playSound(index, soundLevelDown, -1, false);
 
-	ExecuteForward(forwardHandles[forwardLevelDown], forwardReturnDummy, index, userLevel[index]);
+	ExecuteForward(forwardHandles[forwardLevelDown], forwardReturnDummy, index, userData[index][dataLevel]);
 }
 
 decrementTeamLevel(team, value)
@@ -2988,8 +3018,8 @@ decrementTeamLevel(team, value)
 	// Update level and kills of players in the team.
 	ForTeam(i, team)
 	{
-		userLevel[i] = teamLevel[team - 1];
-		userKills[i] = teamKills[team - 1];
+		userData[i][dataLevel] = teamLevel[team - 1];
+		userData[i][dataWeaponKills] = teamKills[team - 1];
 	}
 
 	// Play leveldown sound.
@@ -3038,7 +3068,7 @@ endGunGame(winner)
 	getPlayerByTopLevel(topPlayers, charsmax(topPlayers));
 
 	// Reward winner.
-	userStats[winner][statsWins]++;
+	userData[winner][dataWins]++;
 
 	// Format win message.
 	formatex(winMessage, charsmax(winMessage), "%s^nTopowi gracze:^n^n^n^n", chatPrefix);
@@ -3053,7 +3083,7 @@ endGunGame(winner)
 			continue;
 		}
 
-		formatex(tempMessage, charsmax(tempMessage), "^n^n%i. %s (%i lvl - %s [%i fragow] [wygranych: %i])", i + 1, userShortName[index], userLevel[index] + 1, customWeaponNames[userLevel[index]], get_user_frags(index), userStats[index][statsWins]);
+		formatex(tempMessage, charsmax(tempMessage), "^n^n%i. %s (%i lvl - %s [%i fragow] [wygranych: %i])", i + 1, userData[index][dataShortName], userData[index][dataLevel] + 1, customWeaponNames[userData[index][dataLevel]], get_user_frags(index), userData[index][dataWins]);
 
 		add(winMessage, charsmax(winMessage), tempMessage, charsmax(tempMessage));
 	}
@@ -3083,18 +3113,18 @@ giveWeapons(index)
 	removePlayerWeapons(index);
 
 	// Reset player allowed weapons and add knife.
-	userAllowedWeapons[index] = CSW_KNIFE;
+	userData[index][dataAllowedWeapons] = CSW_KNIFE;
 
 	// Add wand if player is on last level and such option is enabled.
-	if (userLevel[index] != maxLevel)
+	if (userData[index][dataLevel] != maxLevel)
 	{
 		// Add weapon couple of times to make sure backpack ammo is right.
-		new csw = get_weaponid(weaponEntityNames[userLevel[index]]);
+		new csw = get_weaponid(weaponEntityNames[userData[index][dataLevel]]);
 
-		give_item(index, weaponEntityNames[userLevel[index]]);
+		give_item(index, weaponEntityNames[userData[index][dataLevel]]);
 
 		// Add weapon to allowed to carry by player.
-		userAllowedWeapons[index] |= weaponsData[userLevel[index]][weaponCSW];
+		userData[index][dataAllowedWeapons] |= weaponsData[userData[index][dataLevel]][weaponCSW];
 
 		if (csw != CSW_HEGRENADE && csw != CSW_KNIFE && csw != CSW_FLASHBANG)
 		{
@@ -3102,7 +3132,7 @@ giveWeapons(index)
 		}
 
 		// Deploy primary weapon.
-		engclient_cmd(index, weaponEntityNames[userLevel[index]]);
+		engclient_cmd(index, weaponEntityNames[userData[index][dataLevel]]);
 
 		// Add knife last so the primary weapon gets drawn out (dont switch to powerful weapon fix).
 		give_item(index, "weapon_knife");
@@ -3122,7 +3152,7 @@ giveWeapons(index)
 			// Add two flashes.
 			if (get_pcvar_num(cvarsData[cvar_flashesEnabled]))
 			{
-				userAllowedWeapons[index] |= CSW_FLASHBANG;
+				userData[index][dataAllowedWeapons] |= CSW_FLASHBANG;
 
 				ForRange(i, 0, 1)
 				{
@@ -3197,14 +3227,14 @@ getGameLeader()
 				continue;
 			}
 			
-			if (userLevel[i] > userLevel[highest])
+			if (userData[i][dataLevel] > userData[highest][dataLevel])
 			{
 				highest = i;
 			}
 
-			else if (userLevel[i] == userLevel[highest])
+			else if (userData[i][dataLevel] == userData[highest][dataLevel])
 			{
-				if (userKills[i] > userKills[highest])
+				if (userData[i][dataWeaponKills] > userData[highest][dataWeaponKills])
 				{
 					highest = i;
 				}
@@ -3237,12 +3267,12 @@ getCurrentLowestLevel()
 	// Loop through all players and get lowest level.
 	ForPlayers(i)
 	{
-		if (!is_user_connected(i) || userLevel[i] > lowest)
+		if (!is_user_connected(i) || userData[i][dataLevel] > lowest)
 		{
 			continue;
 		}
 
-		lowest = userLevel[i];
+		lowest = userData[i][dataLevel];
 	}
 
 	return lowest;
@@ -3272,7 +3302,7 @@ getPlayerByName(name[])
 	// Loop through players, get index if names are matching.
 	ForPlayers(i)
 	{
-		if (!is_user_connected(i) || containi(userName[i], name) == -1)
+		if (!is_user_connected(i) || containi(userData[i][dataName], name) == -1)
 		{
 			continue;
 		}
@@ -3305,12 +3335,12 @@ getPlayerByTopLevel(array[], count)
 
 		for(new i = count - 1; i >= 0; i--)
 		{
-			if (highestLevels[i] < userLevel[index] + 1 && i)
+			if (highestLevels[i] < userData[index][dataLevel] + 1 && i)
 			{
 				continue;
 			}
 
-			if (highestLevels[i] >= userLevel[index] + 1 && i < count - 1)
+			if (highestLevels[i] >= userData[index][dataLevel] + 1 && i < count - 1)
 			{
 				counter = i + 1;
 			}
@@ -3332,7 +3362,7 @@ getPlayerByTopLevel(array[], count)
 				array[j + 1] = array[j];
 			}
 
-			highestLevels[counter] = userLevel[index] + 1;
+			highestLevels[counter] = userData[index][dataLevel] + 1;
 			array[counter] = index;
 		}
 	}
@@ -3417,23 +3447,23 @@ randomWarmupWeapon(index)
 	// Set weapon bp ammo to 100.
 	cs_set_user_bpammo(index, csw, 100);
 
-	userWarmupWeapon[index] = csw;
-	userWarmupCustomWeaponIndex[index] = weaponsArrayIndex;
+	userData[index][dataWarmupWeapon] = csw;
+	userData[index][dataWarmupCustomWeaponIndex] = weaponsArrayIndex;
 }
 
 // Clamp down user name if its length is greater than "value" argument.
 clampDownClientName(index, output[], length, const value, const token[])
 {
-	if (strlen(userName[index]) > value)
+	if (strlen(userData[index][dataName]) > value)
 	{
-		format(output, value, userName[index]);
+		format(output, value, userData[index][dataName]);
 
 		add(output, length, token);
 	}
 	else
 	{
 		// Just copy his original name instead.
-		copy(userShortName[index], charsmax(userShortName[]), userName[index]);
+		copy(userData[index][dataShortName], MAX_CHARS - 1, userData[index][dataName]);
 	}
 }
 
@@ -3821,7 +3851,7 @@ public setMaxLevel(index)
 {
 	if (gameMode == modeNormal)
 	{
-		userLevel[index] = sizeof(weaponsData) - 3;
+		userData[index][dataLevel] = sizeof(weaponsData) - 3;
 		
 		incrementUserLevel(index, 1, true);
 	}
@@ -3871,26 +3901,26 @@ public warmupFunction(index)
 
 public addKnifeKill(index)
 {
-	userStats[index][statsKnifeKills]++;
-	client_print(0, print_chat, "%i", userStats[index][statsKnifeKills]);
+	userData[index][dataKnifeKills]++;
+	client_print(0, print_chat, "%i", userData[index][dataKnifeKills]);
 }
 
 public addHeadshot(index)
 {
-	userStats[index][statsHeadshots]++;
-	client_print(0, print_chat, "%i", userStats[index][statsHeadshots]);
+	userData[index][dataHeadshots]++;
+	client_print(0, print_chat, "%i", userData[index][dataHeadshots]);
 }
 
 public addKill(index)
 {
-	userStats[index][statsKills]++;
-	client_print(0, print_chat, "%i", userStats[index][statsKills]);
+	userData[index][dataKills]++;
+	client_print(0, print_chat, "%i", userData[index][dataKills]);
 }
 
 public addWin(index)
 {
-	userStats[index][statsWins]++;
-	client_print(0, print_chat, "%i", userStats[index][statsWins]);
+	userData[index][dataWins]++;
+	client_print(0, print_chat, "%i", userData[index][dataWins]);
 }
 
 #endif
