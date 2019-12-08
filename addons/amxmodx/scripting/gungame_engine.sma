@@ -513,10 +513,11 @@ enum (+= 1)
 	cvar_removeWeaponsOffTheGround,
 
 	// These 4 must always be at the end!
-	cvar_sqlDb,
-	cvar_sqlPass,
+	cvar_sqlHost,
 	cvar_sqlUser,
-	cvar_sqlHost
+	cvar_sqlPass,
+	cvar_sqlDb,
+	cvar_sqlTable
 };
 
 new const ggCvarsData[][][] =
@@ -720,7 +721,7 @@ public plugin_init()
 	// Register cvars.
 	ForArray(i, ggCvarsData)
 	{
-		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1], i >= sizeof(ggCvarsData) - 1 ? FCVAR_PROTECTED : FCVAR_NONE);
+		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1], i >= sizeof(ggCvarsData) - 5 ? FCVAR_PROTECTED : FCVAR_NONE);
 	}
 
 	// Register Death and team assign events.
@@ -2244,6 +2245,12 @@ public respawnPlayerOnJoin(taskIndex)
 
 connectDatabase()
 {
+	get_pcvar_string(cvarsData[cvar_sqlHost], dbData[dbHost], MAX_CHARS * 2);
+	get_pcvar_string(cvarsData[cvar_sqlUser], dbData[dbUser], MAX_CHARS * 2);
+	get_pcvar_string(cvarsData[cvar_sqlPass], dbData[dbPass], MAX_CHARS * 2);
+	get_pcvar_string(cvarsData[cvar_sqlDb], dbData[dbDbase], MAX_CHARS * 2);
+	get_pcvar_string(cvarsData[cvar_sqlTable], dbData[dbTableName], MAX_CHARS * 2);
+
 	new mysqlRequest[MAX_CHARS * 10];
 
 	// Create mysql tuple.
