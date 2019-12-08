@@ -1167,7 +1167,7 @@ public plugin_precache()
 public client_authorized(index)
 {
 	// Do nothing if user is a hltv.
-	if (is_user_hltv(index))
+	if (is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
@@ -2169,6 +2169,7 @@ public displayHud(taskIndex)
 
 	// Display hud.
 	set_hudmessage(hudColors[0], hudColors[1], hudColors[2], -1.0, 0.02, 0, 6.0, hudDisplayInterval + 0.1, 0.0, 0.0);
+	
 	if (gameMode == modeNormal)
 	{
 		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s", userLevel[index] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[leader]]) : customWeaponNames[userLevel[index]], userKills[index], weaponsData[userLevel[index]][weaponKills], userCombo[index], nextWeapon, leaderData);
@@ -2265,7 +2266,7 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 	}
 }
 
-public insertUserData(index)
+insertUserData(index)
 {
 	new mysqlRequest[MAX_CHARS * 10];
 
@@ -2279,7 +2280,7 @@ public insertUserData(index)
 	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
 }
 
-public updateUserData(index)
+updateUserData(index)
 {
 	new mysqlRequest[MAX_CHARS * 10];
 
@@ -2304,7 +2305,7 @@ public ignoreHandle(failState, Handle:query, error[], errorNum, data[], dataSize
 	return PLUGIN_CONTINUE;
 }
 
-public loadTopPlayers()
+loadTopPlayers()
 {
 	new mysqlRequest[MAX_CHARS * 3];
 
