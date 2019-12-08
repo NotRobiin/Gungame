@@ -663,10 +663,22 @@ enum warmupEnumerator
 	bool:warmupEnabled,
 	warmupTimer,
 	warmupWeaponIndex,
-	warmupWeaponName
+	warmupWeaponNameIndex
+};
+
+enum teamplayEnumerator
+{
+	tpTeamLevel[2],
+	tpTeamKills[2],
+	bool:tpEnabled
 };
 
 new userData[MAX_PLAYERS + 1][userDataEnumerator],
+
+	warmupData[warmupEnumerator],
+
+	topPlayers[topPlayersDisplayed + 1][topPlayersEnumerator],
+	topData[topInfo],
 
 	weaponNames[sizeof(weaponsData)][MAX_CHARS - 1],
 	weaponEntityNames[sizeof(weaponsData)][MAX_CHARS],
@@ -679,8 +691,6 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	hudObjects[3],
 
-	warmupData[warmupEnumerator],
-
 	spriteLevelupIndex,
 
 	Handle:mysqlHandle,
@@ -688,9 +698,6 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	forwardHandles[sizeof(forwardsNames)],
 	forwardReturnDummy,
-
-	topPlayers[topPlayersDisplayed + 1][topPlayersEnumerator],
-	topData[topInfo],
 
 	wandSpritesIndexes[sizeof(wandSprites)],
 
@@ -700,8 +707,7 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 	bool:gameVoteEnabled,
 	gameMode = -1,
 
-	teamLevel[2],
-	teamKills[2];
+	tpData[teamplayEnumerator];
 
 
 public plugin_init()
@@ -935,7 +941,7 @@ public native_SetTeamLevel(plugin, params)
 
 	new bool:includeMembers = bool:get_param(3);
 
-	teamLevel[team - 1] = level;
+	tpData[tpTeamLevel][team - 1] = level;
 
 	if (includeMembers)
 	{
@@ -963,7 +969,7 @@ public native_GetTeamLevel(plugin, params)
 		return -1;
 	}
 
-	return teamLevel[team - 1];
+	return tpData[tpTeamLevel][team - 1];
 }
 
 public native_GetUserWeaponKills(plugin, params)
@@ -1560,7 +1566,7 @@ public playerDeathEvent()
 	{
 		ForRange(i, 0, 1)
 		{
-			if (teamLevel[i] != maxLevel)
+			if (tpData[tpTeamLevel][i] != maxLevel)
 			{
 				continue;
 			}
@@ -1620,7 +1626,7 @@ public playerDeathEvent()
 				}
 
 				// Notify player.
-				ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", teamLevel[victimTeam]);
+				ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", tpData[tpTeamLevel][victimTeam]);
 			}
 			
 			// Increment killer's weapon kills by two instead of leveling up imediatly.
@@ -1894,7 +1900,7 @@ public displayWarmupTimer()
 		playSound(0, soundTimerTick, -1, false);
 
 		// Get warmup weapon name index if not done so yet.
-		if (warmupData[warmupWeaponName] == -1)
+		if (warmupData[warmupWeaponNameIndex] == -1)
 		{
 			getWarmupWeaponName();
 		}
@@ -1916,7 +1922,7 @@ public displayWarmupTimer()
 		}
 		else
 		{
-			ShowSyncHudMsg(0, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupData[warmupTimer], get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2 ? "Rozdzki" : customWeaponNames[get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1 ? warmupData[warmupWeaponIndex] : warmupData[warmupWeaponName]]);
+			ShowSyncHudMsg(0, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupData[warmupTimer], get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2 ? "Rozdzki" : customWeaponNames[get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1 ? warmupData[warmupWeaponIndex] : warmupData[warmupWeaponNameIndex]]);
 		}
 
 		// Set task to display hud again.
@@ -2214,7 +2220,7 @@ public displayHud(taskIndex)
 	{
 		new userTeam = get_user_team(index) - 1;
 
-		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s", teamLevel[userTeam] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]], teamKills[userTeam], weaponsData[userData[index][dataLevel]][weaponTeamKills], nextWeapon, leaderData);
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s", tpData[tpTeamLevel][userTeam] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]], tpData[tpTeamKills][userTeam], weaponsData[userData[index][dataLevel]][weaponTeamKills], nextWeapon, leaderData);
 	}
 }
 
@@ -2870,9 +2876,9 @@ incrementUserWeaponKills(index, value)
 
 incrementTeamWeaponKills(team, value)
 {
-	teamKills[team - 1] += value;
+	tpData[tpTeamKills][team - 1] += value;
 
-	while (teamKills[team - 1] >= weaponsData[teamLevel[team - 1]][weaponTeamKills])
+	while (tpData[tpTeamKills][team - 1] >= weaponsData[tpData[tpTeamLevel][team - 1]][weaponTeamKills])
 	{
 		incrementTeamLevel(team, 1, true);
 	}
@@ -2897,16 +2903,16 @@ decrementUserWeaponKills(index, value, bool:levelLose)
 // Decrement weapon kills, take care of leveldown.
 decrementTeamWeaponKills(team, value, bool:levelLose)
 {
-	teamKills[team - 1] -= value;
+	tpData[tpTeamKills][team - 1] -= value;
 
-	if (teamKills[team - 1] < 0)
+	if (tpData[tpTeamKills][team - 1] < 0)
 	{
-		teamKills[team - 1] = 0;
+		tpData[tpTeamKills][team - 1] = 0;
 	}
 
 	ForTeam(i, team)
 	{
-		userData[i][dataWeaponKills] = teamKills[team - 1];
+		userData[i][dataWeaponKills] = tpData[tpTeamKills][team - 1];
 	}
 
 	if (!levelLose)
@@ -2950,13 +2956,13 @@ incrementUserLevel(index, value, bool:notify)
 incrementTeamLevel(team, value, bool:notify)
 {
 	// Set weapon kills based on current level required kills. Set new level if valid number.
-	teamKills[team - 1] = 0;
-	teamLevel[team - 1] = (teamLevel[team - 1] + value > maxLevel ? maxLevel : teamLevel[team - 1] + value);
+	tpData[tpTeamKills][team - 1] = 0;
+	tpData[tpTeamLevel][team - 1] = (tpData[tpTeamLevel][team - 1] + value > maxLevel ? maxLevel : tpData[tpTeamLevel][team - 1] + value);
 
 	ForTeam(i, team)
 	{
-		userData[i][dataLevel] = teamLevel[team - 1];
-		userData[i][dataWeaponKills] = teamKills[team - 1];
+		userData[i][dataLevel] = tpData[tpTeamLevel][team - 1];
+		userData[i][dataWeaponKills] = tpData[tpTeamKills][team - 1];
 
 		// Levelup effect.
 		displayLevelupSprite(i);
@@ -2965,12 +2971,12 @@ incrementTeamLevel(team, value, bool:notify)
 		giveWeapons(i);
 	}
 
-	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, -1, teamLevel[team - 1], team);
+	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, -1, tpData[tpTeamLevel][team - 1], team);
 
 	if (notify)
 	{
 		// Notify about levelup.
-		ColorChat(0, RED, "%s^x01 Druzyna^x04 %s^x01 awansowala na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, teamNames[team - 1], teamLevel[team - 1] + 1, teamLevel[team - 1] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[teamLevel[team - 1]]) : customWeaponNames[teamLevel[team - 1]]);
+		ColorChat(0, RED, "%s^x01 Druzyna^x04 %s^x01 awansowala na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, teamNames[team - 1], tpData[tpTeamLevel][team - 1] + 1, tpData[tpTeamLevel][team - 1] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[tpData[tpTeamLevel][team - 1]]) : customWeaponNames[tpData[tpTeamLevel][team - 1]]);
 	}
 }
 
@@ -3017,14 +3023,14 @@ decrementUserLevel(index, value)
 decrementTeamLevel(team, value)
 {
 	// Decrement team level and kills, make sure level is not negative.
-	teamLevel[team - 1] = (teamLevel[team - 1] - value < 0 ? 0 : teamLevel[team - 1] - value);
-	teamKills[team - 1] = 0;
+	tpData[tpTeamLevel][team - 1] = (tpData[tpTeamLevel][team - 1] - value < 0 ? 0 : tpData[tpTeamLevel][team - 1] - value);
+	tpData[tpTeamKills][team - 1] = 0;
 
 	// Update level and kills of players in the team.
 	ForTeam(i, team)
 	{
-		userData[i][dataLevel] = teamLevel[team - 1];
-		userData[i][dataWeaponKills] = teamKills[team - 1];
+		userData[i][dataLevel] = tpData[tpTeamLevel][team - 1];
+		userData[i][dataWeaponKills] = tpData[tpTeamKills][team - 1];
 	}
 
 	// Play leveldown sound.
@@ -3248,11 +3254,11 @@ getGameLeader()
 	}
 	else if (gameMode == modeTeamplay)
 	{
-		highest = teamLevel[0] == teamLevel[1] ? -1 : (teamLevel[1] > teamLevel[0] ? 1 : 0);
+		highest = tpData[tpTeamLevel][0] == tpData[tpTeamLevel][1] ? -1 : (tpData[tpTeamLevel][1] > tpData[tpTeamLevel][0] ? 1 : 0);
 
 		if (highest == -1)
 		{
-			highest = teamKills[0] == teamKills[1] ? -1 : (teamKills[1] > teamKills[0] ? 1 : 0);
+			highest = tpData[tpTeamKills][0] == tpData[tpTeamKills][1] ? -1 : (tpData[tpTeamKills][1] > tpData[tpTeamKills][0] ? 1 : 0);
 		}
 	}
 
@@ -3376,7 +3382,7 @@ getPlayerByTopLevel(array[], count)
 getWarmupWeaponName()
 {
 	// Return if warmup weapon is static.
-	if (warmupData[warmupWeaponName] > -1)
+	if (warmupData[warmupWeaponNameIndex] > -1)
 	{
 		return;
 	}
@@ -3386,7 +3392,7 @@ getWarmupWeaponName()
 	{
 		if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == weaponsData[i][weaponCSW])
 		{
-			warmupData[warmupWeaponName] = i;
+			warmupData[warmupWeaponNameIndex] = i;
 
 			break;
 		}
@@ -3864,7 +3870,7 @@ public setMaxLevel(index)
 	{
 		new team = get_user_team(index);
 
-		teamLevel[team - 1] = sizeof(weaponsData) - 3;
+		tpData[tpTeamLevel][team - 1] = sizeof(weaponsData) - 3;
 
 		incrementTeamLevel(team, 1, true);
 	}
@@ -4028,6 +4034,8 @@ public finishGameVote()
 	if (tie)
 	{
 		gameMode = random_num(0, sizeof(gameModes) - 1);
+
+		tpData[tpEnabled] = bool:(gameMode == modeTeamplay);
 	}
 
 	if (get_playersnum())
