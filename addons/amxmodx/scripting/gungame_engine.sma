@@ -1598,11 +1598,13 @@ public playerDeathEvent()
 	{
 		switch (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
 		{
+			// Refill killers ammo.
 			case 1:
 			{
 				refillAmmo(killer);
 			}
 
+			// Refill only for vips.
 			case 2:
 			{
 				if (gg_get_user_vip(killer))
@@ -1625,12 +1627,13 @@ public playerDeathEvent()
 				}
 			}
 
-			// Refil just killer ammo
+			// Refill just killer ammo.
 			case 2:
 			{
 				refillAmmo(killer);
 			}
 
+			// Refill only for vips.
 			case 3:
 			{
 				if (gg_get_user_vip(killer))
