@@ -436,7 +436,7 @@ new const mysqlData[][] =
 	"serwer23497_asio",
 	"jNogj+7EpSz$HRZQqo8ppk",
 	"serwer23497_asio",
-	"top"
+	"topgg"
 };
 
 // Determines number of top-players that will be shown in game-ending message.
@@ -617,12 +617,19 @@ new const teamNames[][] =
 	"CT"
 };
 
+enum statsEnumerator (+=1 )
+{
+	statsWins,
+	statsKills,
+	statsKnifeKills,
+	statsHeadshots
+};
+
 new userLevel[MAX_PLAYERS + 1],
 	userKills[MAX_PLAYERS + 1],
 	userName[MAX_PLAYERS + 1][MAX_CHARS],
 	userShortName[MAX_PLAYERS + 1][MAX_CHARS],
 	userTimeToRespawn[MAX_PLAYERS + 1],
-	userWins[MAX_PLAYERS + 1],
 	bool:userSpawnProtection[MAX_PLAYERS + 1],
 	userCombo[MAX_PLAYERS + 1],
 	userLastOrigin[MAX_PLAYERS + 1][3],
@@ -631,6 +638,7 @@ new userLevel[MAX_PLAYERS + 1],
 	userWarmupWeapon[MAX_PLAYERS + 1] = { -1, ... },
 	userWarmupCustomWeaponIndex[MAX_PLAYERS + 1] = { -1, ... },
 	userAllowedWeapons[MAX_PLAYERS + 1],
+	userStats[MAX_PLAYERS + 1][statsEnumerator],
 
 	weaponNames[sizeof(weaponsData)][MAX_CHARS - 1],
 	weaponEntityNames[sizeof(weaponsData)][MAX_CHARS],
@@ -657,7 +665,7 @@ new userLevel[MAX_PLAYERS + 1],
 	forwardReturnDummy,
 
 	topPlayersNames[topPlayersDisplayed + 1][MAX_CHARS],
-	topPlayersWins[topPlayersDisplayed + 1],
+	topPlayersStats[topPlayersDisplayed + 1][statsEnumerator],
 	bool:topPlayersDataLoaded,
 	topPlayersMotdCode[MAX_CHARS * 50],
 	topPlayersMotdLength,
@@ -806,8 +814,12 @@ public plugin_init()
 	register_clcmd("say /addlvl", "addLevel");
 	register_clcmd("say /kills", "addKills");
 	register_clcmd("say /addkill", "addFrag");
-	register_clcmd("say /win", "testWinMessage");
+	register_clcmd("say /winmessage", "testWinMessage");
 	register_clcmd("say /warmup", "warmupFunction");
+	register_clcmd("say /knife", "addKnifeKill");
+	register_clcmd("say /headshot", "addHeadshot");
+	register_clcmd("say /kill", "addKill");
+	register_clcmd("say /win", "addWin");
 
 #endif
 }
@@ -1068,7 +1080,7 @@ public native_GetUserWins(plugin, params)
 		return nativesErrorValue;
 	}
 
-	return userWins[index];
+	return userStats[index][statsWins];
 }
 
 public native_GetUserCombo(plugin, params)
@@ -1561,46 +1573,62 @@ public playerDeathEvent()
 
 		return;
 	}
-
-	if (equal(weapon, "knife") && userLevel[killer] != maxLevel)
+	
+	// Update stats.
+	if(read_data(3))
 	{
-		if (userLevel[victim])
+		userStats[killer][statsHeadshots]++;
+	}
+	
+	// Update stats.
+	userStats[killer][statsKills]++;
+
+	if (equal(weapon, "knife"))
+	{
+		// Update stats.
+		userStats[killer][statsKnifeKills]++;
+
+		if(userLevel[killer] != maxLevel)
 		{
-			// Decrement victim level or team level when killed with knife and his level is greater than 1.
+			if (userLevel[victim])
+			{
+				// Decrement victim level or team level when killed with knife and his level is greater than 1.
+				if (gameMode == modeNormal)
+				{
+					decrementUserLevel(victim, 1);
+				}
+				else
+				{
+					decrementTeamLevel(victimTeam, 1);
+				}
+
+				// Notify player.
+				ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", teamLevel[victimTeam]);
+			}
+			
+			// Increment killer's weapon kills by two instead of leveling up imediatly.
 			if (gameMode == modeNormal)
 			{
-				decrementUserLevel(victim, 1);
-			}
-			else
-			{
-				decrementTeamLevel(victimTeam, 1);
-			}
+				if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
+				{
+					incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
 
-			// Notify player.
-			ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", teamLevel[victimTeam]);
-		}
-
-		// Increment killer's weapon kills by two instead of leveling up imediatly.
-		if (gameMode == modeNormal)
-		{
-			if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
-			{
-				incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
+				}
+				else
+				{
+					incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+				}
 			}
-			else
+			else if (gameMode == modeTeamplay)
 			{
-				incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
-			}
-		}
-		else if (gameMode == modeTeamplay)
-		{
-			if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
-			{
-				incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
-			}
-			else
-			{
-				incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+				if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
+				{
+					incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
+				}
+				else
+				{
+					incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+				}
 			}
 		}
 	}
@@ -2167,13 +2195,13 @@ public respawnPlayerOnJoin(taskIndex)
 
 connectDatabase()
 {
-	new mysqlRequest[MAX_CHARS * 4];
+	new mysqlRequest[MAX_CHARS * 7];
 
 	// Create mysql tuple.
 	mysqlHandle = SQL_MakeDbTuple(mysqlData[databaseHost], mysqlData[databaseUser], mysqlData[databasePass], mysqlData[databaseDB]);
 
 	// Format mysql request.
-	formatex(mysqlRequest, charsmax(mysqlRequest), "CREATE TABLE IF NOT EXISTS `%s` (`userName` VARCHAR(35), `userWins` INT(5), PRIMARY KEY (`userName`));", mysqlData[databaseTableName]);
+	formatex(mysqlRequest, charsmax(mysqlRequest), "CREATE TABLE IF NOT EXISTS `%s` (`name` VARCHAR(35), `wins` INT(6), `knife_kills` INT(6), `kills` INT(6), `headshot_kills` INT(6), PRIMARY KEY (`name`));", mysqlData[databaseTableName]);
 
 	// Send request to database.
 	SQL_ThreadQuery(mysqlHandle, "connectDatabaseHandler", mysqlRequest);
@@ -2201,18 +2229,28 @@ public getWinsData(index)
 	data[0] = index;
 
 	// Format mysql request.
-	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT `userWins` FROM `%s` WHERE `userName` = '%n';", mysqlData[databaseTableName], index);
+	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `%s` WHERE `name` = '%n';", mysqlData[databaseTableName], index);
 
 	// Send request to database.
-	SQL_ThreadQuery(mysqlHandle, "getWinsDataHandler", mysqlRequest, data, charsmax(data));
+	SQL_ThreadQuery(mysqlHandle, "getUserInfoDataHandler", mysqlRequest, data, charsmax(data));
 }
 
 // Read user wins from database.
-public getWinsDataHandler(failState, Handle:query, error[], errorNum, data[], dataSize)
+public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[], dataSize)
 {
+	new index = data[0];
+
+	if(!is_user_connected(index))
+	{
+		return;
+	}
+
 	if (SQL_NumRows(query))
 	{
-		userWins[data[0]] = SQL_ReadResult(query, 0);
+		userStats[index][statsWins] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "wins"));
+		userStats[index][statsKnifeKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "knife_kills"));
+		userStats[index][statsHeadshots] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "headshot_kills"));
+		userStats[index][statsKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "kills"));
 	}
 }
 
@@ -2221,7 +2259,12 @@ public saveWinsData(index)
 	new mysqlRequest[MAX_CHARS * 5];
 
 	// Format mysql request.
-	formatex(mysqlRequest, charsmax(mysqlRequest), "INSERT INTO `%s` (`userName`, `userWins`) VALUES ('%n', %i) ON DUPLICATE KEY UPDATE `userWins` = %i;", mysqlData[databaseTableName], index, userWins[index], userWins[index]);
+	formatex(mysqlRequest, charsmax(mysqlRequest),
+		"INSERT INTO `%s` \
+			(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
+		VALUES ('%n', %i, %i, %i, %i) \
+		ON DUPLICATE KEY UPDATE \
+			`wins` = %i, `knife_kills` = %i, `kills` = %i, `headshot_kills` = %i;", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots], userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots]);
 
 	// Send request to database.
 	SQL_ThreadQuery(mysqlHandle, "saveWinsDataHandler", mysqlRequest);
@@ -2238,7 +2281,7 @@ public loadTopPlayers()
 	new mysqlRequest[MAX_CHARS * 3];
 
 	// Format mysql request.
-	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `%s` ORDER BY `userWins` DESC LIMIT %i;", mysqlData[databaseTableName], topPlayersDisplayed + 1);
+	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `%s` ORDER BY `wins` DESC LIMIT %i;", mysqlData[databaseTableName], topPlayersDisplayed + 1);
 
 	// Send request to database.
 	SQL_ThreadQuery(mysqlHandle, "loadTopPlayersHandler", mysqlRequest);
@@ -2252,10 +2295,13 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 	while (SQL_MoreResults(query))
 	{
 		// Get top player name.
-		SQL_ReadResult(query, 0, topPlayersNames[iterator], charsmax(topPlayersNames[]));
+		SQL_ReadResult(query, SQL_FieldNameToNum(query, "name"), topPlayersNames[iterator], charsmax(topPlayersNames[]));
 		
-		// Assign his wins to variable.
-		topPlayersWins[iterator] = SQL_ReadResult(query, 1);
+		// Assign his info to variables.
+		topPlayersStats[iterator][statsWins] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "wins"));
+		topPlayersStats[iterator][statsKnifeKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "knife_kills"));
+		topPlayersStats[iterator][statsHeadshots] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "headshot_kills"));
+		topPlayersStats[iterator][statsKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "kills"));
 
 		// Iterate loop.
 		iterator++;
@@ -2319,13 +2365,14 @@ createTopPlayersMotd()
 	ForRange(i, 0, topPlayersDisplayed - 1)
 	{
 		// Continue if player has no wins at all.
-		if (!topPlayersWins[i])
+		if (!topPlayersStats[i][statsWins])
 		{
 			continue;
 		}
 
 		// Add HTML to motd.
-		topPlayersMotdLength += formatex(topPlayersMotdCode[topPlayersMotdLength], charsmax(topPlayersMotdCode), "<tr><td><b><h4>%d</h4></b><td><h4>%s</h4><td><h4>%d</h4><td></tr>", i + 1, topPlayersNames[i], topPlayersWins[i]);
+		topPlayersMotdLength += formatex(topPlayersMotdCode[topPlayersMotdLength], charsmax(topPlayersMotdCode),
+			"<tr><td><b><h4>%d</h4></b><td><h4>%s</h4><td><h4>%d</h4><td><td><h4>%d</h4></td></tr>", i + 1, topPlayersNames[i], topPlayersStats[i][statsWins], topPlayersStats[i][statsKnifeKills]);
 		
 		playersDisplayed++;
 	}
@@ -2504,7 +2551,7 @@ showPlayerInfo(index, target)
 			isOnLastLevel(target) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userLevel[target]]) : customWeaponNames[userLevel[target]],
 			userKills[target],
 			weaponsData[userLevel[target]][gameMode == modeNormal ? weaponKills : weaponTeamKills],
-			userWins[target],
+			userStats[target][statsWins],
 			gg_get_user_vip(target) ? "VIP" : "Brak");
 	}
 	else
@@ -2942,7 +2989,7 @@ endGunGame(winner)
 	getPlayerByTopLevel(topPlayers, charsmax(topPlayers));
 
 	// Reward winner.
-	userWins[winner]++;
+	userStats[winner][statsWins]++;
 
 	// Save winner to database.
 	saveWinsData(winner);
@@ -2960,7 +3007,7 @@ endGunGame(winner)
 			continue;
 		}
 
-		formatex(tempMessage, charsmax(tempMessage), "^n^n%i. %s (%i lvl - %s [%i fragow] [wygranych: %i])", i + 1, userShortName[index], userLevel[index] + 1, customWeaponNames[userLevel[index]], get_user_frags(index), userWins[index]);
+		formatex(tempMessage, charsmax(tempMessage), "^n^n%i. %s (%i lvl - %s [%i fragow] [wygranych: %i])", i + 1, userShortName[index], userLevel[index] + 1, customWeaponNames[userLevel[index]], get_user_frags(index), userStats[index][statsWins]);
 
 		add(winMessage, charsmax(winMessage), tempMessage, charsmax(tempMessage));
 	}
@@ -3776,6 +3823,30 @@ public warmupFunction(index)
 	client_print(0, print_chat, "Warmup = %s", warmupEnabled ? "ON" : "OFF");
 }
 
+public addKnifeKill(index)
+{
+	userStats[index][statsKnifeKills]++;
+	client_print(0, print_chat, "%i", userStats[index][statsKnifeKills]);
+}
+
+public addHeadshot(index)
+{
+	userStats[index][statsHeadshots]++;
+	client_print(0, print_chat, "%i", userStats[index][statsHeadshots]);
+}
+
+public addKill(index)
+{
+	userStats[index][statsKills]++;
+	client_print(0, print_chat, "%i", userStats[index][statsKills]);
+}
+
+public addWin(index)
+{
+	userStats[index][statsWins]++;
+	client_print(0, print_chat, "%i", userStats[index][statsWins]);
+}
+
 #endif
 
 /*
@@ -3784,7 +3855,7 @@ public warmupFunction(index)
 
 public showGameVoteMenu(index)
 {
-	if (!gameVoteEnabled)
+	if (!gameVoteEnabled || !is_user_connected(index))
 	{
 		return PLUGIN_HANDLED;
 	}
