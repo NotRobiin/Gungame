@@ -1179,7 +1179,7 @@ public client_authorized(index)
 	clampDownClientName(index, userShortName[index], charsmax(userShortName[]), maxNicknameLength, nicknameReplaceToken);
 
 	// Load mysql data.
-	getWinsData(index);
+	getUserData(index);
 
 	// Preset user level to 0.
 	userLevel[index] = 0;
@@ -2221,7 +2221,7 @@ public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, dat
 	return PLUGIN_CONTINUE;
 }
 
-public getWinsData(index)
+public getUserData(index)
 {
 	new mysqlRequest[MAX_CHARS * 3],
 		data[2];
@@ -2252,26 +2252,47 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 		userStats[index][statsHeadshots] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "headshot_kills"));
 		userStats[index][statsKills] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "kills"));
 	}
+	else
+	{
+		insertUserData(index);
+	}
 }
 
-public saveUserData(index)
+public insertUserData(index)
+{
+	new mysqlRequest[MAX_CHARS * 10];
+
+	// Format request.
+	formatex(mysqlRequest, charsmax(mysqlRequest),
+		"INSERT INTO `%s` \
+		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills` \
+		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots]);
+
+	// Send request.
+	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
+}
+
+public updateUserData(index)
 {
 	new mysqlRequest[MAX_CHARS * 5];
 
 	// Format mysql request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
-		"INSERT INTO `%s` \
-			(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
-		VALUES ('%n', %i, %i, %i, %i) \
-		ON DUPLICATE KEY UPDATE \
-			`wins` = %i, `knife_kills` = %i, `kills` = %i, `headshot_kills` = %i;", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots], userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots]);
+		"UPDATE `%s` SET \
+			`name` = '%n',\
+			`wins` = %i,\
+			`knife_kills` = %i,\
+			`kills` = %i,\
+			`headshot_kills` = %i\
+		WHERE \
+			`name` = '%n';", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots], index);
 
-	// Send request to database.
-	SQL_ThreadQuery(mysqlHandle, "saveWinsDataHandler", mysqlRequest);
+	// Send request.
+	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
 }
 
 // Pretty much ignore any data that database sends back.
-public saveWinsDataHandler(failState, Handle:query, error[], errorNum, data[], dataSize)
+public ignoreHandle(failState, Handle:query, error[], errorNum, data[], dataSize)
 {
 	return PLUGIN_CONTINUE;
 }
@@ -2999,7 +3020,7 @@ endGunGame(winner)
 			continue;
 		}
 
-		saveUserData(i);
+		updateUserData(i);
 	}
 
 	// Format win message.
