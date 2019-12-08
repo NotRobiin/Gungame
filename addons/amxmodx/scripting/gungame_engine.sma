@@ -1281,16 +1281,28 @@ public primaryAttack(entity)
 
 public onAddItemToPlayer(index, weaponEntity)
 {
-	if (cs_get_weapon_id(weaponEntity) != CSW_C4)
+	new csw = cs_get_weapon_id(weaponEntity);
+
+	// Skip kevlar.
+	if (csw == CSW_VEST || csw == CSW_VESTHELM)
 	{
 		return HAM_IGNORED;
 	}
 
-	// Disable player's planting ability.
-	cs_set_user_plant(index, false, false);
+	// User is allowed to carry that weapon?
+	if (userAllowedWeapons[index] & csw)
+	{
+		return HAM_IGNORED;
+	}
 
-	// Reset body model to get rid of bomb on the back.
-	set_pev(index, pev_body, false);
+	if (csw == CSW_C4)
+	{
+		// Disable player's planting ability.
+		cs_set_user_plant(index, false, false);
+
+		// Reset body model to get rid of bomb on the back.
+		set_pev(index, pev_body, false);		
+	}
 
 	// Kill weapon entity.
 	ExecuteHam(Ham_Item_Kill, weaponEntity);
@@ -1593,7 +1605,7 @@ public playerDeathEvent()
 		}
 	}
 
-	// Ammo refill enabled?
+	// Handle ammo refill.
 	if (gameMode == modeNormal)
 	{
 		switch (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
