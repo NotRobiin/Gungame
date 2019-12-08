@@ -552,8 +552,8 @@ new const ggCvarsData[][][] =
 	
 	{ "gg_fallDamageEnabled", "0" }, // Enable falldamage?
 	
-	{ "gg_refillWeaponAmmo", "1" }, // Refill weapon clip on kill?
-	{ "gg_refillWeaponAmmo_teamplay", "1" }, // Enabled on teamplay? 0 - disabled, 1 - enabled, refill whole team ammo, 2 - personal refill
+	{ "gg_refillWeaponAmmo", "1" }, // Refill weapon clip on kill? 0 - disabled, 1 - enabled to everyone, 2 - only vips
+	{ "gg_refillWeaponAmmo_teamplay", "1" }, // Enabled on teamplay? 0 - disabled, 1 - enabled, refill whole team ammo, 2 - personal refill, 3 - only vips
 	
 	{ "gg_idleCheckInterval", "6.0" }, // Determines interval between AFK checks.
 	{ "gg_idleSlapPower", "5" }, // Hit power of a slap when player is 'AFK'.
@@ -1596,14 +1596,25 @@ public playerDeathEvent()
 	// Ammo refill enabled?
 	if (gameMode == modeNormal)
 	{
-		if (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
+		switch (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
 		{
-			refillAmmo(killer);
+			case 1:
+			{
+				refillAmmo(killer);
+			}
+
+			case 2:
+			{
+				if (gg_get_user_vip(killer))
+				{
+					refillAmmo(killer);
+				}
+			}
 		}
 	}
 	else
 	{
-		switch(get_pcvar_num(cvarsData[cvar_refillWeaponAmmo_teamplay]))
+		switch (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo_teamplay]))
 		{
 			// Refill whole team ammo.
 			case 1:
@@ -1618,6 +1629,14 @@ public playerDeathEvent()
 			case 2:
 			{
 				refillAmmo(killer);
+			}
+
+			case 3:
+			{
+				if (gg_get_user_vip(killer))
+				{
+					refillAmmo(killer);
+				}
 			}
 		}
 	}
