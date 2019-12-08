@@ -7,7 +7,7 @@ enum (+= 1)
 {
 	weaponCSW,
 	weaponKills,
-	weaponDamage
+	weaponTeamKills
 };
 
 /*
@@ -28,6 +28,28 @@ native gg_set_user_level(index, level);
 	@return 		Player level or nativeErrorValue if player is not connected.
 */
 native gg_get_user_level(index);
+
+/*
+	Sets team level.
+
+	@param team		1 - TT, 2 - CT
+	@param level		0 - (max level - 1)
+	@param includeMembers		Adjust level of players in team?
+
+	@return		True on success, false otherwise.
+
+*/
+native gg_set_team_level(team, level, bool:includeMembers = true);
+
+/*
+	Returns team level.
+
+	@param team		1 - TT, 2 - CT
+	
+	@return		Team level or -1 if invalid team was given.
+
+*/
+native gg_get_team_level(team);
 
 /*
 	Gets size of weapons array - 1, which is max level. 
@@ -95,6 +117,27 @@ native gg_get_user_combo(index);
 native gg_get_game_leader();
 
 /*
+	Checks if user is a vip.
+
+	@return			True if player is a vip, false otherwise.
+*/
+native bool:gg_get_user_vip(index);
+
+/*
+	Sets vip.
+
+	@return			True if vip was set, false otherwise.
+*/
+native gg_set_user_vip(index, bool:status);
+
+/*
+	Returns bitsum of flags required to have vip.
+
+	@return			Bit sum or -1 if given invalid amount of params.
+*/
+native gg_get_vip_flags();
+
+/*
 	Called when player ranks up.
 
 	@param index		Valid (1-32) player index.
@@ -120,7 +163,7 @@ forward gg_game_end(winner);
 /*
 	Called when gungame beings, and warmup ends.
 
-	@param warmupWinner	Valid (1-32) player index. 0 if warmup ended with no winner.
+	@param warmupWinner	Valid (1-32) player index. 0 if warmup ended with no winner. -1 if there's no winner because of game mode.
 */
 forward gg_game_beginning(warmupWinner);
 
