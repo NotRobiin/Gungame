@@ -636,7 +636,8 @@ enum userDataEnumerator
 	dataWins,
 	dataKills,
 	dataKnifeKills,
-	dataHeadshots
+	dataHeadshots,
+	dataWandLastAttack
 };
 
 enum topInfo
@@ -687,7 +688,6 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 	topData[topInfo],
 
 	wandSpritesIndexes[sizeof(wandSprites)],
-	wandLastAttack[MAX_PLAYERS + 1],
 
 	cvarsData[sizeof(ggCvarsData)],
 
@@ -3476,7 +3476,7 @@ wandAttack(index, weapon)
 	}
 
 	// Block shooting if cooldown is still on.
-	if (wandLastAttack[index] + get_pcvar_float(cvarsData[cvar_wandAttackInterval]) > get_gametime())
+	if (userData[index][dataWandLastAttack] + get_pcvar_float(cvarsData[cvar_wandAttackInterval]) > get_gametime())
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -3555,7 +3555,7 @@ wandAttack(index, weapon)
 	set_pev(index, pev_punchangle, Float:{ -1.5, 0.0, 0.0 });
 
 	// Log last attack.
-	wandLastAttack[index] = floatround(get_gametime());
+	userData[index][dataWandLastAttack] = floatround(get_gametime());
 
 	// Create temp. entity.
 	new entity = engfunc(EngFunc_CreateNamedEntity, engfunc(EngFunc_AllocString, "info_target"));
