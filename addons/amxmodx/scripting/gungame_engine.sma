@@ -2195,7 +2195,7 @@ public respawnPlayerOnJoin(taskIndex)
 
 connectDatabase()
 {
-	new mysqlRequest[MAX_CHARS * 7];
+	new mysqlRequest[MAX_CHARS * 10];
 
 	// Create mysql tuple.
 	mysqlHandle = SQL_MakeDbTuple(mysqlData[databaseHost], mysqlData[databaseUser], mysqlData[databasePass], mysqlData[databaseDB]);
@@ -2224,7 +2224,7 @@ public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, dat
 public getUserData(index)
 {
 	new mysqlRequest[MAX_CHARS * 3],
-		data[2];
+		data[1];
 
 	data[0] = index;
 
@@ -2274,7 +2274,7 @@ public insertUserData(index)
 
 public updateUserData(index)
 {
-	new mysqlRequest[MAX_CHARS * 5];
+	new mysqlRequest[MAX_CHARS * 10];
 
 	// Format mysql request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
