@@ -782,8 +782,8 @@ public plugin_init()
 	halfMaxLevel = floatround(float(maxLevel) / 2, floatround_round);
 
 	// Create forwards.
-	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level up (2)
-	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level down (2)
+	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level up (3)
+	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level down (3)
 	forwardHandles[2] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
 	forwardHandles[3] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
 	forwardHandles[4] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
@@ -850,7 +850,7 @@ public native_SetUserLevel(plugin, params)
 	{
 		#if defined DEBUG_MODE
 		
-		log_amx("%s Level value incorrect (%i).", nativesLogPrefix, level);
+		log_amx("%s Level value incorrect (%i) [min. %i | max. %i].", nativesLogPrefix, level, 0, maxLevel);
 		
 		#endif
 
@@ -1349,7 +1349,7 @@ public onTeamAssign()
 	new userTeam = get_user_team(index);
 
 	// Narrow matches a bit.
-	if (userTeam == 0 || userTeam == 3)
+	if (0 >= userTeam > 2)
 	{
 		return;
 	}
