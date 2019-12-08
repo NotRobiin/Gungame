@@ -1203,9 +1203,10 @@ public client_putinserver(index)
 }
 
 // Remove hud tasks on disconnect.
-public client_disconnected(index)
+public client_disconnect(index)
 {
 	removeHud(index);
+	updateUserData(index);
 }
 
 // Get user's name again when changed.
@@ -2276,8 +2277,6 @@ insertUserData(index)
 		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
 		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots]);
 
-	log_amx("Sending data: %s", mysqlRequest);
-
 	// Send request.
 	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
 }
@@ -3021,17 +3020,6 @@ endGunGame(winner)
 
 	// Reward winner.
 	userStats[winner][statsWins]++;
-
-	// Save players data to database.
-	ForPlayers(i)
-	{
-		if(!is_user_connected(i))
-		{
-			continue;
-		}
-
-		updateUserData(i);
-	}
 
 	// Format win message.
 	formatex(winMessage, charsmax(winMessage), "%s^nTopowi gracze:^n^n^n^n", chatPrefix);
