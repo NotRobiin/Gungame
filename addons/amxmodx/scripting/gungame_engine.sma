@@ -429,16 +429,6 @@ enum databaseEnum (+= 1)
 	databaseTableName
 };
 
-// Mysql database.
-new const mysqlData[][] =
-{
-	"sql33.lh.pl",
-	"serwer23497_asio",
-	"jNogj+7EpSz$HRZQqo8ppk",
-	"serwer23497_asio",
-	"topgg"
-};
-
 // Determines number of top-players that will be shown in game-ending message.
 const topPlayersDisplayed = 10;
 
@@ -530,7 +520,13 @@ enum (+= 1)
 
 	cvar_takeDamageHudTime,
 	
-	cvar_removeWeaponsOffTheGround
+	cvar_removeWeaponsOffTheGround,
+
+	// These 4 must always be at the end!
+	cvar_sqlDb,
+	cvar_sqlPass,
+	cvar_sqlUser,
+	cvar_sqlHost,
 };
 
 new const ggCvarsData[][][] =
@@ -713,7 +709,7 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	wandSpritesIndexes[sizeof(wandSprites)],
 
-	cvarsData[sizeof(ggCvarsData)],
+	cvarsData[sizeof(ggCvarsData) + 4],
 
 	gameVotes[sizeof(gameModes)],
 	bool:gameVoteEnabled,
@@ -729,6 +725,13 @@ public plugin_init()
 	{
 		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1]);
 	}
+
+	// Register protected SQL cvars
+	new sizeOfCvarsData = sizeof(cvarsData);
+	cvarsData[sizeOfCvarsData - 1] = register_cvar("gg_sql_host", "", FCVAR_PROTECTED);
+	cvarsData[sizeOfCvarsData - 2] = register_cvar("gg_sql_user", "", FCVAR_PROTECTED);
+	cvarsData[sizeOfCvarsData - 3] = register_cvar("gg_sql_pass", "", FCVAR_PROTECTED);
+	cvarsData[sizeOfCvarsData - 4] = register_cvar("gg_sql_db", "", FCVAR_PROTECTED);
 
 	// Register Death and team assign events.
 	register_event("DeathMsg", "playerDeathEvent", "a");
@@ -2258,13 +2261,13 @@ connectDatabase()
 
 	// Format mysql request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
-		"CREATE TABLE IF NOT EXISTS `%s` \
+		"CREATE TABLE IF NOT EXISTS `gungame` \
 			(`name` VARCHAR(35), \
 			`wins` INT(6), \
 			`knife_kills` INT(6), \
 			`kills` INT(6), \
 			`headshot_kills` INT(6), \
-		PRIMARY KEY (`name`));", mysqlData[databaseTableName]);
+		PRIMARY KEY (`name`));");
 
 	// Send request to database.
 	SQL_ThreadQuery(dbData[sqlHandle], "connectDatabaseHandler", mysqlRequest);
@@ -2297,7 +2300,7 @@ getUserData(index)
 	data[0] = index;
 
 	// Format mysql request.
-	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `%s` WHERE `name` = '%n';", mysqlData[databaseTableName], index);
+	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `gungame` WHERE `name` = '%n';", index);
 
 	// Send request to database.
 	SQL_ThreadQuery(dbData[sqlHandle], "getUserInfoDataHandler", mysqlRequest, data, charsmax(data));
@@ -2337,7 +2340,7 @@ insertUserData(index)
 
 	// Format request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
-		"INSERT INTO `%s` \
+		"INSERT INTO `gungame` \
 		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
 		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
 
@@ -2356,7 +2359,7 @@ updateUserData(index)
 
 	// Format mysql request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
-		"UPDATE `%s` SET \
+		"UPDATE `gungame` SET \
 			`name` = '%n',\
 			`wins` = %i,\
 			`knife_kills` = %i,\
@@ -2380,7 +2383,7 @@ loadTopPlayers()
 	new mysqlRequest[MAX_CHARS * 3];
 
 	// Format mysql request.
-	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `%s` ORDER BY `wins` DESC LIMIT %i;", mysqlData[databaseTableName], topPlayersDisplayed + 1);
+	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `gungame` ORDER BY `wins` DESC LIMIT %i;", topPlayersDisplayed + 1);
 
 	// Send request to database.
 	SQL_ThreadQuery(dbData[sqlHandle], "loadTopPlayersHandler", mysqlRequest);
