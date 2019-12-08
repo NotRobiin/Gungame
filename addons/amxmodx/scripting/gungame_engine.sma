@@ -1164,7 +1164,7 @@ public plugin_precache()
 	}
 }
 
-public client_authorized(index)
+public client_putinserver(index)
 {
 	// Do nothing if user is a hltv.
 	if (is_user_hltv(index) || is_user_bot(index))
@@ -2229,7 +2229,7 @@ public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, dat
 	return PLUGIN_CONTINUE;
 }
 
-public getUserData(index)
+getUserData(index)
 {
 	new mysqlRequest[MAX_CHARS * 3],
 		data[1];
@@ -2275,6 +2275,8 @@ insertUserData(index)
 		"INSERT INTO `%s` \
 		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills` \
 		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots]);
+
+	log_amx("Sending data: %s", mysqlRequest);
 
 	// Send request.
 	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
