@@ -729,7 +729,7 @@ public plugin_init()
 	}
 
 	new weaponClassname[24];
-	new const excludedWeapons = (CSW_KNIFE);//(CSW_KNIFE | CSW_C4);
+	new const excludedWeapons = (CSW_KNIFE | CSW_C4);
 
 	ForRange(i, 1, 30)
 	{
