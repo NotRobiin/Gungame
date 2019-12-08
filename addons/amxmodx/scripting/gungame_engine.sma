@@ -640,15 +640,6 @@ enum userDataEnumerator
 	dataWandLastAttack
 };
 
-enum topInfo
-{
-	bool:topDataLoaded,
-	topMotdCode[MAX_CHARS * 50],
-	topMotdLength,
-	topMotdName,
-	bool:topMotdCreated
-};
-
 enum topPlayersEnumerator
 {
 	topNames[MAX_CHARS],
@@ -656,6 +647,15 @@ enum topPlayersEnumerator
 	topKills,
 	topKnifeKills,
 	topHeadshots
+};
+
+enum topInfo
+{
+	bool:topDataLoaded,
+	topMotdCode[MAX_CHARS * 50],
+	topMotdLength,
+	topMotdName,
+	bool:topMotdCreated
 };
 
 enum warmupEnumerator
@@ -673,12 +673,27 @@ enum teamplayEnumerator
 	bool:tpEnabled
 };
 
+enum dbEnumerator
+{
+	Handle:sqlHandle,
+	bool:sqlLoaded,
+	dbHost[MAX_CHARS * 2],
+	dbUser[MAX_CHARS * 2],
+	dbPass[MAX_CHARS * 2],
+	dbDbase[MAX_CHARS * 2],
+	dbTableName[MAX_CHARS * 2]
+};
+
 new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	warmupData[warmupEnumerator],
 
 	topPlayers[topPlayersDisplayed + 1][topPlayersEnumerator],
 	topData[topInfo],
+
+	tpData[teamplayEnumerator],
+
+	dbData[dbEnumerator],
 
 	weaponNames[sizeof(weaponsData)][MAX_CHARS - 1],
 	weaponEntityNames[sizeof(weaponsData)][MAX_CHARS],
@@ -693,9 +708,6 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	spriteLevelupIndex,
 
-	Handle:mysqlHandle,
-	bool:mysqlLoaded,
-
 	forwardHandles[sizeof(forwardsNames)],
 	forwardReturnDummy,
 
@@ -705,9 +717,7 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	gameVotes[sizeof(gameModes)],
 	bool:gameVoteEnabled,
-	gameMode = -1,
-
-	tpData[teamplayEnumerator];
+	gameMode = -1;
 
 
 public plugin_init()
@@ -2241,7 +2251,7 @@ connectDatabase()
 	new mysqlRequest[MAX_CHARS * 10];
 
 	// Create mysql tuple.
-	mysqlHandle = SQL_MakeDbTuple(mysqlData[databaseHost], mysqlData[databaseUser], mysqlData[databasePass], mysqlData[databaseDB]);
+	dbData[sqlHandle] = SQL_MakeDbTuple(mysqlData[databaseHost], mysqlData[databaseUser], mysqlData[databasePass], mysqlData[databaseDB]);
 
 	// Format mysql request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
@@ -2254,16 +2264,16 @@ connectDatabase()
 		PRIMARY KEY (`name`));", mysqlData[databaseTableName]);
 
 	// Send request to database.
-	SQL_ThreadQuery(mysqlHandle, "connectDatabaseHandler", mysqlRequest);
+	SQL_ThreadQuery(dbData[sqlHandle], "connectDatabaseHandler", mysqlRequest);
 }
 
 public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, data[], dataSize)
 {
 	// Connection has succeded?
-	mysqlLoaded = bool:(failState == TQUERY_SUCCESS);
+	dbData[sqlLoaded] = bool:(failState == TQUERY_SUCCESS);
 
 	// Throw log to server's console if error occured.
-	if (!mysqlLoaded)
+	if (!dbData[sqlLoaded])
 	{
 		log_amx("Database connection status: Not connected. Error (%i): %s", errorNumber, error);
 	}
@@ -2287,7 +2297,7 @@ getUserData(index)
 	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `%s` WHERE `name` = '%n';", mysqlData[databaseTableName], index);
 
 	// Send request to database.
-	SQL_ThreadQuery(mysqlHandle, "getUserInfoDataHandler", mysqlRequest, data, charsmax(data));
+	SQL_ThreadQuery(dbData[sqlHandle], "getUserInfoDataHandler", mysqlRequest, data, charsmax(data));
 }
 
 // Read user wins from database.
@@ -2329,7 +2339,7 @@ insertUserData(index)
 		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
 
 	// Send request.
-	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
+	SQL_ThreadQuery(dbData[sqlHandle], "ignoreHandle", mysqlRequest);
 }
 
 updateUserData(index)
@@ -2353,7 +2363,7 @@ updateUserData(index)
 			`name` = '%n';", mysqlData[databaseTableName], index, userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots], index);
 
 	// Send request.
-	SQL_ThreadQuery(mysqlHandle, "ignoreHandle", mysqlRequest);
+	SQL_ThreadQuery(dbData[sqlHandle], "ignoreHandle", mysqlRequest);
 }
 
 // Pretty much ignore any data that database sends back.
@@ -2370,7 +2380,7 @@ loadTopPlayers()
 	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `%s` ORDER BY `wins` DESC LIMIT %i;", mysqlData[databaseTableName], topPlayersDisplayed + 1);
 
 	// Send request to database.
-	SQL_ThreadQuery(mysqlHandle, "loadTopPlayersHandler", mysqlRequest);
+	SQL_ThreadQuery(dbData[sqlHandle], "loadTopPlayersHandler", mysqlRequest);
 }
 
 public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data[], dataSize)
