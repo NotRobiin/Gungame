@@ -419,16 +419,6 @@ new const listWeaponsCommands[][] =
 };
 
 
-// Mysql database enum.
-enum databaseEnum (+= 1)
-{
-	databaseHost,
-	databaseUser,
-	databasePass,
-	databaseDB,
-	databaseTableName
-};
-
 // Determines number of top-players that will be shown in game-ending message.
 const topPlayersDisplayed = 10;
 
@@ -2257,7 +2247,7 @@ connectDatabase()
 	new mysqlRequest[MAX_CHARS * 10];
 
 	// Create mysql tuple.
-	dbData[sqlHandle] = SQL_MakeDbTuple(mysqlData[databaseHost], mysqlData[databaseUser], mysqlData[databasePass], mysqlData[databaseDB]);
+	dbData[sqlHandle] = SQL_MakeDbTuple(dbData[dbHost], dbData[dbUser], dbData[dbPass], dbData[dbDbase]);
 
 	// Format mysql request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
@@ -2300,7 +2290,7 @@ getUserData(index)
 	data[0] = index;
 
 	// Format mysql request.
-	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `gungame` WHERE `name` = '%n';", index);
+	formatex(mysqlRequest, charsmax(mysqlRequest), "SELECT * FROM `gungame` WHERE `name` = '%s';", userData[index][dataSafeName]);
 
 	// Send request to database.
 	SQL_ThreadQuery(dbData[sqlHandle], "getUserInfoDataHandler", mysqlRequest, data, charsmax(data));
@@ -2342,7 +2332,7 @@ insertUserData(index)
 	formatex(mysqlRequest, charsmax(mysqlRequest),
 		"INSERT INTO `gungame` \
 		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
-		VALUES ('%n', %i, %i, %i, %i);", mysqlData[databaseTableName], index, userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
+		VALUES ('%s', %i, %i, %i, %i);", dbData[dbTableName], userData[index][dataSafeName], userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
 
 	// Send request.
 	SQL_ThreadQuery(dbData[sqlHandle], "ignoreHandle", mysqlRequest);
@@ -2360,13 +2350,13 @@ updateUserData(index)
 	// Format mysql request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
 		"UPDATE `gungame` SET \
-			`name` = '%n',\
+			`name` = '%s',\
 			`wins` = %i,\
 			`knife_kills` = %i,\
 			`kills` = %i,\
 			`headshot_kills` = %i \
 		WHERE \
-			`name` = '%n';", mysqlData[databaseTableName], index, userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots], index);
+			`name` = '%s';", dbData[dbTableName], userData[index][dataSafeName], userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots], userData[index][dataSafeName]);
 
 	// Send request.
 	SQL_ThreadQuery(dbData[sqlHandle], "ignoreHandle", mysqlRequest);
