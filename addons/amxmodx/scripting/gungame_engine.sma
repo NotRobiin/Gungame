@@ -516,7 +516,7 @@ enum (+= 1)
 	cvar_sqlDb,
 	cvar_sqlPass,
 	cvar_sqlUser,
-	cvar_sqlHost,
+	cvar_sqlHost
 };
 
 new const ggCvarsData[][][] =
@@ -560,7 +560,14 @@ new const ggCvarsData[][][] =
 	
 	{ "gg_takeDamageHudTime", "1.2" }, // Take damage hud hold-time.
 	
-	{ "gg_removeWeaponsOffTheGround", "1" } // Remove weapons off the ground when loading map?
+	{ "gg_removeWeaponsOffTheGround", "1" }, // Remove weapons off the ground when loading map?
+
+/*		These need to always be last 		*/
+	{ "gg_sql_host", "" },	// SQL Host
+	{ "gg_sql_user", "" },	// SQL User
+	{ "gg_sql_pass", "" },	// SQL Password
+	{ "gg_sql_db", "" },	// SQL Database
+	{ "gg_sql_table", "" }	// SQL Table
 };
 
 new const forwardsNames[][] =
@@ -708,20 +715,13 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 public plugin_init()
 {
-	register_plugin("GunGame", "v2.2", AUTHOR);
+	register_plugin("GunGame", "v2.5", AUTHOR);
 
 	// Register cvars.
 	ForArray(i, ggCvarsData)
 	{
-		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1]);
+		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1], i >= sizeof(ggCvarsData) - 1 ? FCVAR_PROTECTED : FCVAR_NONE);
 	}
-
-	// Register protected SQL cvars
-	new sizeOfCvarsData = sizeof(cvarsData);
-	cvarsData[sizeOfCvarsData - 1] = register_cvar("gg_sql_host", "", FCVAR_PROTECTED);
-	cvarsData[sizeOfCvarsData - 2] = register_cvar("gg_sql_user", "", FCVAR_PROTECTED);
-	cvarsData[sizeOfCvarsData - 3] = register_cvar("gg_sql_pass", "", FCVAR_PROTECTED);
-	cvarsData[sizeOfCvarsData - 4] = register_cvar("gg_sql_db", "", FCVAR_PROTECTED);
 
 	// Register Death and team assign events.
 	register_event("DeathMsg", "playerDeathEvent", "a");
