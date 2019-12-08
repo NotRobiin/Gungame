@@ -707,7 +707,7 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	wandSpritesIndexes[sizeof(wandSprites)],
 
-	cvarsData[sizeof(ggCvarsData) + 4],
+	cvarsData[sizeof(ggCvarsData)],
 
 	gameVotes[sizeof(gameModes)],
 	bool:gameVoteEnabled,
