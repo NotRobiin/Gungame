@@ -658,6 +658,14 @@ enum topPlayersEnumerator
 	topHeadshots
 };
 
+enum warmupEnumerator
+{
+	bool:warmupEnabled,
+	warmupTimer,
+	warmupWeaponIndex,
+	warmupWeaponName
+};
+
 new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	weaponNames[sizeof(weaponsData)][MAX_CHARS - 1],
@@ -671,10 +679,7 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	hudObjects[3],
 
-	bool:warmupEnabled,
-	warmupTimer,
-	warmupWeaponIndex,
-	warmupWeaponName = -1,
+	warmupData[warmupEnumerator],
 
 	spriteLevelupIndex,
 
@@ -1269,7 +1274,7 @@ public setEntityModel(entity, model[])
 	// Set tasks to give grenade back after it has exploded. 
 	if (equal(model[9], "he", 2))
 	{
-		if (weaponsData[userData[owner][dataLevel]][weaponCSW] == CSW_HEGRENADE || get_pcvar_num(cvarsData[cvar_warmupWeapon]) == CSW_HEGRENADE && warmupEnabled)
+		if (weaponsData[userData[owner][dataLevel]][weaponCSW] == CSW_HEGRENADE || get_pcvar_num(cvarsData[cvar_warmupWeapon]) == CSW_HEGRENADE && warmupData[warmupEnabled])
 		{
 			set_task(get_pcvar_float(cvarsData[cvar_giveBackHeInterval]), "giveHeGrenade", owner + TASK_GIVEGRENADE);
 		}
@@ -1461,7 +1466,7 @@ public knifeDeploy(entity)
 		weapon = cs_get_weapon_id(entity);
 
 	// Return if player isnt alive or its not a warmup with wands.
-	if (warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2 || !is_user_alive(index) || userData[index][dataLevel] != maxLevel || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE)
+	if (warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2 || !is_user_alive(index) || userData[index][dataLevel] != maxLevel || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE)
 	{
 		return;
 	}
@@ -1489,7 +1494,7 @@ public playerDeathEvent()
 	}
 
 	// Respawn player shortly if warmup is enabled.
-	if (warmupEnabled)
+	if (warmupData[warmupEnabled])
 	{
 		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_warumpRespawnInterval]));
 	
@@ -1714,7 +1719,7 @@ public playerSpawn(index)
 		return;
 	}
 
-	if (warmupEnabled)
+	if (warmupData[warmupEnabled])
 	{
 		// Give weapons to player.
 		giveWarmupWeapons(index);
@@ -1875,25 +1880,25 @@ public audioGrenadeMessage()
 public displayWarmupTimer()
 {
 	// Return if warmup has ended.
-	if (!warmupEnabled)
+	if (!warmupData[warmupEnabled])
 	{
 		return;
 	}
 
 	// Decrement warmup timer.
-	warmupTimer--;
+	warmupData[warmupTimer]--;
 
-	if (warmupTimer >= 0)
+	if (warmupData[warmupTimer] >= 0)
 	{
 		// Play timer tick sound.
 		playSound(0, soundTimerTick, -1, false);
 
 		// Get warmup weapon name index if not done so yet.
-		if (warmupWeaponName == -1)
+		if (warmupData[warmupWeaponName] == -1)
 		{
 			getWarmupWeaponName();
 		}
-			
+		
 		// Display warmup hud.
 		set_hudmessage(warmupHudColors[0], warmupHudColors[1], warmupHudColors[2], -1.0, 0.1, 0, 6.0, 0.6, 0.2, 0.2);
 		
@@ -1906,12 +1911,12 @@ public displayWarmupTimer()
 					continue;
 				}
 
-				ShowSyncHudMsg(i, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupTimer, customWeaponNames[userData[i][dataWarmupCustomWeaponIndex]]);
+				ShowSyncHudMsg(i, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupData[warmupTimer], customWeaponNames[userData[i][dataWarmupCustomWeaponIndex]]);
 			}
 		}
 		else
 		{
-			ShowSyncHudMsg(0, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupTimer, get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2 ? "Rozdzki" : customWeaponNames[get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1 ? warmupWeaponIndex : warmupWeaponName]);
+			ShowSyncHudMsg(0, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupData[warmupTimer], get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2 ? "Rozdzki" : customWeaponNames[get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1 ? warmupData[warmupWeaponIndex] : warmupData[warmupWeaponName]]);
 		}
 
 		// Set task to display hud again.
@@ -2001,7 +2006,7 @@ public giveHeGrenade(taskIndex)
 	new index = taskIndex - TASK_GIVEGRENADE;
 
 	// Return if player is not alive or this type of grenade is none of his weapons.
-	if (!is_user_alive(index) || !warmupEnabled && weaponsData[userData[index][dataLevel]][weaponCSW] != CSW_HEGRENADE || warmupEnabled && warmupWeaponIndex == CSW_HEGRENADE)
+	if (!is_user_alive(index) || !warmupData[warmupEnabled] && weaponsData[userData[index][dataLevel]][weaponCSW] != CSW_HEGRENADE || warmupData[warmupEnabled] && warmupData[warmupWeaponIndex] == CSW_HEGRENADE)
 	{
 		return;
 	}
@@ -2506,10 +2511,10 @@ giveWarmupWeapons(index)
 	else if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
 	{
 		// Add weapon.
-		give_item(index, weaponEntityNames[warmupWeaponIndex]);
+		give_item(index, weaponEntityNames[warmupData[warmupWeaponIndex]]);
 
 		// Set weapon bp ammo to 100.
-		cs_set_user_bpammo(index, get_weaponid(weaponEntityNames[warmupWeaponIndex]), 100);
+		cs_set_user_bpammo(index, get_weaponid(weaponEntityNames[warmupData[warmupWeaponIndex]]), 100);
 	}
 
 	// Set wand model.
@@ -2711,10 +2716,10 @@ toggleWarmup(bool:status)
 {
 	setWarmupHud(status);
 
-	warmupEnabled = status;
+	warmupData[warmupEnabled] = status;
 
 	// Warmup set to disabled?
-	if (!warmupEnabled)
+	if (!warmupData[warmupEnabled])
 	{
 		finishGameVote();
 
@@ -2765,7 +2770,7 @@ toggleWarmup(bool:status)
 		}
 
 		// Get random weapon, only if its not a knife.
-		warmupWeaponIndex = random_num(0, sizeof(customWeaponNames) - 2);
+		warmupData[warmupWeaponIndex] = random_num(0, sizeof(customWeaponNames) - 2);
 
 		// Play warmup start sound.
 		playSound(0, soundWarmup, -1, true);
@@ -2781,7 +2786,7 @@ setWarmupHud(bool:status)
 	{
 		set_task(1.0, "displayWarmupTimer");
 
-		warmupTimer = get_pcvar_num(cvarsData[cvar_warmupDuration]);
+		warmupData[warmupTimer] = get_pcvar_num(cvarsData[cvar_warmupDuration]);
 	}
 }
 
@@ -3371,7 +3376,7 @@ getPlayerByTopLevel(array[], count)
 getWarmupWeaponName()
 {
 	// Return if warmup weapon is static.
-	if (warmupWeaponName > -1)
+	if (warmupData[warmupWeaponName] > -1)
 	{
 		return;
 	}
@@ -3381,7 +3386,7 @@ getWarmupWeaponName()
 	{
 		if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == weaponsData[i][weaponCSW])
 		{
-			warmupWeaponName = i;
+			warmupData[warmupWeaponName] = i;
 
 			break;
 		}
@@ -3426,7 +3431,7 @@ refillAmmo(index)
 randomWarmupWeapon(index)
 {
 	// Return if player is not alive or warmup is not enabled.
-	if (!is_user_alive(index) || !warmupEnabled)
+	if (!is_user_alive(index) || !warmupData[warmupEnabled])
 	{
 		return;
 	}
@@ -3470,7 +3475,7 @@ clampDownClientName(index, output[], length, const value, const token[])
 wandAttack(index, weapon)
 {
 	// Block attack if player is not alive, wand is not enabled, not holding a knife, not on last level or wand is not set as warmup weapon.
-	if (!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE || !warmupEnabled && !isOnLastLevel(index) || warmupEnabled && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
+	if (!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE || !warmupData[warmupEnabled] && !isOnLastLevel(index) || warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -3894,9 +3899,9 @@ public testWinMessage(index)
 
 public warmupFunction(index)
 {
-	toggleWarmup(!warmupEnabled);
+	toggleWarmup(!warmupData[warmupEnabled]);
 
-	client_print(0, print_chat, "Warmup = %s", warmupEnabled ? "ON" : "OFF");
+	client_print(0, print_chat, "Warmup = %s", warmupData[warmupEnabled] ? "ON" : "OFF");
 }
 
 public addKnifeKill(index)
