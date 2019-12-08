@@ -2201,7 +2201,14 @@ connectDatabase()
 	mysqlHandle = SQL_MakeDbTuple(mysqlData[databaseHost], mysqlData[databaseUser], mysqlData[databasePass], mysqlData[databaseDB]);
 
 	// Format mysql request.
-	formatex(mysqlRequest, charsmax(mysqlRequest), "CREATE TABLE IF NOT EXISTS `%s` (`name` VARCHAR(35), `wins` INT(6), `knife_kills` INT(6), `kills` INT(6), `headshot_kills` INT(6), PRIMARY KEY (`name`));", mysqlData[databaseTableName]);
+	formatex(mysqlRequest, charsmax(mysqlRequest),
+		"CREATE TABLE IF NOT EXISTS `%s` \
+			(`name` VARCHAR(35), \
+			`wins` INT(6), \
+			`knife_kills` INT(6), \
+			`kills` INT(6), \
+			`headshot_kills` INT(6), \
+		PRIMARY KEY (`name`));", mysqlData[databaseTableName]);
 
 	// Send request to database.
 	SQL_ThreadQuery(mysqlHandle, "connectDatabaseHandler", mysqlRequest);
