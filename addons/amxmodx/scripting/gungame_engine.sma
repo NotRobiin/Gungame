@@ -801,9 +801,6 @@ public plugin_init()
 	// Toggle warmup a bit delayed from plugin start.
 	set_task(1.0, "delayed_toggleWarmup");
 
-	// Load top players from MySQL.
-	loadTopPlayers();
-
 	// Load cvars.
 	loadGameCvars();
 
@@ -1944,6 +1941,9 @@ public topPlayersMotdHandler(index)
 	{
 		ColorChat(index, RED, "%s^x01 Topka nie zostala jeszcze zaladowana.", chatPrefix);
 	
+		// Load top players from MySQL.
+		loadTopPlayers();
+
 		return PLUGIN_CONTINUE;
 	}
 
@@ -2232,6 +2232,11 @@ public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, dat
 
 getUserData(index)
 {
+	if(!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
+	{
+		return;
+	}
+
 	new mysqlRequest[MAX_CHARS * 3],
 		data[1];
 
@@ -2269,6 +2274,11 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 
 insertUserData(index)
 {
+	if(!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
+	{
+		return;
+	}
+
 	new mysqlRequest[MAX_CHARS * 10];
 
 	// Format request.
@@ -2283,6 +2293,11 @@ insertUserData(index)
 
 updateUserData(index)
 {
+	if(!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
+	{
+		return;
+	}
+
 	new mysqlRequest[MAX_CHARS * 10];
 
 	// Format mysql request.
@@ -2292,7 +2307,7 @@ updateUserData(index)
 			`wins` = %i,\
 			`knife_kills` = %i,\
 			`kills` = %i,\
-			`headshot_kills` = %i\
+			`headshot_kills` = %i \
 		WHERE \
 			`name` = '%n';", mysqlData[databaseTableName], index, userStats[index][statsWins], userStats[index][statsKnifeKills], userStats[index][statsKills], userStats[index][statsHeadshots], index);
 
@@ -3002,10 +3017,11 @@ endGunGame(winner)
 		}
 
 		removeHud(i);
+		updateUserData(i);
 	}
 
-	new winMessage[MAX_CHARS * 8],
-		tempMessage[MAX_CHARS * 3],
+	new winMessage[MAX_CHARS * 10],
+		tempMessage[MAX_CHARS * 5],
 		topPlayers[topPlayersDisplayed + 1],
 		index;
 
@@ -3014,6 +3030,9 @@ endGunGame(winner)
 
 	// Recursevly set black screen every second so player has it colored no matter what.
 	set_task(1.0, "setBlackScreenOn");
+
+	// Update top players.
+	loadTopPlayers();
 
 	// Get top players.
 	getPlayerByTopLevel(topPlayers, charsmax(topPlayers));
