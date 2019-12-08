@@ -29,7 +29,7 @@ native bool:gg_get_user_vip(index);
 // Used in loops and to determine static array sizes (+1).
 #define MAX_PLAYERS 32
 
-#define ForTeam(%1,%2) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++) if(is_user_connected(%1) && get_user_team(%1) == %2)
+#define ForTeam(%1,%2) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++) if (is_user_connected(%1) && get_user_team(%1) == %2)
 #define ForPlayers(%1) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++)
 #define ForArray(%1,%2) for(new %1 = 0; %1 < sizeof(%2); %1++)
 #define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
@@ -617,7 +617,7 @@ new const teamNames[][] =
 	"CT"
 };
 
-enum statsEnumerator (+=1 )
+enum statsEnumerator (+=1)
 {
 	statsWins,
 	statsKills,
@@ -1431,7 +1431,7 @@ public weaponDeploy(entity)
 	if (!((1 << weapon) & userAllowedWeapons[index]))
 	{
 		// Take away the weapon.
-		if(!strip_user_weapon(index, weapon))
+		if (!strip_user_weapon(index, weapon))
 		{
 			// Switch to knife if weapon was not taken.
 			engclient_cmd(index, "weapon_knife");
@@ -1573,7 +1573,7 @@ public playerDeathEvent()
 	}
 	
 	// Update stats.
-	if(read_data(3))
+	if (read_data(3))
 	{
 		userStats[killer][statsHeadshots]++;
 	}
@@ -1586,7 +1586,7 @@ public playerDeathEvent()
 		// Update stats.
 		userStats[killer][statsKnifeKills]++;
 
-		if(userLevel[killer] != maxLevel)
+		if (userLevel[killer] != maxLevel)
 		{
 			if (userLevel[victim])
 			{
@@ -2232,7 +2232,7 @@ public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, dat
 
 getUserData(index)
 {
-	if(!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
+	if (!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
@@ -2254,7 +2254,7 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 {
 	new index = data[0];
 
-	if(!is_user_connected(index))
+	if (!is_user_connected(index))
 	{
 		return;
 	}
@@ -2274,7 +2274,7 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 
 insertUserData(index)
 {
-	if(!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
+	if (!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
@@ -2293,7 +2293,7 @@ insertUserData(index)
 
 updateUserData(index)
 {
-	if(!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
+	if (!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
@@ -3655,7 +3655,7 @@ wandAttack(index, weapon)
 
 stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = true)
 {
-	if(!weaponSlot)
+	if (!weaponSlot)
 	{
 		static const weaponsSlots[] = { -1, 2, -1, 1, 4, 1, 5, 1, 1, 4, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 4, 2, 1, 1, 3, 1 };
 		
@@ -3671,10 +3671,10 @@ stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = tr
 
 	new weapon = get_pdata_cbase(index, m_rgpPlayerItems_Slot0 + weaponSlot, XTRA_OFS_PLAYER);
 
-	while(weapon)
+	while (weapon)
 	{
 		// Break if we got the weapon right away.
-		if(get_pdata_int(weapon, m_iId, XTRA_OFS_WEAPON) == weaponCsw)
+		if (get_pdata_int(weapon, m_iId, XTRA_OFS_WEAPON) == weaponCsw)
 		{
 			break;
 		}
@@ -3683,14 +3683,14 @@ stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = tr
 		weapon = get_pdata_cbase(weapon, m_pNext, XTRA_OFS_WEAPON);
 	}
 
-	if(weapon)
+	if (weapon)
 	{
-		if(switchWeapon && get_pdata_cbase(index, m_pActiveItem, XTRA_OFS_PLAYER) == weapon)
+		if (switchWeapon && get_pdata_cbase(index, m_pActiveItem, XTRA_OFS_PLAYER) == weapon)
 		{
 			ExecuteHamB(Ham_Weapon_RetireWeapon, weapon);
 		}
 
-		if(ExecuteHamB(Ham_RemovePlayerItem, index, weapon))
+		if (ExecuteHamB(Ham_RemovePlayerItem, index, weapon))
 		{
 			// Honestly dont know what is the point of this one.
 			user_has_weapon(index, weaponCsw, 0);
