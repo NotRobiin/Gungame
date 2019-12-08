@@ -1198,6 +1198,9 @@ public plugin_precache()
 
 public client_putinserver(index)
 {
+	userData[index][dataWarmupWeapon] = -1;
+	userData[index][dataWarmupCustomWeaponIndex] = -1;
+
 	// Do nothing if user is a hltv.
 	if (is_user_hltv(index) || is_user_bot(index))
 	{
@@ -2730,9 +2733,10 @@ playSoundForTeam(team, soundType, soundIndex, bool:emitSound)
 
 toggleWarmup(bool:status)
 {
-	setWarmupHud(status);
-
+	warmupData[warmupWeaponNameIndex] = -1;
 	warmupData[warmupEnabled] = status;
+
+	setWarmupHud(status);
 
 	// Warmup set to disabled?
 	if (!warmupData[warmupEnabled])
