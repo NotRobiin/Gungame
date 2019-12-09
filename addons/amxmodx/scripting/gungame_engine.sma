@@ -836,6 +836,9 @@ public plugin_init()
 	// Connect do mysql database.
 	connectDatabase();
 
+	// Load top players from MySQL.
+	loadTopPlayers();
+	
 #if defined TEST_MODE
 
 	// Test commands.
@@ -1973,11 +1976,6 @@ public topPlayersMotdHandler(index)
 	if (!topData[topDataLoaded])
 	{
 		ColorChat(index, RED, "%s^x01 Topka nie zostala jeszcze zaladowana.", chatPrefix);
-	
-		// Load top players from MySQL.
-		loadTopPlayers();
-
-		set_task(0.2, "topPlayerMotdHandler", index);
 
 		return PLUGIN_CONTINUE;
 	}
