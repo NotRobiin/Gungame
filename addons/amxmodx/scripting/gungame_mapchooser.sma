@@ -2,7 +2,7 @@
 #include <colorchat>
 
 #define PLUGIN "Map Manager"
-#define VERSION "2.5.117"
+#define VERSION "2.5.118"
 #define AUTHOR "Mistrick"
 
 #pragma semicolon 1
@@ -935,14 +935,12 @@ public plugin_cfg()
 	if( is_plugin_loaded("Nextmap Chooser") > -1 )
 	{
 		pause("cd", "mapchooser.amxx");
-		log_amx("MapManager: mapchooser.amxx has been stopped.");
 	}
 	
 	#if defined FUNCTION_NEXTMAP
 	if( is_plugin_loaded("NextMap") > -1 )
 	{
 		pause("cd", "nextmap.amxx");
-		log_amx("MapManager: nextmap.amxx has been stopped.");
 	}	
 	#endif
 	
