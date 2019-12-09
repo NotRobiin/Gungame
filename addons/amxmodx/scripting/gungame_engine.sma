@@ -2259,11 +2259,11 @@ connectDatabase()
 	// Format mysql request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
 		"CREATE TABLE IF NOT EXISTS `gungame` \
-			(`name` VARCHAR(35), \
-			`wins` INT(6), \
-			`knife_kills` INT(6), \
-			`kills` INT(6), \
-			`headshot_kills` INT(6), \
+			(`name` VARCHAR(35) NOT NULL, \
+			`wins` INT(6) NOT NULL DEFAULT 0, \
+			`knife_kills` INT(6) NOT NULL DEFAULT 0, \
+			`kills` INT(6) NOT NULL DEFAULT 0, \
+			`headshot_kills` INT(6) NOT NULL DEFAULT 0, \
 		PRIMARY KEY (`name`));");
 
 	// Send request to database.
