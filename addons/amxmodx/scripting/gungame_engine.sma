@@ -799,6 +799,12 @@ public plugin_init()
 	// Load cvars.
 	loadGameCvars();
 
+	// Connect do mysql database.
+	connectDatabase();
+
+	// Load top players from MySQL.
+	loadTopPlayers();
+	
 #if defined TEST_MODE
 
 	// Test commands.
@@ -1914,7 +1920,6 @@ public topPlayersMotdHandler(index)
 	if (!topPlayersDataLoaded)
 	{
 		ColorChat(index, RED, "%s^x01 Topka nie zostala jeszcze zaladowana.", chatPrefix);
-	
 		return PLUGIN_CONTINUE;
 	}
 
