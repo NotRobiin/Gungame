@@ -427,7 +427,28 @@ new const topPlayersMotdHTML[][] =
 {
 	"<style> body{ background: #202020 } tr{ text-align: left } table{ font-size: 12px; color: #ffffff; padding: 0px } h1{ color: #FFF; font-family: Verdana }</style><body>",
 	"<table width = 100%% border = 0 align = center cellpadding = 0 cellspacing = 2>",
-	"<tr><th><h3>Pozycja</h3><th><b><h3>Nazwa gracza</h3></b><th><h3>Wygrane gry</h3></th></tr>"
+	"<tr>\
+		<th>\
+			<h3>Pozycja</h3>\
+		</th>\
+		\
+		<th>\
+			<h3>Nazwa gracza</h3>\
+		</th>\
+		\
+		<th>\
+			<h3>Wygrane gry</h3>\
+		</th>\
+		\
+		<th>\
+		\
+			<h3>Zabicia nozem</h3>\
+		</th>\
+		\
+		<th>\
+			<h3>%% HS</h3>\
+		</th>\
+	</tr>"
 };
 
 // Top players motd commands.
@@ -516,8 +537,7 @@ enum (+= 1)
 	cvar_sqlHost,
 	cvar_sqlUser,
 	cvar_sqlPass,
-	cvar_sqlDb,
-	cvar_sqlTable
+	cvar_sqlDb
 };
 
 new const ggCvarsData[][][] =
@@ -567,8 +587,7 @@ new const ggCvarsData[][][] =
 	{ "gg_sql_host", "" },	// SQL Host
 	{ "gg_sql_user", "" },	// SQL User
 	{ "gg_sql_pass", "" },	// SQL Password
-	{ "gg_sql_db", "" },	// SQL Database
-	{ "gg_sql_table", "" }	// SQL Table
+	{ "gg_sql_db", "" }		// SQL Database
 };
 
 new const forwardsNames[][] =
@@ -674,8 +693,7 @@ enum dbEnumerator
 	dbHost[MAX_CHARS * 2],
 	dbUser[MAX_CHARS * 2],
 	dbPass[MAX_CHARS * 2],
-	dbDbase[MAX_CHARS * 2],
-	dbTableName[MAX_CHARS * 2]
+	dbDbase[MAX_CHARS * 2]
 };
 
 new userData[MAX_PLAYERS + 1][userDataEnumerator],
@@ -721,7 +739,7 @@ public plugin_init()
 	// Register cvars.
 	ForArray(i, ggCvarsData)
 	{
-		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1], i >= sizeof(ggCvarsData) - 5 ? FCVAR_PROTECTED : FCVAR_NONE);
+		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1], i >= sizeof(ggCvarsData) - 4 ? FCVAR_PROTECTED : FCVAR_NONE);
 	}
 
 	// Register Death and team assign events.
@@ -838,7 +856,7 @@ public plugin_init()
 
 	// Load top players from MySQL.
 	loadTopPlayers();
-	
+
 #if defined TEST_MODE
 
 	// Test commands.
@@ -2250,7 +2268,6 @@ connectDatabase()
 	get_pcvar_string(cvarsData[cvar_sqlUser], dbData[dbUser], MAX_CHARS * 2);
 	get_pcvar_string(cvarsData[cvar_sqlPass], dbData[dbPass], MAX_CHARS * 2);
 	get_pcvar_string(cvarsData[cvar_sqlDb], dbData[dbDbase], MAX_CHARS * 2);
-	get_pcvar_string(cvarsData[cvar_sqlTable], dbData[dbTableName], MAX_CHARS * 2);
 
 	new mysqlRequest[MAX_CHARS * 10];
 
@@ -2341,7 +2358,7 @@ insertUserData(index)
 		"INSERT INTO `gungame` \
 			(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
 		VALUES \
-			('%s', %i, %i, %i, %i);", dbData[dbTableName], userData[index][dataSafeName], userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
+			('%s', %i, %i, %i, %i);", userData[index][dataSafeName], userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
 
 	// Send request.
 	SQL_ThreadQuery(dbData[sqlHandle], "ignoreHandle", mysqlRequest);
@@ -2365,7 +2382,7 @@ updateUserData(index)
 			`kills` = %i,\
 			`headshot_kills` = %i \
 		WHERE \
-			`name` = '%s';", dbData[dbTableName], userData[index][dataSafeName], userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots], userData[index][dataSafeName]);
+			`name` = '%s';", userData[index][dataSafeName], userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots], userData[index][dataSafeName]);
 
 	// Send request.
 	SQL_ThreadQuery(dbData[sqlHandle], "ignoreHandle", mysqlRequest);
@@ -2520,9 +2537,15 @@ createTopPlayersMotd()
 				<td>\
 					<h4>%d</h4>\
 				</td>\
+				\
+				<td>\
+					<h4>%d</h4>\
+				</td>\
 			</tr>",
-			i + 1, topPlayers[i][topNames], topPlayers[i][topWins], topPlayers[i][topKnifeKills]);
-		
+			i + 1, topPlayers[i][topNames], topPlayers[i][topWins], topPlayers[i][topKnifeKills], floatround(topPlayers[i][topHeadshots] / topPlayers[i][topKills] * 100.0));
+
+		log_amx("%d %s %d %d %d", i + 1, topPlayers[i][topNames], topPlayers[i][topWins], topPlayers[i][topKnifeKills], floatround(topPlayers[i][topHeadshots] / topPlayers[i][topKills] * 100.0));
+
 		playersDisplayed++;
 	}
 
