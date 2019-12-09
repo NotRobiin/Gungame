@@ -1201,11 +1201,8 @@ public client_putinserver(index)
 		return;
 	}
 
-	// Get player's name once, so we dont do that every time we need that data.
-	get_user_name(index, userData[index][dataName], MAX_CHARS - 1);
-
-	// Clamp down player's name so we can use that to prevent char-overflow in HUD etc.
-	clampDownClientName(index, userData[index][dataShortName], MAX_CHARS - 1, maxNicknameLength, nicknameReplaceToken);
+	// Get name-related data.
+	getUserNameData(index);
 
 	// Load mysql data.
 	getUserData(index);
@@ -1241,9 +1238,8 @@ public client_disconnect(index)
 // Get user's name again when changed.
 public clientInfoChanged(index)
 {
-	get_user_name(index, userData[index][dataName], MAX_CHARS - 1);
-
-	clampDownClientName(index, userData[index][dataShortName], MAX_CHARS - 1, maxNicknameLength, nicknameReplaceToken);
+	// Update name-related data.
+	getUserNameData(index);
 }
 
 // Prevent picking up weapons of off the ground.
@@ -2419,6 +2415,37 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 /*
 		[ FUNCTIONS ]
 */
+
+getUserNameData(index)
+{
+	if (!is_user_connected(index) || is_user_hltv(index))
+	{
+		return;
+	}
+
+	// Get player's name once, so we dont do that every time we need that data.
+	get_user_name(index, userData[index][dataName], MAX_CHARS - 1);
+
+	// Clamp down player's name so we can use that to prevent char-overflow in HUD etc.
+	clampDownClientName(index, userData[index][dataShortName], MAX_CHARS - 1, maxNicknameLength, nicknameReplaceToken);
+
+	// Get player's name to mysql-request-safe state.
+	escapeString(userData[index][dataName], userData[index][dataSafeName], MAX_CHARS * 2);
+}
+
+escapeString(const source[], output[], length)
+{
+	copy(output, length, source);
+
+	replace_all(output, length, "\\", "\\\\");
+	replace_all(output, length, "\0", "\\0");
+	replace_all(output, length, "\n", "\\n");
+	replace_all(output, length, "\r", "\\r");
+	replace_all(output, length, "\x1a", "\Z");
+	replace_all(output, length, "'", "\'");
+	replace_all(output, length, "`", "\`");
+	replace_all(output, length, "^"", "\^"");
+}
 
 loadGameCvars()
 {
