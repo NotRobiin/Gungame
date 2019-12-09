@@ -689,6 +689,8 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	dbData[dbEnumerator],
 
+	cvarsData[sizeof(ggCvarsData)],
+
 	weaponNames[sizeof(weaponsData)][MAX_CHARS - 1],
 	weaponEntityNames[sizeof(weaponsData)][MAX_CHARS],
 	weaponTempName[MAX_CHARS],
@@ -706,8 +708,6 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 	forwardReturnDummy,
 
 	wandSpritesIndexes[sizeof(wandSprites)],
-
-	cvarsData[sizeof(ggCvarsData)],
 
 	gameVotes[sizeof(gameModes)],
 	bool:gameVoteEnabled,
@@ -832,6 +832,9 @@ public plugin_init()
 
 	// Load cvars.
 	loadGameCvars();
+
+	// Connect do mysql database.
+	connectDatabase();
 
 #if defined TEST_MODE
 
@@ -1167,9 +1170,6 @@ public plugin_precache()
 
 	// Precache sprite.
 	spriteLevelupIndex = engfunc(EngFunc_PrecacheModel, spritesData[spriteLevelup]);
-
-	// Connect do mysql database here, since precache is called before init.
-	connectDatabase();
 
 	// Precache wand models.
 	ForArray(i, wandModels)
@@ -1964,6 +1964,11 @@ public listWeaponsMenu_handler(id, menu, item)
 
 public topPlayersMotdHandler(index)
 {
+	if(!is_user_connected(index))
+	{
+		return PLUGIN_HANDLED;
+	}
+
 	// Return if top players data was not loaded yet.
 	if (!topData[topDataLoaded])
 	{
@@ -1971,6 +1976,8 @@ public topPlayersMotdHandler(index)
 	
 		// Load top players from MySQL.
 		loadTopPlayers();
+
+		set_task(0.2, "topPlayerMotdHandler", index);
 
 		return PLUGIN_CONTINUE;
 	}
@@ -2334,8 +2341,9 @@ insertUserData(index)
 	// Format request.
 	formatex(mysqlRequest, charsmax(mysqlRequest),
 		"INSERT INTO `gungame` \
-		(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
-		VALUES ('%s', %i, %i, %i, %i);", dbData[dbTableName], userData[index][dataSafeName], userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
+			(`name`, `wins`, `knife_kills`, `kills`, `headshot_kills`) \
+		VALUES \
+			('%s', %i, %i, %i, %i);", dbData[dbTableName], userData[index][dataSafeName], userData[index][dataWins], userData[index][dataKnifeKills], userData[index][dataKills], userData[index][dataHeadshots]);
 
 	// Send request.
 	SQL_ThreadQuery(dbData[sqlHandle], "ignoreHandle", mysqlRequest);
@@ -2498,7 +2506,24 @@ createTopPlayersMotd()
 
 		// Add HTML to motd.
 		topData[topMotdLength] += formatex(topData[topMotdCode][topData[topMotdLength]], charsmax(topData[topMotdCode]),
-			"<tr><td><b><h4>%d</h4></b><td><h4>%s</h4><td><h4>%d</h4><td><td><h4>%d</h4></td></tr>", i + 1, topPlayers[i][topNames], topPlayers[i][topWins], topPlayers[i][topKnifeKills]);
+			"<tr>\
+				<td>\
+					<b>\
+						<h4>%d</h4>\
+					</b>\
+				<td>\
+				\
+				<h4>%s</h4>\
+				\
+				<td>\
+					<h4>%d</h4>\
+				<td>\
+				\
+				<td>\
+					<h4>%d</h4>\
+				</td>\
+			</tr>",
+			i + 1, topPlayers[i][topNames], topPlayers[i][topWins], topPlayers[i][topKnifeKills]);
 		
 		playersDisplayed++;
 	}
