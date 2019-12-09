@@ -2448,6 +2448,7 @@ getUserNameData(index)
 
 	// Get player's name once, so we dont do that every time we need that data.
 	get_user_name(index, userData[index][dataName], MAX_CHARS - 1);
+	get_user_name(index, userData[index][dataSafeName], MAX_CHARS - 1);
 
 	// Clamp down player's name so we can use that to prevent char-overflow in HUD etc.
 	clampDownClientName(index, userData[index][dataShortName], MAX_CHARS - 1, maxNicknameLength, nicknameReplaceToken);
