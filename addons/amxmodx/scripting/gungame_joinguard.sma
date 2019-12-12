@@ -12,10 +12,10 @@ public plugin_init()
 
 public forceTeamJoin(id, team)
 {
-    engclient_cmd(id, "jointeam", team);
+    client_cmd(id, "jointeam %d", team);
 }
 
-bool:isAutoJoin()
+stock bool:isAutoJoin(id)
 {
     return !access(id, ADMIN_IMMUNITY);
 }
