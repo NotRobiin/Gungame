@@ -7,9 +7,24 @@
 
 public plugin_init()
 {
-	register_plugin(PLUGIN, VERSION, AUTHOR);
+    register_plugin(PLUGIN, VERSION, AUTHOR);
     register_message(get_user_msgid("ShowMenu"), "messageShowMenu");
-	register_message(get_user_msgid("VGUIMenu"), "messageVGUIMenu");
+    register_message(get_user_msgid("VGUIMenu"), "messageVGUIMenu");
+}
+public messageShowMenu(msgid, dest, id)
+{
+    if (isAutoJoin(id))
+    {
+        // main logic goes here...
+        return PLUGIN_HANDLED;
+    }
+    
+    return PLUGIN_CONTINUE;
+}
+
+public messageVGUIMenu(msgid, dest, id)
+{
+
 }
 
 public forceTeamJoin(id, team)
