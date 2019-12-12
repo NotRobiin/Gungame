@@ -9,3 +9,8 @@ public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR);
 }
+
+public forceTeamJoin(id, team)
+{
+    engclient_cmd(id, "jointeam", team);
+}
