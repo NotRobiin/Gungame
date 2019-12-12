@@ -14,3 +14,8 @@ public forceTeamJoin(id, team)
 {
     engclient_cmd(id, "jointeam", team);
 }
+
+bool:isAutoJoin()
+{
+    return !access(id, ADMIN_IMMUNITY);
+}
