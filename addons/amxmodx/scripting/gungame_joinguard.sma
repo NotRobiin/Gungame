@@ -38,7 +38,6 @@ public messageShowMenu(msgid, dest, id)
 {
     if (isAutoJoin(id))
     {
-        // main logic goes here...
         return PLUGIN_HANDLED;
     }
     
@@ -53,6 +52,7 @@ public messageVGUIMenu(msgid, dest, id)
 public forceTeamJoin(id, team)
 {
     client_cmd(id, "jointeam %d", team);
+    teamPlayers[team]++;
 }
 
 stock bool:isAutoJoin(id)
