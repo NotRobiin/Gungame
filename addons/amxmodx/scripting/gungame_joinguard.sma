@@ -38,6 +38,18 @@ public messageShowMenu(msgid, dest, id)
 {
     if (isAutoJoin(id))
     {
+        if (teamPlayers[teamTT] > teamPlayers[teamCT])
+        {
+            forceTeamJoin(id, teamCT);
+        }
+        else if (teamPlayers[teamTT] < teamPlayers[teamCT])
+        {
+            forceTeamJoin(id, teamTT);
+        }
+        else if (teamPlayers[teamTT] == teamPlayers[teamCT])
+        {
+            forceTeamJoin(id, random_num(0, 1));
+        }
         return PLUGIN_HANDLED;
     }
     
