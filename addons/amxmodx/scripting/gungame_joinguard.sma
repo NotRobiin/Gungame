@@ -18,6 +18,12 @@ public plugin_init()
     teamPlayers[1] = 0;
 }
 
+enum (+= 1)
+{
+	teamTT = 0,
+	teamCT
+};
+
 public client_connect(id)
 {
     playerTeam[id] = -1;
