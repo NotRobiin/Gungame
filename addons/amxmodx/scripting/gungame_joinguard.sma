@@ -58,7 +58,12 @@ public messageShowMenu(msgid, dest, id)
 
 public messageVGUIMenu(msgid, dest, id)
 {
+    if (isAutoJoin(id))
+    {
+        return PLUGIN_HANDLED;
+    }
 
+    return PLUGIN_CONTINUE;
 }
 
 public forceTeamJoin(id, team)
