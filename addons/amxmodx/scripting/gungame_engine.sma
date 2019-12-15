@@ -35,7 +35,7 @@ native bool:gg_get_user_vip(index);
 #define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
 
 // Handle name length.
-#define printName(%1) (strlen(userData[%1][dataName]) > maxNicknameLength ? userData[%1][dataShortName] : userData[%1][dataName])
+//#define printName(%1) (strlen(userData[%1][dataName]) > maxNicknameLength ? userData[%1][dataShortName] : userData[%1][dataName])
 
 // Task indexes.
 enum (+= 2500)
@@ -531,7 +531,10 @@ enum (+= 1)
 
 	cvar_takeDamageHudTime,
 	
-	cvar_removeWeaponsOffTheGround
+	cvar_removeWeaponsOffTheGround,
+	
+	cvar_normalFriendlyFire,
+	cvar_teamplayFriendlyFire
 };
 
 new const ggCvarsData[][][] =
@@ -575,7 +578,10 @@ new const ggCvarsData[][][] =
 	
 	{ "gg_takeDamageHudTime", "1.2" }, // Take damage hud hold-time.
 	
-	{ "gg_removeWeaponsOffTheGround", "1" } // Remove weapons off the ground when loading map?
+	{ "gg_removeWeaponsOffTheGround", "1" }, // Remove weapons off the ground when loading map?
+
+	{ "gg_normalFriendlyFire", "0" }, // Enable friendly fire in normal mode?
+	{ "gg_teamplayFriendlyFire", "0" } // Enable friendly fire in teamplay mode?
 };
 
 new const forwardsNames[][] =
@@ -768,7 +774,7 @@ public plugin_init()
 	{
 		RegisterHam(Ham_Think, "grenade", "heGrenadeThink");
 	}
-
+/*
 	// Register knife deployement for model-changes if wand is enabled.
 	if (get_pcvar_num(cvarsData[cvar_wandEnabled]))
 	{
@@ -785,7 +791,7 @@ public plugin_init()
 			RegisterHam(Ham_Item_Deploy, weaponClassname, "weaponDeploy");
 		}
 	}
-
+*/
 	// Register collision event on every weapon registered in gungame.
 	ForArray(i, droppedWeaponsClassnames)
 	{
@@ -829,8 +835,8 @@ public plugin_init()
 	halfMaxLevel = floatround(float(maxLevel) / 2, floatround_round);
 
 	// Create forwards.
-	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level up (3)
-	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level down (3)
+	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL); // Level up (3)
+	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (3)
 	forwardHandles[2] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
 	forwardHandles[3] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
 	forwardHandles[4] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
@@ -1432,13 +1438,22 @@ public roundStart()
 public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 {
 	// Return if attacker isnt alive, self damage, no damage or players are on the same team.
-	if (!is_user_alive(attacker) || victim == attacker || !damage || !is_user_alive(victim) || (gameMode == modeNormal && get_user_team(attacker) == get_user_team(victim)))
+	if (!is_user_alive(attacker) || victim == attacker || !damage || !is_user_alive(victim))
 	{
 		return HAM_IGNORED;
 	}
 
 	// Return if gungame has ended.
 	if (gungameEnded)
+	{
+		return HAM_SUPERCEDE;
+	}
+
+	if (gameMode == modeNormal && !get_pcvar_num(cvarsData[cvar_normalFriendlyFire]) && get_user_team(attacker) == get_user_team(victim))
+	{
+		return HAM_SUPERCEDE;
+	}
+	else if (gameMode == modeTeamplay && !get_pcvar_num(cvarsData[cvar_teamplayFriendlyFire]) && get_user_team(attacker) == get_user_team(victim))
 	{
 		return HAM_SUPERCEDE;
 	}
@@ -1672,6 +1687,17 @@ public playerDeathEvent()
 					incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
 				}
 			}
+		}
+	}
+	else
+	{
+		if (gameMode == modeNormal)
+		{
+			incrementUserWeaponKills(killer, 1);
+		}
+		else if (gameMode == modeTeamplay)
+		{
+			incrementTeamWeaponKills(killerTeam, 1);
 		}
 	}
 
@@ -2202,8 +2228,8 @@ public displayHud(taskIndex)
 		// We dont talk about that. Ever.
 		if(gameMode == modeNormal)
 		{
-			formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]",
-					printName(leader),
+			formatex(leaderData, charsmax(leaderData), "^nLider: %n :: %i poziom [%s - %i/%i]",
+					leader,//printName(leader),
 					userData[leader][dataLevel] + 1,
 					userData[leader][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[leader][dataLevel]],
 					userData[leader][dataWeaponKills],
@@ -2645,6 +2671,8 @@ giveWarmupWeapons(index)
 
 	// Strip weapons.
 	removePlayerWeapons(index);
+
+	userData[index][dataAllowedWeapons] |= CSW_KNIFE;
 
 	// Give knife as a default weapon.
 	give_item(index, "weapon_knife");
@@ -3094,7 +3122,7 @@ incrementUserLevel(index, value, bool:notify)
 	if (notify)
 	{
 		// Notify about levelup.
-		ColorChat(0, RED, "%s^x01 Gracz^x04 %s^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, printName(index), userData[index][dataLevel] + 1, userData[index][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]) : customWeaponNames[userData[index][dataLevel]]);
+		ColorChat(0, RED, "%s^x01 Gracz^x04 %n^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, index/*, printName(index)*/, userData[index][dataLevel] + 1, userData[index][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]) : customWeaponNames[userData[index][dataLevel]]);
 		
 		// Play levelup sound.
 		playSound(index, soundLevelUp, -1, false);
@@ -3117,9 +3145,9 @@ incrementTeamLevel(team, value, bool:notify)
 
 		// Add weapons.
 		giveWeapons(i);
+	
+		ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, i, tpData[tpTeamLevel][team - 1], team);
 	}
-
-	ExecuteForward(forwardHandles[forwardLevelUp], forwardReturnDummy, -1, tpData[tpTeamLevel][team - 1], team);
 
 	if (notify)
 	{
@@ -3165,7 +3193,7 @@ decrementUserLevel(index, value)
 	// Play leveldown sound.
 	playSound(index, soundLevelDown, -1, false);
 
-	ExecuteForward(forwardHandles[forwardLevelDown], forwardReturnDummy, index, userData[index][dataLevel]);
+	ExecuteForward(forwardHandles[forwardLevelDown], forwardReturnDummy, index, userData[index][dataLevel], -1);
 }
 
 decrementTeamLevel(team, value)
@@ -3179,6 +3207,8 @@ decrementTeamLevel(team, value)
 	{
 		userData[i][dataLevel] = tpData[tpTeamLevel][team - 1];
 		userData[i][dataWeaponKills] = tpData[tpTeamKills][team - 1];
+	
+		ExecuteForward(forwardHandles[forwardLevelDown], forwardReturnDummy, i, tpData[tpTeamLevel][team - 1], team);
 	}
 
 	// Play leveldown sound.
