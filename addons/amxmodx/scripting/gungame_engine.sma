@@ -2511,13 +2511,8 @@ loadSqlConfig()
 		value[MAX_CHARS * 5],
 		entries;
 
-	while (fileHandle && !feof(fileHandle))
+	while (fileHandle && !feof(fileHandle) && entries < sizeof(sqlConfigLabels))
 	{
-		if (entries >= sizeof(sqlConfigLabels))
-		{
-			break;
-		}
-
 		// Read one line at a time.
 		fgets(fileHandle, lineContent, charsmax(lineContent));
 		
@@ -2537,6 +2532,8 @@ loadSqlConfig()
 		trim(key);
 		trim(value);
 
+		remove_quotes(value);
+
 		ForArray(i, sqlConfigLabels)
 		{
 			if (!equal(key, sqlConfigLabels[i]))
@@ -2544,16 +2541,20 @@ loadSqlConfig()
 				continue;
 			}
 
-			remove_quotes(value);
-
-			formatex(dbData[dbEnumerator:i], MAX_CHARS * 2, value);
+			switch(entries)
+			{
+				case 0: copy(dbData[dbHost], MAX_CHARS * 2, value);
+				case 1: copy(dbData[dbUser], MAX_CHARS * 2, value);
+				case 2: copy(dbData[dbPass], MAX_CHARS * 2, value);
+				case 3: copy(dbData[dbDbase], MAX_CHARS * 2, value);
+			}
 
 			entries++;
 		
-			log_amx("Read for %s: %s", sqlConfigLabels[i], dbData[dbEnumerator:i]);
+			break;
 		}
 	}
-
+	
 	dbData[sqlConfigFound] = true;
 }
 
