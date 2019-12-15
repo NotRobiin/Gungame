@@ -774,7 +774,7 @@ public plugin_init()
 	{
 		RegisterHam(Ham_Think, "grenade", "heGrenadeThink");
 	}
-/*
+
 	// Register knife deployement for model-changes if wand is enabled.
 	if (get_pcvar_num(cvarsData[cvar_wandEnabled]))
 	{
@@ -791,7 +791,7 @@ public plugin_init()
 			RegisterHam(Ham_Item_Deploy, weaponClassname, "weaponDeploy");
 		}
 	}
-*/
+
 	// Register collision event on every weapon registered in gungame.
 	ForArray(i, droppedWeaponsClassnames)
 	{
@@ -871,6 +871,7 @@ public plugin_init()
 	register_clcmd("say /headshot", "addHeadshot");
 	register_clcmd("say /kill", "addKill");
 	register_clcmd("say /win", "addWin");
+	register_clcmd("say /weapon", "addWeapon");
 
 #endif
 }
@@ -1350,7 +1351,7 @@ public onAddItemToPlayer(index, weaponEntity)
 	}
 
 	// User is allowed to carry that weapon?
-	if (userData[index][dataAllowedWeapons] & csw)
+	if (userData[index][dataAllowedWeapons] & (1 << csw))
 	{
 		return HAM_IGNORED;
 	}
@@ -1487,14 +1488,30 @@ public weaponDeploy(entity)
 		return;
 	}
 
+	// We dont want to mess with the knife, all players should have it at all times.
+	if (weapon == CSW_KNIFE)
+	{
+		return;
+	}
+
+	log_amx("Deploying csw: %i. Allowed: %i. Bitsum: %i", weapon, (1 << weapon) & userData[index][dataAllowedWeapons], userData[index][dataAllowedWeapons]);
+
+	new n[33];
+
+	ForRange(i, 1, 30)
+	{
+		if((1 << i) & userData[index][dataAllowedWeapons])
+		{
+			get_weaponname(i, n, charsmax(n));
+			log_amx("weapon = %s", n);
+		}
+	}
+
+	// Check if player is holding weapon he shouldnt have.
 	if (!((1 << weapon) & userData[index][dataAllowedWeapons]))
 	{
 		// Take away the weapon.
-		if (!strip_user_weapon(index, weapon))
-		{
-			// Switch to knife if weapon was not taken.
-			engclient_cmd(index, "weapon_knife");
-		}
+		strip_user_weapon(index, weapon);
 
 		return;
 	}
@@ -1502,15 +1519,33 @@ public weaponDeploy(entity)
 
 public knifeDeploy(entity)
 {
-	new index = pev(entity, pev_owner),
-		weapon = cs_get_weapon_id(entity);
+	new index = pev(entity, pev_owner);
 
-	// Return if player isnt alive or its not a warmup with wands.
-	if (warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2 || !is_user_alive(index) || userData[index][dataLevel] != maxLevel || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE)
+	// Block if somehow the player is dead.
+	if (!is_user_alive(index))
 	{
 		return;
 	}
-		
+
+	// Block if player is not on last level or its not a warmup.
+	if (!warmupData[warmupEnabled] || userData[index][dataLevel] != maxLevel)
+	{
+		return;
+	}
+
+	// Block if warmup weapon is not a wand.
+	if (warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
+	{
+		return;
+	}
+
+	// Block if wands are disabled.
+	if (!get_pcvar_num(cvarsData[cvar_wandEnabled]))
+	{
+		return;
+	}
+	
+	// Set the wand model.
 	setWandModels(index);
 	setWeaponAnimation(index, 3);
 }
@@ -2554,7 +2589,7 @@ loadSqlConfig()
 			break;
 		}
 	}
-	
+
 	dbData[sqlConfigFound] = true;
 }
 
@@ -2673,30 +2708,37 @@ giveWarmupWeapons(index)
 	// Strip weapons.
 	removePlayerWeapons(index);
 
-	userData[index][dataAllowedWeapons] |= CSW_KNIFE;
+	userData[index][dataAllowedWeapons] = (1 << CSW_KNIFE);
 
 	// Give knife as a default weapon.
 	give_item(index, "weapon_knife");
 	
 	if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) > -1)
 	{
-		new weaponName[MAX_CHARS - 1];
+		new weaponName[MAX_CHARS - 1],
+			weapon = get_pcvar_num(cvarsData[cvar_warmupWeapon]);
 	
-		// Get warmup weapon entity classname.	
-		get_weaponname(get_pcvar_num(cvarsData[cvar_warmupWeapon]), weaponName, charsmax(weaponName));
+		userData[index][dataAllowedWeapons] |= (1 << weapon);
+
+		// Get warmup weapon entity classname.
+		get_weaponname(weapon, weaponName, charsmax(weaponName));
 
 		// Set weapon backpack ammo to 100.
-		cs_set_user_bpammo(index, get_pcvar_num(cvarsData[cvar_warmupWeapon]), 100);
+		cs_set_user_bpammo(index, weapon, 100);
 	}
 
 	// Add random warmup weapon multiple times.
 	else if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
 	{
+		new weapon = get_weaponid(weaponEntityNames[warmupData[warmupWeaponIndex]]);
+
+		userData[index][dataAllowedWeapons] |= (1 << weapon);
+
 		// Add weapon.
 		give_item(index, weaponEntityNames[warmupData[warmupWeaponIndex]]);
 
 		// Set weapon bp ammo to 100.
-		cs_set_user_bpammo(index, get_weaponid(weaponEntityNames[warmupData[warmupWeaponIndex]]), 100);
+		cs_set_user_bpammo(index, weapon, 100);
 	}
 
 	// Set wand model.
@@ -3303,7 +3345,7 @@ giveWeapons(index)
 	removePlayerWeapons(index);
 
 	// Reset player allowed weapons and add knife.
-	userData[index][dataAllowedWeapons] = CSW_KNIFE;
+	userData[index][dataAllowedWeapons] = (1 << CSW_KNIFE);
 
 	// Add wand if player is on last level and such option is enabled.
 	if (userData[index][dataLevel] != maxLevel)
@@ -3311,10 +3353,10 @@ giveWeapons(index)
 		// Add weapon couple of times to make sure backpack ammo is right.
 		new csw = get_weaponid(weaponEntityNames[userData[index][dataLevel]]);
 
-		give_item(index, weaponEntityNames[userData[index][dataLevel]]);
-
 		// Add weapon to allowed to carry by player.
-		userData[index][dataAllowedWeapons] |= weaponsData[userData[index][dataLevel]][weaponCSW];
+		userData[index][dataAllowedWeapons] |= (1 << weaponsData[userData[index][dataLevel]][weaponCSW]);
+
+		give_item(index, weaponEntityNames[userData[index][dataLevel]]);
 
 		if (csw != CSW_HEGRENADE && csw != CSW_KNIFE && csw != CSW_FLASHBANG)
 		{
@@ -3342,7 +3384,7 @@ giveWeapons(index)
 			// Add two flashes.
 			if (get_pcvar_num(cvarsData[cvar_flashesEnabled]))
 			{
-				userData[index][dataAllowedWeapons] |= CSW_FLASHBANG;
+				userData[index][dataAllowedWeapons] |= (1 << CSW_FLASHBANG);
 
 				ForRange(i, 0, 1)
 				{
@@ -3630,6 +3672,8 @@ randomWarmupWeapon(index)
 
 	// Get classname of randomized weapon.
 	get_weaponname(csw, weaponClassname, charsmax(weaponClassname));
+
+	userData[index][dataAllowedWeapons] |= (1 << csw);
 
 	// Add weapon to player.
 	give_item(index, weaponClassname);
@@ -4111,6 +4155,11 @@ public addWin(index)
 {
 	userData[index][dataWins]++;
 	client_print(0, print_chat, "%i", userData[index][dataWins]);
+}
+
+public addWeapon(index)
+{
+	give_item(index, "weapon_m4a1");
 }
 
 #endif
