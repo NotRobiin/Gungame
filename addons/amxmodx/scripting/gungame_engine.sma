@@ -531,13 +531,7 @@ enum (+= 1)
 
 	cvar_takeDamageHudTime,
 	
-	cvar_removeWeaponsOffTheGround,
-
-	// These 4 must always be at the end!
-	cvar_sqlHost,
-	cvar_sqlUser,
-	cvar_sqlPass,
-	cvar_sqlDb
+	cvar_removeWeaponsOffTheGround
 };
 
 new const ggCvarsData[][][] =
@@ -581,13 +575,7 @@ new const ggCvarsData[][][] =
 	
 	{ "gg_takeDamageHudTime", "1.2" }, // Take damage hud hold-time.
 	
-	{ "gg_removeWeaponsOffTheGround", "1" }, // Remove weapons off the ground when loading map?
-
-/*		These need to always be last 		*/
-	{ "gg_sql_host", "" },	// SQL Host
-	{ "gg_sql_user", "" },	// SQL User
-	{ "gg_sql_pass", "" },	// SQL Password
-	{ "gg_sql_db", "" }		// SQL Database
+	{ "gg_removeWeaponsOffTheGround", "1" } // Remove weapons off the ground when loading map?
 };
 
 new const forwardsNames[][] =
@@ -688,12 +676,16 @@ enum teamplayEnumerator
 
 enum dbEnumerator
 {
-	Handle:sqlHandle,
-	bool:sqlLoaded,
+	// These 4 need to be first.
 	dbHost[MAX_CHARS * 2],
 	dbUser[MAX_CHARS * 2],
 	dbPass[MAX_CHARS * 2],
-	dbDbase[MAX_CHARS * 2]
+	dbDbase[MAX_CHARS * 2],
+	// These 4 need to be first.
+
+	Handle:sqlHandle,
+	bool:sqlLoaded,
+	bool:sqlConfigFound
 };
 
 new userData[MAX_PLAYERS + 1][userDataEnumerator],
@@ -739,7 +731,7 @@ public plugin_init()
 	// Register cvars.
 	ForArray(i, ggCvarsData)
 	{
-		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1], i >= sizeof(ggCvarsData) - 4 ? FCVAR_PROTECTED : FCVAR_NONE);
+		cvarsData[i] = register_cvar(ggCvarsData[i][0], ggCvarsData[i][1]);
 	}
 
 	// Register Death and team assign events.
@@ -847,6 +839,9 @@ public plugin_init()
 
 	// Toggle warmup a bit delayed from plugin start.
 	set_task(1.0, "delayed_toggleWarmup");
+
+	// Load info required to connect to database.
+	loadSqlConfig();
 
 	// Load cvars.
 	loadGameCvars();
@@ -2264,11 +2259,6 @@ public respawnPlayerOnJoin(taskIndex)
 
 connectDatabase()
 {
-	get_pcvar_string(cvarsData[cvar_sqlHost], dbData[dbHost], MAX_CHARS * 2);
-	get_pcvar_string(cvarsData[cvar_sqlUser], dbData[dbUser], MAX_CHARS * 2);
-	get_pcvar_string(cvarsData[cvar_sqlPass], dbData[dbPass], MAX_CHARS * 2);
-	get_pcvar_string(cvarsData[cvar_sqlDb], dbData[dbDbase], MAX_CHARS * 2);
-
 	new mysqlRequest[MAX_CHARS * 10];
 
 	// Create mysql tuple.
@@ -2468,6 +2458,77 @@ escapeString(const source[], output[], length)
 	replace_all(output, length, "'", "\'");
 	replace_all(output, length, "`", "\`");
 	replace_all(output, length, "^"", "\^"");
+}
+
+loadSqlConfig()
+{
+	new const sqlConfigPath[] = "addons/amxmodx/configs/gg_sql.cfg";
+
+	new const sqlConfigLabels[][] =
+	{
+		"gg_sql_host",
+		"gg_sql_user",
+		"gg_sql_pass",
+		"gg_sql_db"
+	};
+
+	if (!file_exists(sqlConfigPath))
+	{
+		dbData[sqlConfigFound] = false;
+
+		return;
+	}
+
+	new fileHandle = fopen(sqlConfigPath, "r"),
+		lineContent[MAX_CHARS * 10],
+		key[MAX_CHARS * 5],
+		value[MAX_CHARS * 5],
+		entries;
+
+	while (fileHandle && !feof(fileHandle))
+	{
+		if (entries >= sizeof(sqlConfigLabels))
+		{
+			break;
+		}
+
+		// Read one line at a time.
+		fgets(fileHandle, lineContent, charsmax(lineContent));
+		
+		// Replace newlines with a null character.
+		replace(lineContent, charsmax(lineContent), "^n", "");
+		
+		// Blank line or comment.
+		if (!lineContent[0] || lineContent[0] == ';')
+		{
+			continue;
+		}
+		
+		// Get key and value.
+		strtok(lineContent, key, charsmax(key), value, charsmax(value), '=');
+		
+		// Trim spaces.
+		trim(key);
+		trim(value);
+
+		ForArray(i, sqlConfigLabels)
+		{
+			if (!equal(key, sqlConfigLabels[i]))
+			{
+				continue;
+			}
+
+			remove_quotes(value);
+
+			formatex(dbData[dbEnumerator:i], MAX_CHARS * 2, value);
+
+			entries++;
+		
+			log_amx("Read for %s: %s", sqlConfigLabels[i], dbData[dbEnumerator:i]);
+		}
+	}
+
+	dbData[sqlConfigFound] = true;
 }
 
 loadGameCvars()
