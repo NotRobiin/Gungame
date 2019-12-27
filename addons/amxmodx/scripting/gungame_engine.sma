@@ -1494,16 +1494,13 @@ public weaponDeploy(entity)
 		return;
 	}
 
-	log_amx("Deploying csw: %i. Allowed: %i. Bitsum: %i", weapon, (1 << weapon) & userData[index][dataAllowedWeapons], userData[index][dataAllowedWeapons]);
-
 	new n[33];
 
 	ForRange(i, 1, 30)
 	{
-		if((1 << i) & userData[index][dataAllowedWeapons])
+		if ((1 << i) & userData[index][dataAllowedWeapons])
 		{
 			get_weaponname(i, n, charsmax(n));
-			log_amx("weapon = %s", n);
 		}
 	}
 
@@ -2041,7 +2038,7 @@ public listWeaponsMenu_handler(id, menu, item)
 
 public topPlayersMotdHandler(index)
 {
-	if(!is_user_connected(index))
+	if (!is_user_connected(index))
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -2261,7 +2258,7 @@ public displayHud(taskIndex)
 	else
 	{
 		// We dont talk about that. Ever.
-		if(gameMode == modeNormal)
+		if (gameMode == modeNormal)
 		{
 			formatex(leaderData, charsmax(leaderData), "^nLider: %n :: %i poziom [%s - %i/%i]",
 					leader,//printName(leader),
@@ -2376,12 +2373,12 @@ getUserData(index)
 public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[], dataSize)
 {
 	new index = data[0];
-
+/*
 	if (!is_user_connected(index))
 	{
 		return;
 	}
-
+*/
 	if (SQL_NumRows(query))
 	{
 		userData[index][dataWins] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "wins"));
@@ -2397,10 +2394,12 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 
 insertUserData(index)
 {
+	/*
 	if (!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
+	*/
 
 	new mysqlRequest[MAX_CHARS * 10];
 
@@ -2666,8 +2665,6 @@ createTopPlayersMotd()
 				</td>\
 			</tr>",
 			i + 1, topPlayers[i][topNames], topPlayers[i][topWins], topPlayers[i][topKnifeKills], floatround(topPlayers[i][topHeadshots] / topPlayers[i][topKills] * 100.0));
-
-		log_amx("%d %s %d %d %d", i + 1, topPlayers[i][topNames], topPlayers[i][topWins], topPlayers[i][topKnifeKills], floatround(topPlayers[i][topHeadshots] / topPlayers[i][topKills] * 100.0));
 
 		playersDisplayed++;
 	}
