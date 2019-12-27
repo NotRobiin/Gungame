@@ -1213,7 +1213,7 @@ public plugin_precache()
 	}
 }
 
-public client_putinserver(index)
+public client_authorized(index)
 {
 	userData[index][dataWarmupWeapon] = -1;
 	userData[index][dataWarmupCustomWeaponIndex] = -1;
@@ -1245,7 +1245,10 @@ public client_putinserver(index)
 	// Set user level to current lowest or half of max level if current lowest is greater than half.
 	userData[index][dataLevel] = newLevel;
 	userData[index][dataWeaponKills] = 0;
+}
 
+public client_putinserver(index)
+{
 	// Respawn player.
 	set_task(2.0, "respawnPlayerOnJoin", index + TASK_RESPAWN_ON_JOIN);
 	set_task(3.0, "showGameVoteMenu", index);
@@ -2352,13 +2355,13 @@ public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, dat
 
 getUserData(index)
 {
-	if (!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
+	if (is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
 
 	new mysqlRequest[MAX_CHARS * 3],
-		data[1];
+		data[2];
 
 	data[0] = index;
 
@@ -2373,12 +2376,7 @@ getUserData(index)
 public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[], dataSize)
 {
 	new index = data[0];
-/*
-	if (!is_user_connected(index))
-	{
-		return;
-	}
-*/
+
 	if (SQL_NumRows(query))
 	{
 		userData[index][dataWins] = SQL_ReadResult(query, SQL_FieldNameToNum(query, "wins"));
@@ -2394,12 +2392,10 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 
 insertUserData(index)
 {
-	/*
-	if (!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
+	if (is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
-	*/
 
 	new mysqlRequest[MAX_CHARS * 10];
 
@@ -2491,7 +2487,7 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 
 getUserNameData(index)
 {
-	if (!is_user_connected(index) || is_user_hltv(index))
+	if (is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
