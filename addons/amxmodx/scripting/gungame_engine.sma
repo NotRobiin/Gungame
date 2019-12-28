@@ -3497,28 +3497,100 @@ getWarmupWinner(bool:announce)
 	}
 
 	new winner;
+	new Array:candidates = ArrayCreate(2, 32);
 
-	// Get player with most kills.
+	// Collect all players data
 	ForPlayers(i)
 	{
-		if (!is_user_connected(i) || get_user_frags(i) < get_user_frags(winner))
+		if (is_user_connected(i) && !is_user_hltv(i))
 		{
-			continue;
+			new dataSet[3];
+			dataSet[0] = i; // id
+			dataSet[1] = get_user_frags(i) - get_user_deaths(i); // frags and deaths difference
+			ArrayPushArray(candidates, dataSet);
 		}
+		// if (!is_user_connected(i) || get_user_frags(i) < get_user_frags(winner))
+		// {
+		// 	continue;
+		// }
 
-		winner = i;
+		// winner = i;
 	}
 
-	// Print win-message couple times in chat.
-	if (announce && is_user_connected(winner))
+	if (ArraySize(candidates) > 0)
 	{
-		ForRange(i, 0, 2)
+		ArraySortEx(candidates, "sortPlayersByKillsDeathsDifference");
+
+		// Get only players with best score
+		new Array:bestPlayers = ArrayCreate(2, 32);
+		new candidateData[3];
+		ArrayGetArray(candidates, 0, candidateData);
+
+		new maximum = candidateData[1]; // Get first player with best score
+		if (maximum > 0)
 		{
-			ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]));
+			ForDynamicArray(i, candidates)
+			{
+				ArrayGetArray(candidates, i, candidateData);
+				if (candidateData[1] < maximum)
+				{
+					break;
+				}
+				ArrayPushArray(bestPlayers, candidateData);
+			}
+
+			// Only player with top score, he's the winner
+			new bestPlayersAmount = ArraySize(bestPlayers);
+			if (bestPlayersAmount == 1)
+			{
+				ArrayGetArray(bestPlayers, 0, candidateData);
+				winner = candidateData[0];
+			}
+			else // There are more players with top score, let's randomly choose one
+			{
+				new choosen = random_num(0, bestPlayersAmount - 1);
+				ArrayGetArray(bestPlayers, choosen, candidateData);
+				winner = candidateData[0];
+			}
+
+			// Print win-message couple times in chat.
+			if (announce && is_user_connected(winner))
+			{
+				ForRange(i, 0, 2)
+				{
+					ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]));
+				}
+			}
 		}
+		else if (maximum == 0) // No one got killed
+		{
+			winner = 0;
+		}
+
+		ArrayDestroy(candidates);
+		ArrayDestroy(bestPlayers);
+
+		return winner;
 	}
 
-	return winner;
+	// There is no winner, no real players on server
+	return 0;
+}
+
+public sortPlayersByKillsDeathsDifference(Array:array, elem1[], elem2[], const data[], data_size)
+{
+	new p1Difference = elem1[1];
+	new p2Difference = elem2[1];
+
+	if (p1Difference > p2Difference)
+	{
+		return -1;
+	}
+	else if (p1Difference < p2Difference)
+	{
+		return 1;
+	}
+	return 0;
 }
 
 getWeaponsName(iterator, weaponIndex, string[], length)
