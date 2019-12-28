@@ -30,12 +30,10 @@ native bool:gg_get_user_vip(index);
 #define MAX_PLAYERS 32
 
 #define ForTeam(%1,%2) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++) if (is_user_connected(%1) && get_user_team(%1) == %2)
+#define ForDynamicArray(%1,%2) for(new %1 = 0; %1 < ArraySize(%2); %1++)
 #define ForPlayers(%1) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++)
 #define ForArray(%1,%2) for(new %1 = 0; %1 < sizeof(%2); %1++)
 #define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
-
-// Handle name length.
-//#define printName(%1) (strlen(userData[%1][dataName]) > maxNicknameLength ? userData[%1][dataShortName] : userData[%1][dataName])
 
 // Task indexes.
 enum (+= 2500)
@@ -694,6 +692,13 @@ enum dbEnumerator
 	bool:sqlConfigFound
 };
 
+enum dcDataEnumerator
+{
+	Array:dcDataLevel,
+	Array:dcDataName,
+	Array:dcDataWeaponKills
+};
+
 new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	warmupData[warmupEnumerator],
@@ -727,7 +732,9 @@ new userData[MAX_PLAYERS + 1][userDataEnumerator],
 
 	gameVotes[sizeof(gameModes)],
 	bool:gameVoteEnabled,
-	gameMode = -1;
+	gameMode = -1,
+
+	disconnectedPlayersData[dcDataEnumerator];
 
 
 public plugin_init()
@@ -854,6 +861,11 @@ public plugin_init()
 
 	// Connect do mysql database.
 	connectDatabase();
+
+	// Initialize dynamic arrays.
+	disconnectedPlayersData[dcDataLevel] = ArrayCreate(1, 1);
+	disconnectedPlayersData[dcDataName] = ArrayCreate(32, 1);
+	disconnectedPlayersData[dcDataWeaponKills] = ArrayCreate(1, 1);
 
 	// Load top players from MySQL.
 	loadTopPlayers();
@@ -1155,6 +1167,12 @@ public native_GetUserCombo(plugin, params)
 		[ Forwards & menus & unassigned publics ]
 */
 
+public plugin_end()
+{
+	ArrayDestroy(disconnectedPlayersData[dcDataName]);
+	ArrayDestroy(disconnectedPlayersData[dcDataLevel]);
+}
+
 public plugin_precache()
 {
 	new filePath[MAX_CHARS * 3];
@@ -1231,9 +1249,13 @@ public client_authorized(index)
 
 	// Preset user level to 0.
 	userData[index][dataLevel] = 0;
+	userData[index][dataWeaponKills] = 0;
 
-	// Dont calculate level if gungame has ended.
-	if (gungameEnded)
+	// Reconnected?
+	getOnConnect(index);
+
+	// Dont calculate level if gungame has ended or player has reconnected.
+	if (gungameEnded || userData[index][dataLevel])
 	{
 		return;
 	}
@@ -1258,6 +1280,7 @@ public client_disconnect(index)
 {
 	removeHud(index);
 	updateUserData(index);
+	saveOnDisconnect(index);
 }
 
 // Get user's name again when changed.
@@ -2520,6 +2543,40 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 /*
 		[ FUNCTIONS ]
 */
+
+saveOnDisconnect(index)
+{
+	ArrayPushCell(disconnectedPlayersData[dcDataLevel], userData[index][dataLevel]);
+	ArrayPushCell(disconnectedPlayersData[dcDataWeaponKills], userData[index][dataWeaponKills]);
+	ArrayPushString(disconnectedPlayersData[dcDataName], userData[index][dataName]);
+}
+
+getOnConnect(index)
+{
+	static name[MAX_CHARS];
+
+	ForDynamicArray(i, disconnectedPlayersData[dcDataName])
+	{
+		ArrayGetString(disconnectedPlayersData[dcDataName], i, name, charsmax(name));
+
+		// Not our guy.
+		if (!equal(name, userData[index][dataName]))
+		{
+			continue;
+		}
+
+		// Set new level and weapon kills.
+		userData[index][dataLevel] = ArrayGetCell(disconnectedPlayersData[dcDataLevel], i);
+		userData[index][dataWeaponKills] = ArrayGetCell(disconnectedPlayersData[dcDataWeaponKills], i);
+
+		// Delete data from dynamic arrays.
+		ArrayDeleteItem(disconnectedPlayersData[dcDataLevel], i);
+		ArrayDeleteItem(disconnectedPlayersData[dcDataWeaponKills], i);
+		ArrayDeleteItem(disconnectedPlayersData[dcDataName], i);
+
+		break;
+	}
+}
 
 getUserNameData(index)
 {
