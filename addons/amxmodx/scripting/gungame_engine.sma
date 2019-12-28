@@ -2040,7 +2040,7 @@ public displayWarmupTimer()
 			}
 			else
 			{
-				if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
+				if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
 				{
 					copy(weaponName, charsmax(weaponName), customWeaponNames[warmupData[warmupWeaponIndex]]);
 				}
@@ -3679,7 +3679,7 @@ getPlayerByTopLevel(array[], count)
 			continue;
 		}
 
-		for(new i = count - 1; i >= 0; i--)
+		for (new i = count - 1; i >= 0; i--)
 		{
 			if (highestLevels[i] < userData[index][dataLevel] + 1 && i)
 			{
@@ -3701,7 +3701,7 @@ getPlayerByTopLevel(array[], count)
 				break;
 			}
 
-			for(new j = count - 2; j >= counter; j--)
+			for (new j = count - 2; j >= counter; j--)
 			{
 				highestLevels[j + 1] = highestLevels[j];
 
