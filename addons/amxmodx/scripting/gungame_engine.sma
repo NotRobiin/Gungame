@@ -1171,6 +1171,7 @@ public plugin_end()
 {
 	ArrayDestroy(disconnectedPlayersData[dcDataName]);
 	ArrayDestroy(disconnectedPlayersData[dcDataLevel]);
+	ArrayDestroy(disconnectedPlayersData[dcDataWeaponKills]);
 }
 
 public plugin_precache()
@@ -4326,32 +4327,30 @@ setGameVote()
 public finishGameVote()
 {
 	gameVoteEnabled = false;
-
-	new bool:tie,
-		sumOfVotes;
-
 	gameMode = 0;
 
+	new bool:tie,
+		sumOfVotes = gameVotes[0] + gameVotes[1];
+
 	// Handle game mode votes.
-	ForArray(i, gameModes)
+	if (gameVotes[0] == gameVotes[1])
 	{
-		sumOfVotes += gameVotes[i];
-
-		if (gameVotes[i] < gameVotes[gameMode])
+		tie = true;
+	}
+	else
+	{
+		if (gameVotes[0] > gameVotes[1])
 		{
-			continue;
+			gameMode = 0;
 		}
-
-		if (gameVotes[i] == gameVotes[gameMode] && gameVotes[i])
+		else
 		{
-			tie = true;
+			gameMode = 1;
 		}
-
-		gameMode = i;
 	}
 
 	// If there is no definitive winner, get one randomly.
-	if (tie)
+	if (tie || !sumOfVotes)
 	{
 		gameMode = random_num(0, sizeof(gameModes) - 1);
 
