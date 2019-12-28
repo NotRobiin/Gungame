@@ -532,7 +532,9 @@ enum (+= 1)
 	cvar_removeWeaponsOffTheGround,
 	
 	cvar_normalFriendlyFire,
-	cvar_teamplayFriendlyFire
+	cvar_teamplayFriendlyFire,
+
+	cvar_spawnProtectionType
 };
 
 new const ggCvarsData[][][] =
@@ -579,7 +581,9 @@ new const ggCvarsData[][][] =
 	{ "gg_removeWeaponsOffTheGround", "1" }, // Remove weapons off the ground when loading map?
 
 	{ "gg_normalFriendlyFire", "0" }, // Enable friendly fire in normal mode?
-	{ "gg_teamplayFriendlyFire", "0" } // Enable friendly fire in teamplay mode?
+	{ "gg_teamplayFriendlyFire", "0" }, // Enable friendly fire in teamplay mode?
+
+	{ "gg_spawnProtectionType", "0" } // Spawn protection effect: 0 - godmode, 1 - no points granted to killer if victim is on spawn protection.
 };
 
 new const forwardsNames[][] =
@@ -842,13 +846,13 @@ public plugin_init()
 	halfMaxLevel = floatround(float(maxLevel) / 2, floatround_round);
 
 	// Create forwards.
-	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL); // Level up (3)
-	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (3)
-	forwardHandles[2] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
-	forwardHandles[3] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
-	forwardHandles[4] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
-	forwardHandles[5] = CreateMultiForward(forwardsNames[5], ET_IGNORE, FP_CELL, FP_CELL); // Combo streak (2)
-	forwardHandles[6] = CreateMultiForward(forwardsNames[6], ET_IGNORE, FP_CELL); // Game mode chosen (1)
+	forwardHandles[forwardLevelUp] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level up (3)
+	forwardHandles[forwardLevelDown] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (3)
+	forwardHandles[forwardGameEnd] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
+	forwardHandles[forwardGameBeginning] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
+	forwardHandles[forwardPlayerSpawned] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
+	forwardHandles[forwardComboStreak] = CreateMultiForward(forwardsNames[5], ET_IGNORE, FP_CELL, FP_CELL); // Combo streak (2)
+	forwardHandles[forwardGameModeChosen] = CreateMultiForward(forwardsNames[6], ET_IGNORE, FP_CELL); // Game mode chosen (1)
 
 	// Toggle warmup a bit delayed from plugin start.
 	set_task(1.0, "delayed_toggleWarmup");
@@ -1476,11 +1480,19 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 		return HAM_SUPERCEDE;
 	}
 
-	if (gameMode == modeNormal && !get_pcvar_num(cvarsData[cvar_normalFriendlyFire]) && get_user_team(attacker) == get_user_team(victim))
+	if (get_user_team(attacker) == get_user_team(victim))
 	{
-		return HAM_SUPERCEDE;
+		if (gameMode == modeNormal && !get_pcvar_num(cvarsData[cvar_normalFriendlyFire]))
+		{
+			return HAM_SUPERCEDE;
+		}
+		else if (gameMode == modeTeamplay && !get_pcvar_num(cvarsData[cvar_teamplayFriendlyFire]))
+		{
+			return HAM_SUPERCEDE;
+		}
 	}
-	else if (gameMode == modeTeamplay && !get_pcvar_num(cvarsData[cvar_teamplayFriendlyFire]) && get_user_team(attacker) == get_user_team(victim))
+
+	if (userData[victim][dataSpawnProtection] && !get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
 	{
 		return HAM_SUPERCEDE;
 	}
@@ -1662,21 +1674,24 @@ public playerDeathEvent()
 	// Respawn victim normally.
 	respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
 
-	if (userData[victim][dataSpawnProtection])
+	if (get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
 	{
-		// Remove protection task if present.
-		if (task_exists(victim + TASK_SPAWNPROTECTION))
+		if (userData[victim][dataSpawnProtection])
 		{
-			remove_task(victim + TASK_SPAWNPROTECTION);
+			// Remove protection task if present.
+			if (task_exists(victim + TASK_SPAWNPROTECTION))
+			{
+				remove_task(victim + TASK_SPAWNPROTECTION);
+			}
+
+			// Toggle off respawn protection.
+			toggleSpawnProtection(victim, false);
+
+			// Prevent weapon-drop to the floor.
+			removePlayerWeapons(victim);
+
+			return;
 		}
-
-		// Toggle off respawn protection.
-		toggleSpawnProtection(victim, false);
-
-		// Prevent weapon-drop to the floor.
-		removePlayerWeapons(victim);
-
-		return;
 	}
 	
 	// Update stats.
@@ -2025,7 +2040,7 @@ public displayWarmupTimer()
 			}
 			else
 			{
-				if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
+				if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
 				{
 					copy(weaponName, charsmax(weaponName), customWeaponNames[warmupData[warmupWeaponIndex]]);
 				}
@@ -3099,6 +3114,12 @@ toggleSpawnProtection(index, bool:status)
 	// Toggle spawn protection on index.
 	userData[index][dataSpawnProtection] = status;
 
+	// Toggle godmode.
+	if (get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
+	{
+		set_user_godmode(index, status);
+	}
+
 	// Set glowshell to indicate spawn protection. Disable any rendering if status is false.
 	if (status)
 	{
@@ -3730,7 +3751,7 @@ getPlayerByTopLevel(array[], count)
 			continue;
 		}
 
-		for(new i = count - 1; i >= 0; i--)
+		for (new i = count - 1; i >= 0; i--)
 		{
 			if (highestLevels[i] < userData[index][dataLevel] + 1 && i)
 			{
@@ -3752,7 +3773,7 @@ getPlayerByTopLevel(array[], count)
 				break;
 			}
 
-			for(new j = count - 2; j >= counter; j--)
+			for (new j = count - 2; j >= counter; j--)
 			{
 				highestLevels[j + 1] = highestLevels[j];
 
@@ -4399,32 +4420,30 @@ setGameVote()
 public finishGameVote()
 {
 	gameVoteEnabled = false;
-
-	new bool:tie,
-		sumOfVotes;
-
 	gameMode = 0;
 
+	new bool:tie,
+		sumOfVotes = gameVotes[0] + gameVotes[1];
+
 	// Handle game mode votes.
-	ForArray(i, gameModes)
+	if (gameVotes[0] == gameVotes[1])
 	{
-		sumOfVotes += gameVotes[i];
-
-		if (gameVotes[i] < gameVotes[gameMode])
+		tie = true;
+	}
+	else
+	{
+		if (gameVotes[0] > gameVotes[1])
 		{
-			continue;
+			gameMode = 0;
 		}
-
-		if (gameVotes[i] == gameVotes[gameMode] && gameVotes[i])
+		else
 		{
-			tie = true;
+			gameMode = 1;
 		}
-
-		gameMode = i;
 	}
 
 	// If there is no definitive winner, get one randomly.
-	if (tie)
+	if (tie || !sumOfVotes)
 	{
 		gameMode = random_num(0, sizeof(gameModes) - 1);
 
