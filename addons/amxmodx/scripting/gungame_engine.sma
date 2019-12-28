@@ -842,13 +842,13 @@ public plugin_init()
 	halfMaxLevel = floatround(float(maxLevel) / 2, floatround_round);
 
 	// Create forwards.
-	forwardHandles[0] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL); // Level up (3)
-	forwardHandles[1] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (3)
-	forwardHandles[2] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
-	forwardHandles[3] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
-	forwardHandles[4] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
-	forwardHandles[5] = CreateMultiForward(forwardsNames[5], ET_IGNORE, FP_CELL, FP_CELL); // Combo streak (2)
-	forwardHandles[6] = CreateMultiForward(forwardsNames[6], ET_IGNORE, FP_CELL); // Game mode chosen (1)
+	forwardHandles[forwardLevelUp] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level up (3)
+	forwardHandles[forwardLevelDown] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (3)
+	forwardHandles[forwardGameEnd] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
+	forwardHandles[forwardGameBeginning] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
+	forwardHandles[forwardPlayerSpawned] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
+	forwardHandles[forwardComboStreak] = CreateMultiForward(forwardsNames[5], ET_IGNORE, FP_CELL, FP_CELL); // Combo streak (2)
+	forwardHandles[forwardGameModeChosen] = CreateMultiForward(forwardsNames[6], ET_IGNORE, FP_CELL); // Game mode chosen (1)
 
 	// Toggle warmup a bit delayed from plugin start.
 	set_task(1.0, "delayed_toggleWarmup");
