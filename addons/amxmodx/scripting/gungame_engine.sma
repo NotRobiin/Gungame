@@ -532,7 +532,9 @@ enum (+= 1)
 	cvar_removeWeaponsOffTheGround,
 	
 	cvar_normalFriendlyFire,
-	cvar_teamplayFriendlyFire
+	cvar_teamplayFriendlyFire,
+
+	cvar_spawnProtectionType
 };
 
 new const ggCvarsData[][][] =
@@ -579,7 +581,9 @@ new const ggCvarsData[][][] =
 	{ "gg_removeWeaponsOffTheGround", "1" }, // Remove weapons off the ground when loading map?
 
 	{ "gg_normalFriendlyFire", "0" }, // Enable friendly fire in normal mode?
-	{ "gg_teamplayFriendlyFire", "0" } // Enable friendly fire in teamplay mode?
+	{ "gg_teamplayFriendlyFire", "0" }, // Enable friendly fire in teamplay mode?
+
+	{ "gg_spawnProtectionType", "0" } // Spawn protection effect: 0 - godmode, 1 - no points granted to killer if victim is on spawn protection.
 };
 
 new const forwardsNames[][] =
@@ -1476,11 +1480,19 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 		return HAM_SUPERCEDE;
 	}
 
-	if (gameMode == modeNormal && !get_pcvar_num(cvarsData[cvar_normalFriendlyFire]) && get_user_team(attacker) == get_user_team(victim))
+	if (get_user_team(attacker) == get_user_team(victim))
 	{
-		return HAM_SUPERCEDE;
+		if (gameMode == modeNormal && !get_pcvar_num(cvarsData[cvar_normalFriendlyFire]))
+		{
+			return HAM_SUPERCEDE;
+		}
+		else if (gameMode == modeTeamplay && !get_pcvar_num(cvarsData[cvar_teamplayFriendlyFire]))
+		{
+			return HAM_SUPERCEDE;
+		}
 	}
-	else if (gameMode == modeTeamplay && !get_pcvar_num(cvarsData[cvar_teamplayFriendlyFire]) && get_user_team(attacker) == get_user_team(victim))
+
+	if (userData[victim][dataSpawnProtection] && !get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
 	{
 		return HAM_SUPERCEDE;
 	}
@@ -1662,21 +1674,24 @@ public playerDeathEvent()
 	// Respawn victim normally.
 	respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
 
-	if (userData[victim][dataSpawnProtection])
+	if (get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
 	{
-		// Remove protection task if present.
-		if (task_exists(victim + TASK_SPAWNPROTECTION))
+		if (userData[victim][dataSpawnProtection])
 		{
-			remove_task(victim + TASK_SPAWNPROTECTION);
+			// Remove protection task if present.
+			if (task_exists(victim + TASK_SPAWNPROTECTION))
+			{
+				remove_task(victim + TASK_SPAWNPROTECTION);
+			}
+
+			// Toggle off respawn protection.
+			toggleSpawnProtection(victim, false);
+
+			// Prevent weapon-drop to the floor.
+			removePlayerWeapons(victim);
+
+			return;
 		}
-
-		// Toggle off respawn protection.
-		toggleSpawnProtection(victim, false);
-
-		// Prevent weapon-drop to the floor.
-		removePlayerWeapons(victim);
-
-		return;
 	}
 	
 	// Update stats.
@@ -3098,6 +3113,12 @@ toggleSpawnProtection(index, bool:status)
 {
 	// Toggle spawn protection on index.
 	userData[index][dataSpawnProtection] = status;
+
+	// Toggle godmode.
+	if (get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
+	{
+		set_user_godmode(index, status);
+	}
 
 	// Set glowshell to indicate spawn protection. Disable any rendering if status is false.
 	if (status)
