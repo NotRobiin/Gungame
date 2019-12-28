@@ -1171,6 +1171,7 @@ public plugin_end()
 {
 	ArrayDestroy(disconnectedPlayersData[dcDataName]);
 	ArrayDestroy(disconnectedPlayersData[dcDataLevel]);
+	ArrayDestroy(disconnectedPlayersData[dcDataWeaponKills]);
 }
 
 public plugin_precache()
