@@ -2,7 +2,7 @@
 #include <colorchat>
 
 #define PLUGIN "Map Manager"
-#define VERSION "2.5.116"
+#define VERSION "2.5.118"
 #define AUTHOR "Mistrick"
 
 #pragma semicolon 1
@@ -935,14 +935,12 @@ public plugin_cfg()
 	if( is_plugin_loaded("Nextmap Chooser") > -1 )
 	{
 		pause("cd", "mapchooser.amxx");
-		log_amx("MapManager: mapchooser.amxx has been stopped.");
 	}
 	
 	#if defined FUNCTION_NEXTMAP
 	if( is_plugin_loaded("NextMap") > -1 )
 	{
 		pause("cd", "nextmap.amxx");
-		log_amx("MapManager: nextmap.amxx has been stopped.");
 	}	
 	#endif
 	
@@ -1186,20 +1184,17 @@ public Event_NewRound()
 	new iMaxRounds = get_pcvar_num(g_pCvars[MAXROUNDS]);
 	if(!g_bVoteFinished && iMaxRounds && (g_iTeamScore[0] + g_iTeamScore[1]) >= iMaxRounds - 2)
 	{
-		log_amx("StartVote: maxrounds %d [%d]", iMaxRounds, g_iTeamScore[0] + g_iTeamScore[1]);
 		StartVote(0);
 	}
 	
 	new iWinLimit = get_pcvar_num(g_pCvars[WINLIMIT]) - 2;
 	if(!g_bVoteFinished && iWinLimit > 0 && (g_iTeamScore[0] >= iWinLimit || g_iTeamScore[1] >= iWinLimit))
 	{
-		log_amx("StartVote: winlimit %d [%d/%d]", iWinLimit, g_iTeamScore[0], g_iTeamScore[1]);
 		StartVote(0);
 	}
 	
 	if(g_bStartVote)
 	{
-		log_amx("StartVote: timeleft %d, new round", get_timeleft());
 		StartVote(0);
 	}
 	
