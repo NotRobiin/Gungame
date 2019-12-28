@@ -142,16 +142,18 @@ native gg_get_vip_flags();
 
 	@param index		Valid (1-32) player index.
 	@param level 		New player's level.
+	@param team 		-1 if leveled up on normal mode, 1/2 on teamplay
 */
-forward gg_level_up(index, level);
+forward gg_level_up(index, level, team);
 
 /*
 	Called when player ranks down.
 
 	@param index		Valid (1-32) player index.
 	@param level 		New player's level.
+	@param team 		-1 if leveled down on normal mode, 1/2 on teamplay
 */
-forward gg_level_down(index, level);
+forward gg_level_down(index, level, team);
 
 /*
 	Called when someone wins gungame.
