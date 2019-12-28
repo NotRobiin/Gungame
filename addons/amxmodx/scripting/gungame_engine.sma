@@ -1497,22 +1497,12 @@ public weaponDeploy(entity)
 		return;
 	}
 
-	new n[33];
-
-	ForRange(i, 1, 30)
-	{
-		if ((1 << i) & userData[index][dataAllowedWeapons])
-		{
-			get_weaponname(i, n, charsmax(n));
-		}
-	}
-
 	// Check if player is holding weapon he shouldnt have.
 	if (!((1 << weapon) & userData[index][dataAllowedWeapons]))
 	{
 		// Take away the weapon.
 		strip_user_weapon(index, weapon);
-
+		
 		return;
 	}
 }
