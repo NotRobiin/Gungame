@@ -204,7 +204,7 @@ new const hudColors[] = { 200, 130, 0 };
 new const warmupHudColors[] = { 255, 255, 255 };
 
 
-// Ammo indexes;
+// Ammo indexes.
 new const ammoAmounts[] =
 {
 	0, 13, -0,
@@ -1601,7 +1601,7 @@ public playerDeathEvent()
 				decrementTeamWeaponKills(get_user_team(victim), 1, true);
 			}
 		}
-
+		
 		// Prevent weapon-drop to the floor.
 		removePlayerWeapons(victim);
 
@@ -1694,7 +1694,6 @@ public playerDeathEvent()
 				if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
 				{
 					incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
-
 				}
 				else
 				{
@@ -1880,8 +1879,8 @@ public sayHandle(msgId, msgDest, msgEnt)
 
 public sayCustomCommandHandle(index)
 {
-	new message[MAX_CHARS - 10],
-		command[MAX_CHARS - 10];
+	new message[MAX_CHARS],
+		command[MAX_CHARS];
 
 	// Remove quotes from message.
 	getChatMessageArguments(message, charsmax(message));
@@ -1987,12 +1986,33 @@ public displayWarmupTimer()
 					continue;
 				}
 
-				ShowSyncHudMsg(i, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupData[warmupTimer], customWeaponNames[userData[i][dataWarmupCustomWeaponIndex]]);
+				ShowSyncHudMsg(i, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]",
+					warmupData[warmupTimer],
+					customWeaponNames[userData[i][dataWarmupCustomWeaponIndex]]);
 			}
 		}
 		else
 		{
-			ShowSyncHudMsg(0, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupData[warmupTimer], get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2 ? "Rozdzki" : customWeaponNames[get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1 ? warmupData[warmupWeaponIndex] : warmupData[warmupWeaponNameIndex]]);
+			new weaponName[MAX_CHARS];
+
+			// Warmup weapon is a wand?
+			if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2)
+			{
+				formatex(weaponName, charsmax(weaponName), "Rozdzki");
+			}
+			else
+			{
+				if(get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
+				{
+					copy(weaponName, charsmax(weaponName), customWeaponNames[warmupData[warmupWeaponIndex]]);
+				}
+				else
+				{
+					copy(weaponName, charsmax(weaponName), customWeaponNames[warmupData[warmupWeaponNameIndex]]);
+				}
+			}
+
+			ShowSyncHudMsg(0, hudObjects[hudObjectWarmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmupData[warmupTimer], weaponName);
 		}
 
 		// Set task to display hud again.
@@ -2007,12 +2027,25 @@ public displayWarmupTimer()
 public listWeaponsMenu(index)
 {
 	// Create menu handler.
-	new menuIndex = menu_create("Lista broni:^n[Bron ^t-^tpoziom  ^t-^t ilosc wymaganych zabojstw]", "listWeaponsMenu_handler");
+	new menuIndex = menu_create("Lista broni:^n[Bron ^t-^tpoziom  ^t-^t ilosc wymaganych zabojstw]", "listWeaponsMenu_handler"),
+		menuItem[MAX_CHARS * 3],
+		weaponName[MAX_CHARS];
 
 	ForArray(i, weaponsData)
 	{
+		if (i == maxLevel && get_pcvar_num(cvarsData[cvar_wandEnabled]))
+		{
+			formatex(weaponName, charsmax(weaponName), "Rozdzka");
+		}
+		else
+		{
+			copy(weaponName, charsmax(weaponName), customWeaponNames[i]);
+		}
+
+		formatex(menuItem, charsmax(menuItem), "[%s - %i lv. - %i (%i)]", weaponName, i + 1, weaponsData[i][weaponKills], weaponsData[i][weaponTeamKills]);
+
 		// Add item to menu.
-		menu_additem(menuIndex, fmt("[%s - %i lv. - %i (%i)]", i == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[i]) : customWeaponNames[i], i + 1, weaponsData[i][weaponKills], weaponsData[i][weaponTeamKills]));
+		menu_additem(menuIndex, menuItem);
 	}
 
 	// Display menu to player.
@@ -2254,7 +2287,7 @@ public displayHud(taskIndex)
 		if (gameMode == modeNormal)
 		{
 			formatex(leaderData, charsmax(leaderData), "^nLider: %n :: %i poziom [%s - %i/%i]",
-					leader,//printName(leader),
+					leader,
 					userData[leader][dataLevel] + 1,
 					userData[leader][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[leader][dataLevel]],
 					userData[leader][dataWeaponKills],
@@ -2286,13 +2319,28 @@ public displayHud(taskIndex)
 	
 	if (gameMode == modeNormal)
 	{
-		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s", userData[index][dataLevel] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]], userData[index][dataWeaponKills], weaponsData[userData[index][dataLevel]][weaponKills], userData[index][dataCombo], nextWeapon, leaderData);
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s",
+			userData[index][dataLevel] + 1,
+			sizeof(weaponsData),
+			isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]],
+			userData[index][dataWeaponKills],
+			weaponsData[userData[index][dataLevel]][weaponKills],
+			userData[index][dataCombo],
+			nextWeapon,
+			leaderData);
 	}
 	else
 	{
-		new userTeam = get_user_team(index) - 1;
+		new team = get_user_team(index) - 1;
 
-		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s", tpData[tpTeamLevel][userTeam] + 1, sizeof(weaponsData), isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]], tpData[tpTeamKills][userTeam], weaponsData[userData[index][dataLevel]][weaponTeamKills], nextWeapon, leaderData);
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s",
+			tpData[tpTeamLevel][team] + 1,
+			sizeof(weaponsData),
+			isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]],
+			tpData[tpTeamKills][team],
+			weaponsData[userData[index][dataLevel]][weaponTeamKills],
+			nextWeapon,
+			leaderData);
 	}
 }
 
@@ -2828,10 +2876,7 @@ showPlayerInfo(index, target)
 {
 	if (is_user_connected(target))
 	{
-		ColorChat(
-			index,
-			RED,
-			"%s^x01 Gracz ^x04%n^x01 jest na poziomie^x04 %i^x01 [^x04%s^x01 - ^x04%i^x01/^x04%i^x01]. Wygral ^x04%i^x01 razy. Status uslugi:^x04 %s^x01.",
+		ColorChat(index, RED, "%s^x01 Gracz ^x04%n^x01 jest na poziomie^x04 %i^x01 [^x04%s^x01 - ^x04%i^x01/^x04%i^x01]. Wygral ^x04%i^x01 razy. Status uslugi:^x04 %s^x01.",
 			chatPrefix,
 			target,
 			userData[target][dataLevel] + 1,
@@ -2843,12 +2888,7 @@ showPlayerInfo(index, target)
 	}
 	else
 	{
-		ColorChat(
-			index,
-			RED,
-			"%s^x01 %s",
-			chatPrefix,
-			target == -1 ? "Wiecej niz jeden gracz pasuje do podanego nicku." : " Gracz o tym nicku nie zostal znaleziony.");
+		ColorChat(index, RED, "%s^x01 %s", chatPrefix, target == -1 ? "Wiecej niz jeden gracz pasuje do podanego nicku." : " Gracz o tym nicku nie zostal znaleziony.");
 	}
 }
 
@@ -3148,7 +3188,11 @@ incrementUserLevel(index, value, bool:notify)
 	if (notify)
 	{
 		// Notify about levelup.
-		ColorChat(0, RED, "%s^x01 Gracz^x04 %n^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, index/*, printName(index)*/, userData[index][dataLevel] + 1, userData[index][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]) : customWeaponNames[userData[index][dataLevel]]);
+		ColorChat(0, RED, "%s^x01 Gracz^x04 %n^x01 awansowal na poziom^x04 %i^x01 ::^x04 %s^x01.",
+			chatPrefix,
+			index,
+			userData[index][dataLevel] + 1,
+			userData[index][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]) : customWeaponNames[userData[index][dataLevel]]);
 		
 		// Play levelup sound.
 		playSound(index, soundLevelUp, -1, false);
@@ -3178,7 +3222,11 @@ incrementTeamLevel(team, value, bool:notify)
 	if (notify)
 	{
 		// Notify about levelup.
-		ColorChat(0, RED, "%s^x01 Druzyna^x04 %s^x01 awansowala na poziom^x04 %i^x01 ::^x04 %s^x01.", chatPrefix, teamNames[team - 1], tpData[tpTeamLevel][team - 1] + 1, tpData[tpTeamLevel][team - 1] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[tpData[tpTeamLevel][team - 1]]) : customWeaponNames[tpData[tpTeamLevel][team - 1]]);
+		ColorChat(0, RED, "%s^x01 Druzyna^x04 %s^x01 awansowala na poziom^x04 %i^x01 ::^x04 %s^x01.",
+			chatPrefix,
+			teamNames[team - 1],
+			tpData[tpTeamLevel][team - 1] + 1,
+			tpData[tpTeamLevel][team - 1] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[tpData[tpTeamLevel][team - 1]]) : customWeaponNames[tpData[tpTeamLevel][team - 1]]);
 	}
 }
 
@@ -3298,7 +3346,13 @@ endGunGame(winner)
 			continue;
 		}
 
-		formatex(tempMessage, charsmax(tempMessage), "^n^n%i. %s (%i lvl - %s [%i fragow] [wygranych: %i])", i + 1, userData[index][dataShortName], userData[index][dataLevel] + 1, customWeaponNames[userData[index][dataLevel]], get_user_frags(index), userData[index][dataWins]);
+		formatex(tempMessage, charsmax(tempMessage), "^n^n%i. %s (%i lvl - %s [%i fragow] [wygranych: %i])",
+			i + 1,
+			userData[index][dataShortName],
+			userData[index][dataLevel] + 1,
+			customWeaponNames[userData[index][dataLevel]],
+			get_user_frags(index),
+			userData[index][dataWins]);
 
 		add(winMessage, charsmax(winMessage), tempMessage, charsmax(tempMessage));
 	}
