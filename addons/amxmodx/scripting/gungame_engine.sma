@@ -13,6 +13,7 @@
 // Used in custom mapchooser.
 native showMapVoteMenu();
 native bool:gg_get_user_vip(index);
+native gg_set_user_vip(index, bool:status);
 
 #pragma semicolon 1
 #pragma compress 1
@@ -2145,8 +2146,15 @@ public rewardWarmupWinner(taskIndex)
 		return;
 	}
 
-	// Add reward.
-	incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]) - userData[winner][dataLevel] - 1, false);
+	// For regular players add VIP for this map, for VIPs add 3 levels.
+	if (gg_get_user_vip(winner))
+	{
+		incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]) - userData[winner][dataLevel] - 1, false);
+	}
+	else
+	{
+		gg_set_user_vip(winner, true);
+	}
 }
 
 public giveHeGrenade(taskIndex)
@@ -3574,7 +3582,7 @@ getWarmupWinner()
 		{
 			winner = top2Player[0];
 			ArrayDestroy(candidates);
-			
+
 			announceWarmUpWinner(winner);
 			return winner;
 		}
@@ -3636,7 +3644,14 @@ announceWarmUpWinner(winner)
 	{
 		ForRange(i, 0, 2)
 		{
-			ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]));
+			if (gg_get_user_vip(winner))
+			{
+				ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]));
+			}
+			else
+			{
+				ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode otrzymuje VIPA do konca mapy!", chatPrefix, winner);
+			}
 		}
 	}
 }
