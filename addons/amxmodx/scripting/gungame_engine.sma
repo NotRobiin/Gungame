@@ -1362,6 +1362,12 @@ public primaryAttack(entity)
 		return PLUGIN_HANDLED;
 	}
 
+	// Cooldown on.
+	if (userData[index][dataWandLastAttack] + get_pcvar_float(cvarsData[cvar_wand_attack_interval]) > get_gametime())
+	{
+		return PLUGIN_HANDLED;
+	}
+
 	new weaponIndex = cs_get_weapon_id(entity);
 
 	// Handle wand attacking.
@@ -1718,7 +1724,13 @@ public playerDeathEvent()
 			switch(gameMode)
 			{
 				case modeNormal: decrementUserLevel(victim, 1);
-				case modeTeamplay: decrementTeamLevel(victimTeam, 1);
+				case modeTeamplay:
+				{
+					if (get_pcvar_num(cvarsData[cvar_knife_kill_level_down_teamplay]))
+					{
+						decrementTeamLevel(victimTeam, 1);
+					}
+				}
 			}
 
 			ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.",
@@ -3983,13 +3995,36 @@ clampDownClientName(index, output[], length, const value, const token[])
 
 wandAttack(index, weapon)
 {
-	// Block attack if player is not alive, wand is not enabled, not holding a knife, not on last level or wand is not set as warmup weapon.
-	if (!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wand_enabled]) || weapon != CSW_KNIFE || !warmupData[warmupEnabled] && !isOnLastLevel(index) || warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmup_weapon]) != -2)
+	// He ded >.<
+	if (!is_user_alive(index))
 	{
 		return PLUGIN_HANDLED;
 	}
 
-	// Block shooting if cooldown is still on.
+	// Wand enabled?
+	if (!get_pcvar_num(cvarsData[cvar_wand_enabled]))
+	{
+		return PLUGIN_HANDLED;
+	}
+
+	if (weapon != CSW_KNIFE)
+	{
+		return PLUGIN_HANDLED;
+	}
+	
+	// Not on last level & not a warmup.
+	if (!warmupData[warmupEnabled] && !isOnLastLevel(index))
+	{
+		return PLUGIN_HANDLED;
+	}
+
+	// Warmup weapon is not wand.
+	if (warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmup_weapon]) != -2)
+	{
+		return PLUGIN_HANDLED;
+	}
+
+	// Cooldown is still on.
 	if (userData[index][dataWandLastAttack] + get_pcvar_float(cvarsData[cvar_wand_attack_interval]) > get_gametime())
 	{
 		return PLUGIN_HANDLED;
@@ -4003,7 +4038,7 @@ wandAttack(index, weapon)
 	get_user_origin(index, endOrigin, 3);
 
 	// Block shooting if distance is too high.
-	if (get_distance(startOrigin, endOrigin) > get_pcvar_num(cvarsData[cvar_idle_max_distance]))
+	if (get_distance(startOrigin, endOrigin) > get_pcvar_num(cvarsData[cvar_wand_attack_max_distance]))
 	{
 		return PLUGIN_HANDLED;
 	}
