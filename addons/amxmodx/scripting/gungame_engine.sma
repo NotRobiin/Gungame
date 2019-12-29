@@ -13,6 +13,7 @@
 // Used in custom mapchooser.
 native showMapVoteMenu();
 native bool:gg_get_user_vip(index);
+native gg_set_user_vip(index, bool:status);
 
 #pragma semicolon 1
 #pragma compress 1
@@ -2123,8 +2124,15 @@ public rewardWarmupWinner(taskIndex)
 		return;
 	}
 
-	// Add reward.
-	incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]) - userData[winner][dataLevel] - 1, false);
+	// For regular players add VIP for this map, for VIPs add 3 levels.
+	if (gg_get_user_vip(winner))
+	{
+		incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]) - userData[winner][dataLevel] - 1, false);
+	}
+	else
+	{
+		gg_set_user_vip(winner, true);
+	}
 }
 
 public giveHeGrenade(taskIndex)
@@ -3023,7 +3031,7 @@ toggleWarmup(bool:status)
 		if (gameMode == modeNormal)
 		{
 			// Get warmup winner based on kills.
-			new winner = getWarmupWinner(true);
+			new winner = getWarmupWinner();
 
 			// Set task to reward winner after game restart.
 			if (is_user_connected(winner))
@@ -3487,7 +3495,7 @@ giveWeapons(index)
 	}
 }
 
-getWarmupWinner(bool:announce)
+getWarmupWinner()
 {
 	// Return if warmup reward is none.
 	if (get_pcvar_num(cvarsData[cvar_warmupLevelReward]) < 2)
@@ -3496,28 +3504,172 @@ getWarmupWinner(bool:announce)
 	}
 
 	new winner;
+	new Array:candidates = ArrayCreate(2, 32);
 
-	// Get player with most kills.
+	// Collect all players data
 	ForPlayers(i)
 	{
-		if (!is_user_connected(i) || get_user_frags(i) < get_user_frags(winner))
+		if (is_user_connected(i) && !is_user_hltv(i))
 		{
-			continue;
-		}
+			new dataSet[4];
+			dataSet[0] = i; // id
+			dataSet[1] = get_user_frags(i); // frags
+			dataSet[2] = get_user_deaths(i); // deaths
 
-		winner = i;
+			ArrayPushArray(candidates, dataSet);
+		}
 	}
 
+	ArraySortEx(candidates, "sortPlayersByKills");
+
+	new candidatesAmount = ArraySize(candidates);
+	if (candidatesAmount == 0)
+	{
+		// There is no winner, no real players on server
+		return 0;
+	}
+	// Check if top player is best by frags only
+	
+	// Only one player
+	if (candidatesAmount == 1)
+	{
+		new player[4];
+		ArrayGetArray(candidates, 0, player);
+		winner = player[0];
+		announceWarmUpWinner(winner);
+		
+		ArrayDestroy(candidates);
+		return winner;
+	}
+	// More players
+	else if (candidatesAmount >= 2)
+	{
+		new top1Player[4], top2Player[4];
+		ArrayGetArray(candidates, 0, top1Player);
+		ArrayGetArray(candidates, 1, top2Player);
+
+		if (top1Player[1] > top2Player[1])
+		{
+			winner = top1Player[0];
+			ArrayDestroy(candidates);
+			
+			announceWarmUpWinner(winner);
+			return winner;
+		}
+		else if (top1Player[1] < top2Player[1])
+		{
+			winner = top2Player[0];
+			ArrayDestroy(candidates);
+
+			announceWarmUpWinner(winner);
+			return winner;
+		}
+		// Else top players are ex aequo, let's choose by kills and deaths difference
+	}
+
+	ArraySortEx(candidates, "sortPlayersByKillsDeathsDifference");
+
+	// Get only players with best score
+	new Array:bestPlayers = ArrayCreate(2, 32);
+	new candidateData[3];
+	ArrayGetArray(candidates, 0, candidateData);
+
+	new maximum = candidateData[1] + candidateData[2]; // Get top player
+	new topFrags = candidateData[1];
+	if (topFrags > 0) // Best player has killed someone = not everybody has 0:0 stats
+	{
+		ForDynamicArray(i, candidates)
+		{
+			ArrayGetArray(candidates, i, candidateData);
+			if (candidateData[1] < maximum)
+			{
+				break;
+			}
+			ArrayPushArray(bestPlayers, candidateData);
+		}
+
+		// Only player with top score, he's the winner
+		new bestPlayersAmount = ArraySize(bestPlayers);
+		if (bestPlayersAmount == 1)
+		{
+			ArrayGetArray(bestPlayers, 0, candidateData);
+			winner = candidateData[0];
+		}
+		else // There are more players with top score, let's randomly choose one
+		{
+			new choosen = random_num(0, bestPlayersAmount - 1);
+			ArrayGetArray(bestPlayers, choosen, candidateData);
+			winner = candidateData[0];
+		}
+
+		announceWarmUpWinner(winner);
+	}
+	else if (topFrags == 0) // No one got killed
+	{
+		winner = 0;
+	}
+
+	ArrayDestroy(candidates);
+	ArrayDestroy(bestPlayers);
+
+	return winner;
+}
+
+announceWarmUpWinner(winner)
+{
 	// Print win-message couple times in chat.
-	if (announce && is_user_connected(winner))
+	if (is_user_connected(winner))
 	{
 		ForRange(i, 0, 2)
 		{
-			ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]));
+			if (gg_get_user_vip(winner))
+			{
+				ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]));
+			}
+			else
+			{
+				ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode otrzymuje VIPA do konca mapy!", chatPrefix, winner);
+			}
 		}
 	}
+}
 
-	return winner;
+public sortPlayersByKills(Array:array, elem1[], elem2[], const data[], data_size)
+{
+	new p1Kills = elem1[1];
+	new p2Kills = elem2[1];
+
+	if (p1Kills > p2Kills)
+	{
+		return -1;
+	}
+	else if (p1Kills < p2Kills)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+public sortPlayersByKillsDeathsDifference(Array:array, elem1[], elem2[], const data[], data_size)
+{
+	new p1Kills = elem1[1];
+	new p1Deaths = elem1[2];
+
+	new p2Kills = elem2[1];
+	new p2Deaths = elem2[2];
+
+	new p1Difference = p1Kills - p1Deaths;
+	new p2Difference = p2Kills - p2Deaths;
+
+	if (p1Difference > p2Difference)
+	{
+		return -1;
+	}
+	else if (p1Difference < p2Difference)
+	{
+		return 1;
+	}
+	return 0;
 }
 
 getWeaponsName(iterator, weaponIndex, string[], length)
