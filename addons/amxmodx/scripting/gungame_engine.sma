@@ -136,7 +136,7 @@ new const customWeaponNames[][] =
 	"Noz"
 };
 
-// Commands to be blocked (using PLUGIN_HANDLED_MAIN).
+// Commands to be blocked (using PLUGIN_HANDLED).
 new const blockedCommands[][] =
 {
 	"drop",
@@ -822,7 +822,7 @@ public plugin_init()
 	}
 
 	// Block some commands.
-	registerCommands(blockedCommands, sizeof(blockedCommands), "blockCommandUsage");
+	registerCommands(blockedCommands, sizeof(blockedCommands), "blockCommandUsage", false);
 
 	// Register weapon list commands.
 	registerCommands(listWeaponsCommands, sizeof(listWeaponsCommands), "listWeaponsMenu");
@@ -4307,7 +4307,7 @@ stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = tr
 	return false;
 }
 
-stock registerCommands(const array[][], arraySize, function[])
+stock registerCommands(const array[][], arraySize, function[], include_say = true)
 {
 	#if !defined ForRange
 
@@ -4315,13 +4315,20 @@ stock registerCommands(const array[][], arraySize, function[])
 
 	#endif
 
-	#if AMXX_VERSION_NUM < 183
+	#if AMXX_VERSION_NUM > 183
 	
 	ForRange(i, 0, arraySize - 1)
 	{
 		ForRange(j, 0, 1)
 		{
-			register_clcmd(fmt("%s %s", !j ? "say" : "say_team", array[i]), function);
+			if (include_say)
+			{
+				register_clcmd(fmt("%s %s", !j ? "say" : "say_team", array[i]), function);
+			}
+			else
+			{
+				register_clcmd(array[i], function);
+			}
 		}
 	}
 
@@ -4333,8 +4340,15 @@ stock registerCommands(const array[][], arraySize, function[])
 	{
 		ForRange(j, 0, 1)
 		{
-			formatex(newCommand, charsmax(newCommand), "%s %s", !j ? "say" : "say_team", array[i]);
-			register_clcmd(newCommand, function);
+			if (include_say)
+			{
+				formatex(newCommand, charsmax(newCommand), "%s %s", !j ? "say" : "say_team", array[i]);
+				register_clcmd(newCommand, function);
+			}
+			else
+			{
+				register_clcmd(array[i], function);
+			}
 		}
 	}
 
@@ -4343,7 +4357,7 @@ stock registerCommands(const array[][], arraySize, function[])
 
 public blockCommandUsage(index)
 {
-	return PLUGIN_HANDLED_MAIN;
+	return PLUGIN_HANDLED;
 }
 
 public setBlackScreenOn()
