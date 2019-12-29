@@ -3,13 +3,6 @@
 #endif
 #define _gungame_included
 
-enum (+= 1)
-{
-	weaponCSW,
-	weaponKills,
-	weaponTeamKills
-};
-
 /*
 	Sets player's level.
 
@@ -115,20 +108,6 @@ native gg_get_user_combo(index);
 	@return			Valid (1-32) player index. 0 if leader was not found.
 */
 native gg_get_game_leader();
-
-/*
-	Checks if user is a vip.
-
-	@return			True if player is a vip, false otherwise.
-*/
-native bool:gg_get_user_vip(index);
-
-/*
-	Sets vip.
-
-	@return			True if vip was set, false otherwise.
-*/
-native gg_set_user_vip(index, bool:status);
 
 /*
 	Returns bitsum of flags required to have vip.

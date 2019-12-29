@@ -6,14 +6,13 @@
 #include <engine>
 #include <sqlx>
 #include <fun>
+#include <gungame_vip>
 
 // Do not change that, thank you
 #define AUTHOR "Wicked - amxx.pl/user/60210-wicked/ | Ogen Dogen  - amxx.pl/user/21503-ogen-dogen/"
 
 // Used in custom mapchooser.
 native showMapVoteMenu();
-native bool:gg_get_user_vip(index);
-native gg_set_user_vip(index, bool:status);
 
 #pragma semicolon 1
 #pragma compress 1
