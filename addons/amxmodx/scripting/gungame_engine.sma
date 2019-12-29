@@ -2565,6 +2565,21 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 		[ FUNCTIONS ]
 */
 
+setProgressBar(index, Float:time, start = 0)
+{
+	static barMessageHandle;
+	
+	if (!barMessageHandle)
+	{
+		barMessageHandle = get_user_msgid("BarTime2");
+	}
+	
+	message_begin(index ? MSG_ONE : MSG_ALL, barMessageHandle, _, index);
+	write_short(floatround(time));
+	write_short(start);
+	message_end();
+}
+
 saveOnDisconnect(index)
 {
 	ArrayPushCell(disconnectedPlayersData[dcDataLevel], userData[index][dataLevel]);
@@ -4055,17 +4070,7 @@ wandAttack(index, weapon)
 	setWeaponAnimation(index, 1);
 
 	// Show progress bar
-	static barMessageHandle;
-	
-	if (!barMessageHandle)
-	{
-		barMessageHandle = get_user_msgid("BarTime2");
-	}
-	
-	message_begin(index ? MSG_ONE : MSG_ALL, barMessageHandle, _, index);
-	write_short(floatround(get_pcvar_float(cvarsData[cvar_wand_attack_interval])));
-	write_short(0);
-	message_end();
+	setProgressBar(index, get_pcvar_float(cvarsData[cvar_wand_attack_interval]));
 
 	// Play attack sound.
 	emit_sound(index, CHAN_AUTO, wandSounds[wandSoundShoot], 1.0, 0.80, SND_SPAWNING, 100);
