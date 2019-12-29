@@ -1512,7 +1512,7 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 	}
 
 	// Show damage info in hud.
-	set_hudmessage(takeDamageHudColor[0], takeDamageHudColor[1], takeDamageHudColor[2], 0.8, 0.4, 0, 6.0, get_pcvar_float(cvarsData[cvar_take_damage_hud_time]), 0.0, 0.0);
+	set_hudmessage(takeDamageHudColor[0], takeDamageHudColor[1], takeDamageHudColor[2], 0.5, 0.4, 0, 6.0, get_pcvar_float(cvarsData[cvar_take_damage_hud_time]), 0.0, 0.0);
 	ShowSyncHudMsg(attacker, hudObjects[hudObjectDamage], "%i^n", floatround(damage, floatround_round));
 
 	return HAM_IGNORED;
