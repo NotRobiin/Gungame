@@ -490,100 +490,100 @@ new const nativesData[][][] =
 
 enum (+= 1)
 {
-	cvar_spawnProtectionTime,
+	cvar_spawn_protection_time,
 
-	cvar_respawnInterval,
+	cvar_respawn_interval,
 
-	cvar_flashesEnabled,
+	cvar_flashes_enabled,
 
-	cvar_giveBackHeInterval,
-	cvar_giveBackFlashInterval,
+	cvar_give_back_he_interval,
+	cvar_give_back_flash_interval,
 
-	cvar_warmupDuration,
-	cvar_warmupLevelReward,
-	cvar_warmupHealth,
-	cvar_warmupWeapon,
-	cvar_warumpRespawnInterval,
+	cvar_warmup_duration,
+	cvar_warmup_level_reward,
+	cvar_warmup_health,
+	cvar_warmup_weapon,
+	cvar_warump_respawn_interval,
 
-	cvar_fallDamageEnabled,
+	cvar_fall_damage_enabled,
 
-	cvar_refillWeaponAmmo,
-	cvar_refillWeaponAmmo_teamplay,
+	cvar_refill_weapon_ammo,
+	cvar_refill_weapon_ammo_teamplay,
 
-	cvar_idleCheckInterval,
-	cvar_idleSlapPower,
-	cvar_idleMaxStrikes,
-	cvar_idleMaxDistance,
+	cvar_idle_check_interval,
+	cvar_idle_slap_power,
+	cvar_idle_max_strikes,
+	cvar_idle_max_distance,
 
-	cvar_defaultArmorLevel,
+	cvar_default_armor_level,
 
-	cvar_knifeKillInstantLevelup,
-	cvar_knifeKillLevelDown_teamplay,
-	cvar_knifeKillReward,
+	cvar_knife_kill_instant_levelup,
+	cvar_knife_kill_level_down_teamplay,
+	cvar_knife_kill_reward,
 
-	cvar_wandEnabled,
-	cvar_wandAttackSpriteBrightness,
-	cvar_wandAttackSpriteLife,
-	cvar_wandAttackMaxDistance,
-	cvar_wandAttackInterval,
+	cvar_wand_enabled,
+	cvar_wand_attack_sprite_brightness,
+	cvar_wand_attack_sprite_life,
+	cvar_wand_attack_max_distance,
+	cvar_wand_attack_interval,
 
-	cvar_takeDamageHudTime,
+	cvar_take_damage_hud_time,
 	
-	cvar_removeWeaponsOffTheGround,
+	cvar_remove_weapons_off_the_ground,
 	
-	cvar_normalFriendlyFire,
-	cvar_teamplayFriendlyFire,
+	cvar_normal_friendly_fire,
+	cvar_teamplay_friendly_fire,
 
-	cvar_spawnProtectionType
+	cvar_spawn_protection_type
 };
 
 new const ggCvarsData[][][] =
 {
-	{ "gg_spawnProtectionTime", "1.5" }, // Time in which player CAN get killed, but the killer will not be granted any weapon kills if victim is in spawn protection.
+	{ "gg_spawn_protection_time", "1.5" }, // Time in which player CAN get killed, but the killer will not be granted any weapon kills if victim is in spawn protection.
 	
-	{ "gg_respawnInterval", "3.0" }, // Respawn time during GunGame.
+	{ "gg_respawn_interval", "3.0" }, // Respawn time during GunGame.
 	
-	{ "gg_flashesEnabled", "1" }, // Determines wether to enable flashes on last level. Does not support wand.
+	{ "gg_flashes_enabled", "1" }, // Determines wether to enable flashes on last level. Does not support wand.
 	
-	{ "gg_giveBackHeInterval", "1.8" }, // Time between giving a player next HE grenade (during warmup & on HE weapon level).
-	{ "gg_giveBackFlashInterval", "4.5" }, // Time between giving a player next Flash grenade.
+	{ "gg_give_back_he_interval", "1.8" }, // Time between giving a player next HE grenade (during warmup & on HE weapon level).
+	{ "gg_give_back_flash_interval", "4.5" }, // Time between giving a player next Flash grenade.
 	
-	{ "gg_warmupDuration", "10" }, // Time of warmup in seconds
-	{ "gg_warmupLevelReward", "3" }, // Level that will be set to warmup winner. Value < 1 will disable notifications and picking warmup winner.
-	{ "gg_warmupHealth", "50" }, // Health that players will be set to during warmup.
-	{ "gg_warmupWeapon", "-2" }, // Set that to CSW_ index, -1 to get random weapon, -2 to get wands (ignoring gg_wandEnabled value) or -3 to get random weapon for every player.
-	{ "gg_warumpRespawnInterval", "2.0" }, // Time to respawn player during warmup.
+	{ "gg_warmup_duration", "10" }, // Time of warmup in seconds
+	{ "gg_warmup_level_reward", "3" }, // Level that will be set to warmup winner. Value < 1 will disable notifications and picking warmup winner.
+	{ "gg_warmup_health", "50" }, // Health that players will be set to during warmup.
+	{ "gg_warmup_weapon", "-2" }, // Set that to CSW_ index, -1 to get random weapon, -2 to get wands (ignoring gg_wandEnabled value) or -3 to get random weapon for every player.
+	{ "gg_warump_respawn_interval", "2.0" }, // Time to respawn player during warmup.
 	
-	{ "gg_fallDamageEnabled", "0" }, // Enable falldamage?
+	{ "gg_fall_damage_enabled", "0" }, // Enable falldamage?
 	
-	{ "gg_refillWeaponAmmo", "1" }, // Refill weapon clip on kill? 0 - disabled, 1 - enabled to everyone, 2 - only vips
-	{ "gg_refillWeaponAmmo_teamplay", "1" }, // Enabled on teamplay? 0 - disabled, 1 - enabled, refill whole team ammo, 2 - personal refill, 3 - only vips
+	{ "gg_refill_weapon_ammo", "1" }, // Refill weapon clip on kill? 0 - disabled, 1 - enabled to everyone, 2 - only vips
+	{ "gg_refill_weapon_ammo_teamplay", "1" }, // Enabled on teamplay? 0 - disabled, 1 - enabled, refill whole team ammo, 2 - personal refill, 3 - only vips
 	
-	{ "gg_idleCheckInterval", "6.0" }, // Determines interval between AFK checks.
-	{ "gg_idleSlapPower", "5" }, // Hit power of a slap when player is 'AFK'.
-	{ "gg_idleMaxStrikes", "3" }, // Determines max strikes that player can have before slaps start occuring.
-	{ "gg_idleMaxDistance", "30" }, // Distance that resets camping-player idle strikes.
+	{ "gg_idle_check_interval", "6.0" }, // Determines interval between AFK checks.
+	{ "gg_idle_slap_power", "5" }, // Hit power of a slap when player is 'AFK'.
+	{ "gg_idle_max_strikes", "3" }, // Determines max strikes that player can have before slaps start occuring.
+	{ "gg_idle_max_distance", "30" }, // Distance that resets camping-player idle strikes.
 	
-	{ "gg_defaultArmorLevel", "0" }, // Armor level for every player.
+	{ "gg_default_armor_level", "0" }, // Armor level for every player.
 	
-	{ "gg_knifeKillInstantLevelup", "0" }, // If that's set to true, knife will instantly give you gg_knifeKillReward levels. Otherwise gg_knifeKillReward means weapon kills.
-	{ "gg_knifeKillLevelDown_teamplay", "1" }, // Allow to level down when knifed in teamplay?
-	{ "gg_knifeKillReward", "2" }, // Knife kill reward value based on cvar_knifeKillInstantLevelup var.
+	{ "gg_knife_kill_instant_levelup", "0" }, // If that's set to true, knife will instantly give you gg_knifeKillReward levels. Otherwise gg_knifeKillReward means weapon kills.
+	{ "gg_knife_kill_level_down_teamplay", "1" }, // Allow to level down when knifed in teamplay?
+	{ "gg_knife_kill_reward", "2" }, // Knife kill reward value based on cvar_knife_kill_instant_levelup var.
 	
-	{ "gg_wandEnabled", "1" }, // Determines whether you want last level weapon to be knife (false) or wand (true).
-	{ "gg_wandAttackSpriteBrightness", "255" }, // Wand primary attack sprite brightness.
-	{ "gg_wandAttackSpriteLife", "4" }, // Wand primary attack sprite life.
-	{ "gg_wandAttackMaxDistance", "550" }, // Wand primary attack max distance.
-	{ "gg_wandAttackInterval", "2.2" }, // Wand primary attack interval.
+	{ "gg_wand_enabled", "1" }, // Determines whether you want last level weapon to be knife (false) or wand (true).
+	{ "gg_wand_attack_sprite_brightness", "255" }, // Wand primary attack sprite brightness.
+	{ "gg_wand_attack_sprite_life", "4" }, // Wand primary attack sprite life.
+	{ "gg_wand_attack_max_distance", "550" }, // Wand primary attack max distance.
+	{ "gg_wand_attack_interval", "2.2" }, // Wand primary attack interval.
 	
-	{ "gg_takeDamageHudTime", "1.2" }, // Take damage hud hold-time.
+	{ "gg_take_damage_hud_time", "1.2" }, // Take damage hud hold-time.
 	
-	{ "gg_removeWeaponsOffTheGround", "1" }, // Remove weapons off the ground when loading map?
+	{ "gg_remove_weapons_off_the_ground", "1" }, // Remove weapons off the ground when loading map?
 
-	{ "gg_normalFriendlyFire", "0" }, // Enable friendly fire in normal mode?
-	{ "gg_teamplayFriendlyFire", "0" }, // Enable friendly fire in teamplay mode?
+	{ "gg_normal_friendly_fire", "0" }, // Enable friendly fire in normal mode?
+	{ "gg_teamplay_friendly_fire", "0" }, // Enable friendly fire in teamplay mode?
 
-	{ "gg_spawnProtectionType", "0" } // Spawn protection effect: 0 - godmode, 1 - no points granted to killer if victim is on spawn protection.
+	{ "gg_spawn_protection_type", "0" } // Spawn protection effect: 0 - godmode, 1 - no points granted to killer if victim is on spawn protection.
 };
 
 new const forwardsNames[][] =
@@ -756,7 +756,7 @@ public plugin_init()
 	register_event("TeamInfo", "onTeamAssign", "a");
 
 	// Remove weapons off the ground if enabled.
-	if (get_pcvar_num(cvarsData[cvar_removeWeaponsOffTheGround]))
+	if (get_pcvar_num(cvarsData[cvar_remove_weapons_off_the_ground]))
 	{
 		removeWeaponsOffGround();
 		
@@ -787,7 +787,7 @@ public plugin_init()
 	}
 
 	// Register knife deployement for model-changes if wand is enabled.
-	if (get_pcvar_num(cvarsData[cvar_wandEnabled]))
+	if (get_pcvar_num(cvarsData[cvar_wand_enabled]))
 	{
 		RegisterHam(Ham_Item_Deploy, wandBaseEntity, "knifeDeploy", true);
 	}
@@ -1336,9 +1336,9 @@ public setEntityModel(entity, model[])
 	// Set tasks to give grenade back after it has exploded. 
 	if (equal(model[9], "he", 2))
 	{
-		if (weaponsData[userData[owner][dataLevel]][weaponCSW] == CSW_HEGRENADE || get_pcvar_num(cvarsData[cvar_warmupWeapon]) == CSW_HEGRENADE && warmupData[warmupEnabled])
+		if (weaponsData[userData[owner][dataLevel]][weaponCSW] == CSW_HEGRENADE || get_pcvar_num(cvarsData[cvar_warmup_weapon]) == CSW_HEGRENADE && warmupData[warmupEnabled])
 		{
-			set_task(get_pcvar_float(cvarsData[cvar_giveBackHeInterval]), "giveHeGrenade", owner + TASK_GIVEGRENADE);
+			set_task(get_pcvar_float(cvarsData[cvar_give_back_he_interval]), "giveHeGrenade", owner + TASK_GIVEGRENADE);
 		}
 
 		if (heGrenadeExplodeTime != defaultExplodeTime)
@@ -1348,7 +1348,7 @@ public setEntityModel(entity, model[])
 	}
 	else if (equal(model[9], "fl", 2) && weaponsData[userData[owner][dataLevel]][weaponCSW] == CSW_KNIFE)
 	{
-		set_task(get_pcvar_float(cvarsData[cvar_giveBackFlashInterval]), "giveFlashGrenade", owner + TASK_GIVEGRENADE);
+		set_task(get_pcvar_float(cvarsData[cvar_give_back_flash_interval]), "giveFlashGrenade", owner + TASK_GIVEGRENADE);
 	}
 }
 
@@ -1406,7 +1406,7 @@ public onAddItemToPlayer(index, weaponEntity)
 public client_PreThink(index)
 {
 	// Return if player is not alive, is hltv or a bot.
-	if (!get_pcvar_num(cvarsData[cvar_fallDamageEnabled]) || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index))
+	if (!get_pcvar_num(cvarsData[cvar_fall_damage_enabled]) || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index))
 	{
 		return;
 	}
@@ -1418,7 +1418,7 @@ public client_PreThink(index)
 public client_PostThink(index)
 {
 	// Return if player is not alive, is hltv, is bot or is not falling.
-	if (!get_pcvar_num(cvarsData[cvar_fallDamageEnabled]) || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index) || !userData[index][dataFalling])
+	if (!get_pcvar_num(cvarsData[cvar_fall_damage_enabled]) || !is_user_alive(index) || is_user_hltv(index) || is_user_bot(index) || !userData[index][dataFalling])
 	{
 		return;
 	}
@@ -1482,23 +1482,23 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 
 	if (get_user_team(attacker) == get_user_team(victim))
 	{
-		if (gameMode == modeNormal && !get_pcvar_num(cvarsData[cvar_normalFriendlyFire]))
+		if (gameMode == modeNormal && !get_pcvar_num(cvarsData[cvar_normal_friendly_fire]))
 		{
 			return HAM_SUPERCEDE;
 		}
-		else if (gameMode == modeTeamplay && !get_pcvar_num(cvarsData[cvar_teamplayFriendlyFire]))
+		else if (gameMode == modeTeamplay && !get_pcvar_num(cvarsData[cvar_teamplay_friendly_fire]))
 		{
 			return HAM_SUPERCEDE;
 		}
 	}
 
-	if (userData[victim][dataSpawnProtection] && !get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
+	if (userData[victim][dataSpawnProtection] && !get_pcvar_num(cvarsData[cvar_spawn_protection_type]))
 	{
 		return HAM_SUPERCEDE;
 	}
 
 	// Show damage info in hud.
-	set_hudmessage(takeDamageHudColor[0], takeDamageHudColor[1], takeDamageHudColor[2], 0.8, 0.4, 0, 6.0, get_pcvar_float(cvarsData[cvar_takeDamageHudTime]), 0.0, 0.0);
+	set_hudmessage(takeDamageHudColor[0], takeDamageHudColor[1], takeDamageHudColor[2], 0.8, 0.4, 0, 6.0, get_pcvar_float(cvarsData[cvar_take_damage_hud_time]), 0.0, 0.0);
 	ShowSyncHudMsg(attacker, hudObjects[hudObjectDamage], "%i^n", floatround(damage, floatround_round));
 
 	return HAM_IGNORED;
@@ -1559,13 +1559,13 @@ public knifeDeploy(entity)
 	}
 
 	// Block if warmup weapon is not a wand.
-	if (warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
+	if (warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmup_weapon]) != -2)
 	{
 		return;
 	}
 
 	// Block if wands are disabled.
-	if (!get_pcvar_num(cvarsData[cvar_wandEnabled]))
+	if (!get_pcvar_num(cvarsData[cvar_wand_enabled]))
 	{
 		return;
 	}
@@ -1598,11 +1598,11 @@ public playerDeathEvent()
 	// Respawn player.
 	if (warmupData[warmupEnabled])
 	{
-		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_warumpRespawnInterval]));
+		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_warump_respawn_interval]));
 	}
 	else
 	{
-		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
+		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawn_interval]));
 	}
 
 	// Remove grenade task if present.
@@ -1685,7 +1685,7 @@ public playerDeathEvent()
 	}
 
 	// Handle killing on spawn protection.
-	if (get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
+	if (get_pcvar_num(cvarsData[cvar_spawn_protection_type]))
 	{
 		if (userData[victim][dataSpawnProtection])
 		{
@@ -1729,20 +1729,20 @@ public playerDeathEvent()
 		}
 
 		// Handle instant-level-up when killing with knife.
-		if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
+		if (get_pcvar_num(cvarsData[cvar_knife_kill_instant_levelup]))
 		{
 			switch(gameMode)
 			{
-				case modeNormal: incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
-				case modeTeamplay: incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
+				case modeNormal: incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knife_kill_reward]), true);
+				case modeTeamplay: incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knife_kill_reward]), true);
 			}
 		}
 		else
 		{
 			switch(gameMode)
 			{
-				case modeNormal: incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
-				case modeTeamplay: incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+				case modeNormal: incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knife_kill_reward]));
+				case modeTeamplay: incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knife_kill_reward]));
 			}
 		}
 	}
@@ -1771,7 +1771,7 @@ public playerDeathEvent()
 	{
 		case modeNormal:
 		{
-			switch(get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
+			switch(get_pcvar_num(cvarsData[cvar_refill_weapon_ammo]))
 			{
 				case 1: refillAmmo(killer); // Killer
 				case 2: // Vips only
@@ -1786,7 +1786,7 @@ public playerDeathEvent()
 
 		case modeTeamplay:
 		{
-			switch (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo_teamplay]))
+			switch (get_pcvar_num(cvarsData[cvar_refill_weapon_ammo_teamplay]))
 			{
 				case 1: refillAmmo(killerTeam, true); // Whole team
 				case 2: refillAmmo(killer); // Just the killer
@@ -1815,7 +1815,7 @@ public playerSpawn(index)
 		// Give weapons to player.
 		giveWarmupWeapons(index);
 
-		set_user_health(index, get_pcvar_num(cvarsData[cvar_warmupHealth]));
+		set_user_health(index, get_pcvar_num(cvarsData[cvar_warmup_health]));
 	}
 	else
 	{
@@ -1829,10 +1829,10 @@ public playerSpawn(index)
 		toggleSpawnProtection(index, true);
 
 		// Set task to disable spawn protection.
-		set_task(get_pcvar_float(cvarsData[cvar_spawnProtectionTime]), "spawnProtectionOff", index + TASK_SPAWNPROTECTION);
+		set_task(get_pcvar_float(cvarsData[cvar_spawn_protection_time]), "spawnProtectionOff", index + TASK_SPAWNPROTECTION);
 
 		// Set task to chcek if player is AFK.
-		set_task(get_pcvar_float(cvarsData[cvar_idleCheckInterval]), "checkIdle", index + TASK_IDLECHECK, .flags = "b");
+		set_task(get_pcvar_float(cvarsData[cvar_idle_check_interval]), "checkIdle", index + TASK_IDLECHECK, .flags = "b");
 
 		ExecuteForward(forwardHandles[forwardPlayerSpawned], forwardReturnDummy, index);
 	}
@@ -1855,7 +1855,7 @@ public sayHandle(msgId, msgDest, msgEnt)
 	get_msg_arg_string(2, chatString[0], charsmax(chatString[]));
 
 	// Replace "knife" with "wand".
-	formatex(weaponName, charsmax(weaponName), (userData[index][dataLevel] == maxLevel && get_pcvar_num(cvarsData[cvar_wandEnabled])) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]);
+	formatex(weaponName, charsmax(weaponName), (userData[index][dataLevel] == maxLevel && get_pcvar_num(cvarsData[cvar_wand_enabled])) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]);
 
 	if (equal(chatString[0], "#Cstrike_Chat_All"))
 	{
@@ -1993,7 +1993,7 @@ public displayWarmupTimer()
 		// Display warmup hud.
 		set_hudmessage(warmupHudColors[0], warmupHudColors[1], warmupHudColors[2], -1.0, 0.1, 0, 6.0, 0.6, 0.2, 0.2);
 		
-		if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -3)
+		if (get_pcvar_num(cvarsData[cvar_warmup_weapon]) == -3)
 		{
 			ForPlayers(i)
 			{
@@ -2012,13 +2012,13 @@ public displayWarmupTimer()
 			new weaponName[MAX_CHARS];
 
 			// Warmup weapon is a wand?
-			if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2)
+			if (get_pcvar_num(cvarsData[cvar_warmup_weapon]) == -2)
 			{
 				formatex(weaponName, charsmax(weaponName), "Rozdzki");
 			}
 			else
 			{
-				if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
+				if (get_pcvar_num(cvarsData[cvar_warmup_weapon]) == -1)
 				{
 					copy(weaponName, charsmax(weaponName), customWeaponNames[warmupData[warmupWeaponIndex]]);
 				}
@@ -2049,7 +2049,7 @@ public listWeaponsMenu(index)
 
 	ForArray(i, weaponsData)
 	{
-		if (i == maxLevel && get_pcvar_num(cvarsData[cvar_wandEnabled]))
+		if (i == maxLevel && get_pcvar_num(cvarsData[cvar_wand_enabled]))
 		{
 			formatex(weaponName, charsmax(weaponName), "Rozdzka");
 		}
@@ -2118,7 +2118,7 @@ public rewardWarmupWinner(taskIndex)
 	new winner = taskIndex - TASK_REWARDWINNER;
 
 	// Return if user is not connected or his level is somehow incorrect. 
-	if (!is_user_connected(winner) || userData[winner][dataLevel] >= get_pcvar_num(cvarsData[cvar_warmupLevelReward]))
+	if (!is_user_connected(winner) || userData[winner][dataLevel] >= get_pcvar_num(cvarsData[cvar_warmup_level_reward]))
 	{
 		return;
 	}
@@ -2126,7 +2126,7 @@ public rewardWarmupWinner(taskIndex)
 	// For regular players add VIP for this map, for VIPs add 3 levels.
 	if (gg_get_user_vip(winner))
 	{
-		incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]) - userData[winner][dataLevel] - 1, false);
+		incrementUserLevel(winner, get_pcvar_num(cvarsData[cvar_warmup_level_reward]) - userData[winner][dataLevel] - 1, false);
 	}
 	else
 	{
@@ -2214,14 +2214,14 @@ public checkIdle(taskIndex)
 		userData[index][dataLastOrigin][i] = currentOrigin[i];
 	}
 
-	if (distance < get_pcvar_num(cvarsData[cvar_idleMaxDistance]))
+	if (distance < get_pcvar_num(cvarsData[cvar_idle_max_distance]))
 	{
 		// Slap player if he's camping, make sure not to kill him.
-		if (++userData[index][dataIdleStrikes] >= get_pcvar_num(cvarsData[cvar_idleMaxStrikes]))
+		if (++userData[index][dataIdleStrikes] >= get_pcvar_num(cvarsData[cvar_idle_max_strikes]))
 		{
 			ForRange(i, 0, 1)
 			{
-				user_slap(index, !i ? (get_user_health(index) > get_pcvar_num(cvarsData[cvar_idleSlapPower]) ? get_pcvar_num(cvarsData[cvar_idleSlapPower]) : 0) : 0);
+				user_slap(index, !i ? (get_user_health(index) > get_pcvar_num(cvarsData[cvar_idle_slap_power]) ? get_pcvar_num(cvarsData[cvar_idle_slap_power]) : 0) : 0);
 			}
 		}
 	}
@@ -2311,7 +2311,7 @@ public displayHud(taskIndex)
 			formatex(leaderData, charsmax(leaderData), "^nLider: %n :: %i poziom [%s - %i/%i]",
 					leader,
 					userData[leader][dataLevel] + 1,
-					userData[leader][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[leader][dataLevel]],
+					userData[leader][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[leader][dataLevel]],
 					userData[leader][dataWeaponKills],
 					weaponsData[userData[leader][dataLevel]][weaponKills]);
 		}
@@ -2320,7 +2320,7 @@ public displayHud(taskIndex)
 			formatex(leaderData, charsmax(leaderData), "^nLider: %s :: %i poziom [%s - %i/%i]",
 					teamNames[leader],
 					userData[leader][dataLevel] + 1,
-					userData[leader][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[leader][dataLevel]],
+					userData[leader][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[leader][dataLevel]],
 					userData[leader][dataWeaponKills],
 					weaponsData[userData[leader][dataLevel]][weaponTeamKills]);
 		}
@@ -2329,7 +2329,7 @@ public displayHud(taskIndex)
 	// Format next weapon name if available, change knife to wand if enabled so.
 	if (userData[index][dataLevel] == sizeof(weaponsData) - 2)
 	{
-		formatex(nextWeapon, charsmax(nextWeapon), get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel] + 1]);
+		formatex(nextWeapon, charsmax(nextWeapon), get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel] + 1]);
 	}
 	else
 	{
@@ -2344,7 +2344,7 @@ public displayHud(taskIndex)
 		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s",
 			userData[index][dataLevel] + 1,
 			sizeof(weaponsData),
-			isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]],
+			isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]],
 			userData[index][dataWeaponKills],
 			weaponsData[userData[index][dataLevel]][weaponKills],
 			userData[index][dataCombo],
@@ -2358,7 +2358,7 @@ public displayHud(taskIndex)
 		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s",
 			tpData[tpTeamLevel][team] + 1,
 			sizeof(weaponsData),
-			isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]],
+			isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]],
 			tpData[tpTeamKills][team],
 			weaponsData[userData[index][dataLevel]][weaponTeamKills],
 			nextWeapon,
@@ -2800,10 +2800,10 @@ giveWarmupWeapons(index)
 	// Give knife as a default weapon.
 	give_item(index, "weapon_knife");
 	
-	if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) > -1)
+	if (get_pcvar_num(cvarsData[cvar_warmup_weapon]) > -1)
 	{
 		new weaponName[MAX_CHARS - 1],
-			weapon = get_pcvar_num(cvarsData[cvar_warmupWeapon]);
+			weapon = get_pcvar_num(cvarsData[cvar_warmup_weapon]);
 	
 		userData[index][dataAllowedWeapons] |= (1 << weapon);
 
@@ -2815,7 +2815,7 @@ giveWarmupWeapons(index)
 	}
 
 	// Add random warmup weapon multiple times.
-	else if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -1)
+	else if (get_pcvar_num(cvarsData[cvar_warmup_weapon]) == -1)
 	{
 		new weapon = get_weaponid(weaponEntityNames[warmupData[warmupWeaponIndex]]);
 
@@ -2829,13 +2829,13 @@ giveWarmupWeapons(index)
 	}
 
 	// Set wand model.
-	else if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -2)
+	else if (get_pcvar_num(cvarsData[cvar_warmup_weapon]) == -2)
 	{
 		setWandModels(index);
 	}
 
 	// Add random weapon.
-	else if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == -3)
+	else if (get_pcvar_num(cvarsData[cvar_warmup_weapon]) == -3)
 	{
 		randomWarmupWeapon(index);
 	}
@@ -2936,7 +2936,7 @@ showPlayerInfo(index, target)
 			chatPrefix,
 			target,
 			userData[target][dataLevel] + 1,
-			isOnLastLevel(target) ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[target][dataLevel]]) : customWeaponNames[userData[target][dataLevel]],
+			isOnLastLevel(target) ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[target][dataLevel]]) : customWeaponNames[userData[target][dataLevel]],
 			userData[target][dataWeaponKills],
 			weaponsData[userData[target][dataLevel]][gameMode == modeNormal ? weaponKills : weaponTeamKills],
 			userData[target][dataWins],
@@ -3090,7 +3090,7 @@ setWarmupHud(bool:status)
 	{
 		set_task(1.0, "displayWarmupTimer");
 
-		warmupData[warmupTimer] = get_pcvar_num(cvarsData[cvar_warmupDuration]);
+		warmupData[warmupTimer] = get_pcvar_num(cvarsData[cvar_warmup_duration]);
 	}
 }
 
@@ -3100,7 +3100,7 @@ toggleSpawnProtection(index, bool:status)
 	userData[index][dataSpawnProtection] = status;
 
 	// Toggle godmode.
-	if (get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
+	if (get_pcvar_num(cvarsData[cvar_spawn_protection_type]))
 	{
 		set_user_godmode(index, status);
 	}
@@ -3254,7 +3254,7 @@ incrementUserLevel(index, value, bool:notify)
 			chatPrefix,
 			index,
 			userData[index][dataLevel] + 1,
-			userData[index][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]) : customWeaponNames[userData[index][dataLevel]]);
+			userData[index][dataLevel] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[index][dataLevel]]) : customWeaponNames[userData[index][dataLevel]]);
 		
 		// Play levelup sound.
 		playSound(index, soundLevelUp, -1, false);
@@ -3288,7 +3288,7 @@ incrementTeamLevel(team, value, bool:notify)
 			chatPrefix,
 			teamNames[team - 1],
 			tpData[tpTeamLevel][team - 1] + 1,
-			tpData[tpTeamLevel][team - 1] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wandEnabled]) ? "Rozdzka" : customWeaponNames[tpData[tpTeamLevel][team - 1]]) : customWeaponNames[tpData[tpTeamLevel][team - 1]]);
+			tpData[tpTeamLevel][team - 1] == maxLevel ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[tpData[tpTeamLevel][team - 1]]) : customWeaponNames[tpData[tpTeamLevel][team - 1]]);
 	}
 }
 
@@ -3438,7 +3438,7 @@ giveWeapons(index)
 	}
 
 	// We dont want players to have armor.
-	set_user_armor(index, get_pcvar_num(cvarsData[cvar_defaultArmorLevel]));
+	set_user_armor(index, get_pcvar_num(cvarsData[cvar_default_armor_level]));
 
 	// Strip weapons.
 	removePlayerWeapons(index);
@@ -3474,14 +3474,14 @@ giveWeapons(index)
 		give_item(index, "weapon_knife");
 
 		// Set wand model.
-		if (get_pcvar_num(cvarsData[cvar_wandEnabled]))
+		if (get_pcvar_num(cvarsData[cvar_wand_enabled]))
 		{
 			setWandModels(index);
 		}
 		else
 		{
 			// Add two flashes.
-			if (get_pcvar_num(cvarsData[cvar_flashesEnabled]))
+			if (get_pcvar_num(cvarsData[cvar_flashes_enabled]))
 			{
 				userData[index][dataAllowedWeapons] |= (1 << CSW_FLASHBANG);
 
@@ -3497,7 +3497,7 @@ giveWeapons(index)
 getWarmupWinner()
 {
 	// Return if warmup reward is none.
-	if (get_pcvar_num(cvarsData[cvar_warmupLevelReward]) < 2)
+	if (get_pcvar_num(cvarsData[cvar_warmup_level_reward]) < 2)
 	{
 		return 0;
 	}
@@ -3623,7 +3623,7 @@ announceWarmUpWinner(winner)
 		{
 			if (gg_get_user_vip(winner))
 			{
-				ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmupLevelReward]));
+				ColorChat(0, RED, "%s^x01 Zwyciezca rozgrzewki:^x04 %n^x01! W nagrode zaczyna GunGame z poziomem^x04 %i^x01!", chatPrefix, winner, get_pcvar_num(cvarsData[cvar_warmup_level_reward]));
 			}
 			else
 			{
@@ -3854,7 +3854,7 @@ getWarmupWeaponName()
 	// Loop through all weapons, find one with same ID as warmup weapon.
 	ForArray(i, weaponsData)
 	{
-		if (get_pcvar_num(cvarsData[cvar_warmupWeapon]) == weaponsData[i][weaponCSW])
+		if (get_pcvar_num(cvarsData[cvar_warmup_weapon]) == weaponsData[i][weaponCSW])
 		{
 			warmupData[warmupWeaponNameIndex] = i;
 
@@ -3984,13 +3984,13 @@ clampDownClientName(index, output[], length, const value, const token[])
 wandAttack(index, weapon)
 {
 	// Block attack if player is not alive, wand is not enabled, not holding a knife, not on last level or wand is not set as warmup weapon.
-	if (!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wandEnabled]) || weapon != CSW_KNIFE || !warmupData[warmupEnabled] && !isOnLastLevel(index) || warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmupWeapon]) != -2)
+	if (!is_user_alive(index) || !get_pcvar_num(cvarsData[cvar_wand_enabled]) || weapon != CSW_KNIFE || !warmupData[warmupEnabled] && !isOnLastLevel(index) || warmupData[warmupEnabled] && get_pcvar_num(cvarsData[cvar_warmup_weapon]) != -2)
 	{
 		return PLUGIN_HANDLED;
 	}
 
 	// Block shooting if cooldown is still on.
-	if (userData[index][dataWandLastAttack] + get_pcvar_float(cvarsData[cvar_wandAttackInterval]) > get_gametime())
+	if (userData[index][dataWandLastAttack] + get_pcvar_float(cvarsData[cvar_wand_attack_interval]) > get_gametime())
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -4003,7 +4003,7 @@ wandAttack(index, weapon)
 	get_user_origin(index, endOrigin, 3);
 
 	// Block shooting if distance is too high.
-	if (get_distance(startOrigin, endOrigin) > get_pcvar_num(cvarsData[cvar_wandAttackMaxDistance]))
+	if (get_distance(startOrigin, endOrigin) > get_pcvar_num(cvarsData[cvar_idle_max_distance]))
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -4034,13 +4034,13 @@ wandAttack(index, weapon)
 	write_short(wandSpritesIndexes[wandSpriteAttack]);
 	write_byte(0);
 	write_byte(5);
-	write_byte(get_pcvar_num(cvarsData[cvar_wandAttackSpriteLife]));
+	write_byte(get_pcvar_num(cvarsData[cvar_wand_attack_sprite_life]));
 	write_byte(30);
 	write_byte(40);
 	write_byte(wandAttackSpriteColor[0]);
 	write_byte(wandAttackSpriteColor[1]);
 	write_byte(wandAttackSpriteColor[2]);
-	write_byte(get_pcvar_num(cvarsData[cvar_wandAttackSpriteBrightness]));
+	write_byte(get_pcvar_num(cvarsData[cvar_wand_attack_sprite_brightness]));
 	write_byte(0);
 	message_end();
 
