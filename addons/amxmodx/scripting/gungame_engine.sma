@@ -847,7 +847,7 @@ public plugin_init()
 
 	// Create forwards.
 	forwardHandles[forwardLevelUp] = CreateMultiForward(forwardsNames[0], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level up (3)
-	forwardHandles[forwardLevelDown] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL); // Level down (3)
+	forwardHandles[forwardLevelDown] = CreateMultiForward(forwardsNames[1], ET_IGNORE, FP_CELL, FP_CELL, FP_CELL); // Level down (3)
 	forwardHandles[forwardGameEnd] = CreateMultiForward(forwardsNames[2], ET_IGNORE, FP_CELL); // Game end (1)
 	forwardHandles[forwardGameBeginning] = CreateMultiForward(forwardsNames[3], ET_IGNORE, FP_CELL); // Game beginning (1)
 	forwardHandles[forwardPlayerSpawned] = CreateMultiForward(forwardsNames[4], ET_IGNORE, FP_CELL); // Player spawn (1)
@@ -1585,7 +1585,9 @@ public playerDeathEvent()
 		return;
 	}
 
-	// Return if gungame has ended.
+	// Prevent weapon-drop to the floor.
+	removePlayerWeapons(victim);
+
 	if (gungameEnded)
 	{
 		removeIdleCheck(victim);
@@ -1593,12 +1595,14 @@ public playerDeathEvent()
 		return;
 	}
 
-	// Respawn player shortly if warmup is enabled.
+	// Respawn player.
 	if (warmupData[warmupEnabled])
 	{
 		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_warumpRespawnInterval]));
-	
-		return;
+	}
+	else
+	{
+		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
 	}
 
 	// Remove grenade task if present.
@@ -1607,73 +1611,80 @@ public playerDeathEvent()
 		remove_task(victim + TASK_GIVEGRENADE);
 	}
 
-	// Remove HUD.
 	removeHud(victim);
 	
-	// Set killstreak to 0.
 	userData[victim][dataCombo] = 0;
-
-	// Reset user allowed weapons.
 	userData[victim][dataAllowedWeapons] = 0;
-	
-	new killer = read_data(1),
-		weapon[12];
 
-	// Get weapon name.
+	new killer = read_data(1),
+		weapon[12],
+		killerTeam = get_user_team(killer),
+		victimTeam = get_user_team(victim);
+
 	read_data(4, weapon, charsmax(weapon));
 
-	if (killer == victim || !killer)
+	// Handle suicide.
+	if (killer == victim)
 	{
-		// Decement level if killed himself with grenade.
-		if (equal(weapon, "hegrenade"))
+		new oldLevel;
+
+		switch(gameMode)
 		{
-			if (gameMode == modeNormal)
+			case modeNormal:
 			{
+				oldLevel = userData[victim][dataLevel];
+
 				decrementUserWeaponKills(victim, 1, true);
+
+				if (userData[victim][dataLevel] < oldLevel)
+				{
+					ColorChat(0, RED, "%s^x01 Gracz^x04 %n^x01 popelnil samobojstwo i spadl do poziomu^x04 %i (%s)^x01.",
+						chatPrefix,
+						victim,
+						userData[victim][dataLevel],
+						customWeaponNames[userData[victim][dataLevel]]);
+				}
 			}
-			else
+			
+			case modeTeamplay:
 			{
-				decrementTeamWeaponKills(get_user_team(victim), 1, true);
+				oldLevel = tpData[tpTeamLevel][victimTeam - 1];
+
+				decrementTeamWeaponKills(victimTeam, 1, true);
+
+				if (tpData[tpTeamLevel][victimTeam - 1] < oldLevel)
+				{
+					ColorChat(0, RED, "%s^x01 Przez samobojstwo gracza^x04 %n^x01 druzyna^x04 %s^x01 spadla do poziomu^x04 %i (%s)^x01.",
+						chatPrefix,
+						victim,
+						teamNames[victimTeam - 1],
+						tpData[tpTeamLevel][victimTeam - 1],
+						customWeaponNames[tpData[tpTeamLevel][victimTeam - 1]]);
+				}
 			}
 		}
 		
-		// Prevent weapon-drop to the floor.
-		removePlayerWeapons(victim);
-
-		// Respawn player.
-		respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
-
 		return;
 	}
 
-	new killerTeam = get_user_team(killer),
-		victimTeam = get_user_team(victim);
-
+	// End gungame if user/team has reached max level.
 	if (gameMode == modeNormal && userData[killer][dataLevel] == maxLevel)
 	{
-		// End gungame if user has reached max level + 1.
 		endGunGame(killer);
 		
 		return;
 	}
 	else if (gameMode == modeTeamplay)
 	{
-		ForRange(i, 0, 1)
+		if (tpData[tpTeamLevel][0] == maxLevel || tpData[tpTeamLevel][1] == maxLevel)
 		{
-			if (tpData[tpTeamLevel][i] != maxLevel)
-			{
-				continue;
-			}
-
 			endGunGame(killer);
 
 			return;
 		}
 	}
 
-	// Respawn victim normally.
-	respawnPlayer(victim, get_pcvar_float(cvarsData[cvar_respawnInterval]));
-
+	// Handle killing on spawn protection.
 	if (get_pcvar_num(cvarsData[cvar_spawnProtectionType]))
 	{
 		if (userData[victim][dataSpawnProtection])
@@ -1687,141 +1698,108 @@ public playerDeathEvent()
 			// Toggle off respawn protection.
 			toggleSpawnProtection(victim, false);
 
-			// Prevent weapon-drop to the floor.
-			removePlayerWeapons(victim);
-
 			return;
 		}
 	}
 	
+	if (equal(weapon, "knife"))
+	{
+		// Block leveling up if player is on HE level and killed someone with a knife.
+		if (weaponsData[userData[killer][dataLevel]][weaponCSW] == CSW_HEGRENADE)
+		{
+			return;
+		}
+		
+		// Update stats.
+		userData[killer][dataKnifeKills]++;
+
+		if (userData[victim][dataLevel])
+		{
+			switch(gameMode)
+			{
+				case modeNormal: decrementUserLevel(victim, 1);
+				case modeTeamplay: decrementTeamLevel(victimTeam, 1);
+			}
+
+			ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.",
+				chatPrefix,
+				killer,
+				gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny",
+				tpData[tpTeamLevel][victimTeam]);
+		}
+
+		// Handle instant-level-up when killing with knife.
+		if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
+		{
+			switch(gameMode)
+			{
+				case modeNormal: incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
+				case modeTeamplay: incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
+			}
+		}
+		else
+		{
+			switch(gameMode)
+			{
+				case modeNormal: incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+				case modeTeamplay: incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
+			}
+		}
+	}
+	else
+	{
+		switch(gameMode)
+		{
+			case modeNormal: incrementUserWeaponKills(killer, 1);
+			case modeTeamplay: incrementTeamWeaponKills(killerTeam, 1);
+		}
+
+		// Notify about killer's health left.
+		ColorChat(victim, RED, "%s^x01 Zabity przez^x04 %n^x01 (^x04%i^x01 HP)", chatPrefix, killer, get_user_health(killer));
+	}
+
 	// Update stats.
 	if (read_data(3))
 	{
 		userData[killer][dataHeadshots]++;
 	}
 	
-	// Update stats.
 	userData[killer][dataKills]++;
 
-	if (equal(weapon, "knife"))
-	{
-		// Update stats.
-		userData[killer][dataKnifeKills]++;
-
-		if (userData[killer][dataLevel] != maxLevel)
-		{
-			if (userData[victim][dataLevel])
-			{
-				// Decrement victim level or team level when killed with knife and his level is greater than 1.
-				if (gameMode == modeNormal)
-				{
-					decrementUserLevel(victim, 1);
-				}
-				else
-				{
-					decrementTeamLevel(victimTeam, 1);
-				}
-
-				// Notify player.
-				ColorChat(victim, RED, "%s^x01 Zostales zabity z kosy przez^x04 %n^x01. %s spadl do^x04 %i^x01.", chatPrefix, killer, gameMode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny", tpData[tpTeamLevel][victimTeam]);
-			}
-			
-			// Increment killer's weapon kills by two instead of leveling up imediatly.
-			if (gameMode == modeNormal)
-			{
-				if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
-				{
-					incrementUserLevel(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
-				}
-				else
-				{
-					incrementUserWeaponKills(killer, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
-				}
-			}
-			else if (gameMode == modeTeamplay)
-			{
-				if (get_pcvar_num(cvarsData[cvar_knifeKillInstantLevelup]))
-				{
-					incrementTeamLevel(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]), true);
-				}
-				else
-				{
-					incrementTeamWeaponKills(killerTeam, get_pcvar_num(cvarsData[cvar_knifeKillReward]));
-				}
-			}
-		}
-	}
-	else
-	{
-		if (gameMode == modeNormal)
-		{
-			incrementUserWeaponKills(killer, 1);
-		}
-		else if (gameMode == modeTeamplay)
-		{
-			incrementTeamWeaponKills(killerTeam, 1);
-		}
-	}
-
 	// Handle ammo refill.
-	if (gameMode == modeNormal)
+	switch(gameMode)
 	{
-		switch (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
+		case modeNormal:
 		{
-			// Refill killers ammo.
-			case 1:
+			switch(get_pcvar_num(cvarsData[cvar_refillWeaponAmmo]))
 			{
-				refillAmmo(killer);
-			}
-
-			// Refill only for vips.
-			case 2:
-			{
-				if (gg_get_user_vip(killer))
+				case 1: refillAmmo(killer); // Killer
+				case 2: // Vips only
 				{
-					refillAmmo(killer);
+					if (gg_get_user_vip(killer))
+					{
+						refillAmmo(killer);
+					}
+				}
+			}
+		}
+
+		case modeTeamplay:
+		{
+			switch (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo_teamplay]))
+			{
+				case 1: refillAmmo(killerTeam, true); // Whole team
+				case 2: refillAmmo(killer); // Just the killer
+				case 3: // Vips only
+				{
+					if (gg_get_user_vip(killer))
+					{
+						refillAmmo(killer);
+					}
 				}
 			}
 		}
 	}
-	else
-	{
-		switch (get_pcvar_num(cvarsData[cvar_refillWeaponAmmo_teamplay]))
-		{
-			// Refill whole team ammo.
-			case 1:
-			{
-				ForTeam(i, killerTeam)
-				{
-					refillAmmo(i);
-				}
-			}
-
-			// Refill just killer ammo.
-			case 2:
-			{
-				refillAmmo(killer);
-			}
-
-			// Refill only for vips.
-			case 3:
-			{
-				if (gg_get_user_vip(killer))
-				{
-					refillAmmo(killer);
-				}
-			}
-		}
-	}
-
-	// Prevent weapon-drop to the floor.
-	if (is_user_alive(victim))
-	{
-		removePlayerWeapons(victim);
-	}
-
-	// Notify about killer's health left.
-	ColorChat(victim, RED, "%s^x01 Zabity przez^x04 %n^x01 (^x04%i^x01 HP)", chatPrefix, killer, get_user_health(killer));
 }
 
 public playerSpawn(index)
@@ -3734,39 +3712,76 @@ getWarmupWeaponName()
 	}
 }
 
-refillAmmo(index)
+refillAmmo(index, bool:team = false)
 {
 	// Return if player is not alive or gungame has ended.
-	if (!is_user_alive(index) || gungameEnded)
+	if (gungameEnded)
 	{
 		return;
 	}
 
-	new userWeapon = get_user_weapon(index);
-
-	// Return if for some reason player has no weapon.
-	if (!userWeapon)
-	{
-		return;
-	}
-
-	new weaponClassname[MAX_CHARS - 1],
+	static userWeapon,
+		weaponClassname[MAX_CHARS - 1],
 		weaponEntity;
 
-	// Get weapon classname.
-	get_weaponname(userWeapon, weaponClassname, charsmax(weaponClassname));
-
-	// Get entity index of player's weapon.
-	weaponEntity = find_ent_by_owner(-1, weaponClassname, index);
-
-	// Return if weapon index is invalid.
-	if (!weaponEntity)
+	if (team)
 	{
-		return;
-	}
+		ForTeam(i, index)
+		{
+			if (!is_user_alive(i))
+			{
+				continue;
+			}
+			
+			userWeapon = get_user_weapon(i);
 
-	// Refill weapon ammo.
-	cs_set_weapon_ammo(weaponEntity, ammoAmounts[userWeapon]);
+			// Continue if for some reason player has no weapon.
+			if (!userWeapon)
+			{
+				continue;
+			}
+
+			// Get weapon classname.
+			get_weaponname(userWeapon, weaponClassname, charsmax(weaponClassname));
+
+			// Get entity index of player's weapon.
+			weaponEntity = find_ent_by_owner(-1, weaponClassname, i);
+
+			// Continue if weapon index is invalid.
+			if (!weaponEntity)
+			{
+				continue;
+			}
+
+			// Refill weapon ammo.
+			cs_set_weapon_ammo(weaponEntity, ammoAmounts[userWeapon]);
+		}
+	}
+	else
+	{
+		userWeapon = get_user_weapon(index);
+
+		// Return if for some reason player has no weapon.
+		if (!userWeapon)
+		{
+			return;
+		}
+		
+		// Get weapon classname.
+		get_weaponname(userWeapon, weaponClassname, charsmax(weaponClassname));
+
+		// Get entity index of player's weapon.
+		weaponEntity = find_ent_by_owner(-1, weaponClassname, index);
+
+		// Return if weapon index is invalid.
+		if (!weaponEntity)
+		{
+			return;
+		}
+
+		// Refill weapon ammo.
+		cs_set_weapon_ammo(weaponEntity, ammoAmounts[userWeapon]);
+	}
 }
 
 randomWarmupWeapon(index)
