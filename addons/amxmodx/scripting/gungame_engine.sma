@@ -2319,9 +2319,9 @@ public displayHud(taskIndex)
 		nextWeapon[25];
 
 	// Format leader's data if available.
-	if (leader <= 0)
+	if (leader == -1)
 	{
-		formatex(leaderData, charsmax(leaderData), "^nLider: Brak");
+		formatex(leaderData, charsmax(leaderData), "^nLider: %s + %s", teamNames[0], teamNames[1]);
 	}
 	else
 	{
@@ -2361,7 +2361,7 @@ public displayHud(taskIndex)
 	
 	if (gameMode == modeNormal)
 	{
-		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s",
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "-- Tryb normalny --^nTwoj poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s",
 			userData[index][dataLevel] + 1,
 			sizeof(weaponsData),
 			isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]],
@@ -2375,7 +2375,7 @@ public displayHud(taskIndex)
 	{
 		new team = get_user_team(index) - 1;
 
-		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "Poziom: %i/%i [%s - %i/%i]^nNastepna bron: %s%s",
+		ShowSyncHudMsg(index, hudObjects[hudObjectDefault], "-- Tryb teamplay --^nPoziom druzyny: %i/%i [%s - %i/%i]^nNastepna bron: %s%s",
 			tpData[tpTeamLevel][team] + 1,
 			sizeof(weaponsData),
 			isOnLastLevel(index) ? (get_pcvar_num(cvarsData[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[userData[leader][dataLevel]]) : customWeaponNames[userData[index][dataLevel]],
@@ -3753,11 +3753,35 @@ getGameLeader()
 	}
 	else if (gameMode == modeTeamplay)
 	{
-		highest = tpData[tpTeamLevel][0] == tpData[tpTeamLevel][1] ? -1 : (tpData[tpTeamLevel][1] > tpData[tpTeamLevel][0] ? 1 : 0);
+		// Get leading team by level.
+		if (tpData[tpTeamLevel][0] == tpData[tpTeamLevel][1])
+		{
+			highest = -1;
+		}
+		else if(tpData[tpTeamLevel][0] > tpData[tpTeamLevel][1])
+		{
+			highest = 0;
+		}
+		else
+		{
+			highest = 1;
+		}
 
+		// Get leading team by kills if they're at the same level.
 		if (highest == -1)
 		{
-			highest = tpData[tpTeamKills][0] == tpData[tpTeamKills][1] ? -1 : (tpData[tpTeamKills][1] > tpData[tpTeamKills][0] ? 1 : 0);
+			if (tpData[tpTeamKills][0] == tpData[tpTeamKills][1])
+			{
+				highest = -1;
+			}
+			else if(tpData[tpTeamKills][0] > tpData[tpTeamKills][1])
+			{
+				highest = 1;
+			}
+			else
+			{
+				highest = 0;
+			}
 		}
 	}
 
