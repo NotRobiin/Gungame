@@ -2,41 +2,26 @@
 #include <hamsandwich>
 #include <fakemeta>
 #include <fun>
+#include <colorchat>
 
 #define AUTHOR "Wicked - amxx.pl/user/60210-wicked/"
 
 #define ForArray(%1,%2) for(new %1 = 0; %1 < sizeof %2; %1++)
 #define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
+#define ForPlayers(%1) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++)
 
 new const vipFlag[] = "t";
-
-// Added, not set.
 new const vipHealth = 110;
-
-// Set.
 new const vipArmor = 50;
-
-// Chat prefix.
 new const vipPrefix[] = "^x04[VIP]^x01";
-
-// Default + vipJumps.
 new const vipJumps = 0;
-
-// Display greetings on join?
 new const bool:vipGreetings = true;
-
-// Message to display.
 new const vipGreetingsMessage[] = "Wchodzi vip %n!";
+new const vipMotdFile[] = "vip.txt";
+new const vipMotdFileHeader[] = "Informacje o VIPie";
 
-// How high vip jumps.
-new const Float:vipJumpVelocityRange[] = { 265.0, 285.0 };
-
-/*
-	[0] - Weapon
-	[1] - Damage multiplier
-
-	If damage multiplier = 105 and weapon = CSW_M4A1 then vips will deal 5% more damage with m4a1.
-*/
+// [0] - Weapon, [1] - Damage multiplier
+// If damage multiplier = 105 and weapon = CSW_M4A1 then vips will deal 5% more damage with m4a1.
 new const vipHigherDamageWeapons[][] = 
 {
 	{ CSW_KNIFE, 105 }
@@ -48,36 +33,11 @@ new const vipMotdCommands[][] =
 	"/comavip"
 };
 
-new const vipMotdFile[] = "vip.txt";
-
-new const vipMotdFileHeader[] = "Informacje o VIPie";
-
-
-#define vipSkinsEnabled false
-
-#if vipSkinsEnabled
-new const vipSkins[][][] =
+new const vipsOnlineCommands[][] =
 {
-	{ CSW_KNIFE, "models/super_vip/v_crowbar.mdl", "models/super_vip/p_newcrowbar.mdl", (TEAM_T) }
-};
-#endif
-
-
-#define vipModelsEnabled false
-
-#if vipModelsEnabled
-new const vipModel[][][] =
-{
-	{ "models/player/terrorystyk/", "terrorystyk", TEAM_T },
-	{ "models/player/dres/", "dres", TEAM_CT }
-};
-#endif
-
-new const nativesData[][][] =
-{
-	{ "gg_get_user_vip", "native_get_user_vip", 0 },
-	{ "gg_set_user_vip", "native_set_user_vip", 0 },
-	{ "gg_get_vip_flag", "native_get_vip_flag", 0 }
+	"/vips",
+	"/vipy",
+	"/vipyonline"
 };
 
 new bool:userVip[33],
@@ -89,7 +49,7 @@ new bool:userVip[33],
 
 public plugin_init()
 {
-	register_plugin("x", "v0.1", AUTHOR);
+	register_plugin("Gungame VIP", "v1.2", AUTHOR);
 
 	RegisterHam(Ham_Spawn, "player", "playerSpawn", true);
 	RegisterHam(Ham_TakeDamage, "player", "takeDamage");
@@ -99,62 +59,21 @@ public plugin_init()
 
 	register_forward(FM_CmdStart, "commandStartPre");
 
-	registerCommands(vipMotdCommands, sizeof(vipMotdCommands), "vipMotd");
-
-	#if vipSkinsEnabled
-	registerForwards();
-	#endif
+	registerCommands(vipMotdCommands, sizeof(vipMotdCommands), "showVipMotd");
+	registerCommands(vipsOnlineCommands, sizeof(vipsOnlineCommands), "showVipsOnline");
 
 	if(vipGreetings)
 	{
 		greetedPlayers = ArrayCreate(32, 1);
-
 		hudObject = CreateHudSyncObj();
 	}
 }
 
 public plugin_natives()
 {
-	ForArray(i, nativesData)
-	{
-		register_native(nativesData[i][0], nativesData[i][1], nativesData[i][2][0]);
-	}
-}
-
-public plugin_precache()
-{
-	#if vipSkinsEnabled
-	ForArray(i, vipSkins)
-	{
-		if(!file_exists(vipSkins[i][1]) || !file_exists(vipSkins[i][2]))
-		{
-			log_amx("ERROR: Tried to precache non-existing file: ^"%s^" or ^"%s^".", vipSkins[i][1], vipSkins[i][2]);
-
-			continue;
-		}
-
-		precache_model(vipSkins[i][1]);
-		precache_model(vipSkins[i][2]);
-	}
-	#endif
-
-	#if vipModelsEnabled
-	new modelPath[2 << 5];
-
-	ForRange(i, 0, 1)
-	{
-		formatex(modelPath, charsmax(modelPath), "%s%s.mdl", vipModel[i][0], vipModel[i][1]);
-
-		if(!file_exists(modelPath))
-		{
-			log_amx("ERROR: Tried to precache vip player model on path ^"%s^". File was not found.", modelPath);
-
-			continue;
-		}
-
-		precache_model(modelPath);
-	}
-	#endif
+	register_native("gg_get_user_vip", "native_get_user_vip", 0);
+	register_native("gg_set_user_vip", "native_set_user_vip", 0);
+	register_native("gg_get_vip_flag", "native_get_vip_flag", 0);
 }
 
 public plugin_end()
@@ -220,20 +139,47 @@ public native_get_vip_flag(plugin, params)
 	return read_flags(vipFlag);
 }
 
-public vipMotd(index)
+public showVipMotd(index)
 {
 	show_motd(index, vipMotdFile, vipMotdFileHeader);
 }
 
-#if vipSkinsEnabled
-public weaponDeploy(entity)
+public showVipsOnline(index)
 {
-	new index = pev(entity, pev_owner),
-		weapon = cs_get_weapon_id(entity);
+	new const chatPrefix[] = "[GUNGAME]^x01";
 
-	setViewmodel(index, weapon);
+	new message[191],
+		onlineCount;
+	
+	ForPlayers(i)
+	{
+		if (!is_user_connected(i) || !userVip[i])
+		{
+			continue;
+		}
+
+		onlineCount++;
+
+		if (strlen(message) + strlen(fmt("%n, ", i)) > 191)
+		{
+			break;
+		}
+
+		add(message, charsmax(message), fmt("^x04%n^x01, ", i));
+	}
+
+	if (!onlineCount)
+	{
+		ColorChat(index, RED, "%s Brak vipow online^x01.", chatPrefix);
+	}
+	else
+	{
+		format(message, strlen(message) - 3, message);
+		format(message, charsmax(message), "Online (%i): %s^x01.", onlineCount, message);
+		
+		ColorChat(index, RED, "%s %s", chatPrefix, message);
+	}
 }
-#endif
 
 public commandStartPre(index, uc_handle)
 {
@@ -252,7 +198,7 @@ public commandStartPre(index, uc_handle)
 
 		pev(index, pev_velocity, newVelocity);
 
-		newVelocity[2] = random_float(vipJumpVelocityRange[0], vipJumpVelocityRange[1]);
+		newVelocity[2] = random_float(265.0, 285.0);
 
 		set_pev(index, pev_velocity, newVelocity);
 	}
@@ -346,9 +292,7 @@ public playerSpawn(index)
 		return;
 	}
 
-	new userTeam = get_user_team(index);
-
-	if(0 >= userTeam > 2)
+	if(0 >= get_user_team(index) > 2)
 	{
 		return;
 	}
@@ -391,71 +335,6 @@ displayGreetings(index)
 	set_hudmessage(24, 190, 220, 0.25, 0.2, 0, 6.0, 6.0);
 	ShowSyncHudMsg(0, hudObject, vipGreetingsMessage, index);
 }
-
-#if vipSkinsEnabled
-setViewmodel(index, weapon)
-{
-	if(!is_user_alive(index) || !userVip[index])
-	{
-		return;
-	}
-
-	new arrayIndex = -1;
-
-	if(cs_get_user_shield(index))
-	{
-		return;
-	}
-
-	// Get array index of weapon.
-	ForArray(i, vipSkins)
-	{
-		if(weapon != vipSkins[i][0][0] || !(get_user_team(index) & vipSkins[i][3][0]))
-		{
-			continue;
-		}
-
-		arrayIndex = i;
-
-		break;
-	}
-
-	if(arrayIndex == -1)
-	{
-		return;
-	}
-
-	// V_
-	set_pev(index, pev_viewmodel2, vipSkins[arrayIndex][1]);
-	
-	// P_
-	set_pev(index, pev_weaponmodel2, vipSkins[arrayIndex][2]);
-}
-
-registerForwards()
-{
-	new entityName[33],
-		Array:registeredClassnames;
-
-	registeredClassnames = ArrayCreate(33, 1);
-
-	ForArray(i, vipSkins)
-	{
-		get_weaponname(vipSkins[i][0][0], entityName, charsmax(entityName));
-		
-		if(inArray(entityName, registeredClassnames) || !entityName[0])
-		{
-			continue;
-		}
-		
-		RegisterHam(Ham_Item_Deploy, entityName, "weaponDeploy", true);
-
-		ArrayPushString(registeredClassnames, entityName);
-	}
-
-	ArrayDestroy(registeredClassnames);
-}
-#endif
 
 stock registerCommands(const array[][], arraySize, function[])
 {
