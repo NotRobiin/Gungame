@@ -1359,13 +1359,13 @@ public primaryAttack(entity)
 	// Block attacking if gungame has ended.
 	if (gungameEnded && is_user_alive(index))
 	{
-		return PLUGIN_HANDLED;
+		return HAM_IGNORED;
 	}
 
 	// Cooldown on.
 	if (userData[index][dataWandLastAttack] + get_pcvar_float(cvarsData[cvar_wand_attack_interval]) > get_gametime())
 	{
-		return PLUGIN_HANDLED;
+		return HAM_SUPERCEDE;
 	}
 
 	new weaponIndex = cs_get_weapon_id(entity);
@@ -1373,7 +1373,7 @@ public primaryAttack(entity)
 	// Handle wand attacking.
 	wandAttack(index, weaponIndex);
 
-	return PLUGIN_CONTINUE;
+	return HAM_IGNORED;
 }
 
 public onAddItemToPlayer(index, weaponEntity)
@@ -1501,6 +1501,14 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 	if (userData[victim][dataSpawnProtection] && !get_pcvar_num(cvarsData[cvar_spawn_protection_type]))
 	{
 		return HAM_SUPERCEDE;
+	}
+
+	if (get_pcvar_num(cvarsData[cvar_wand_enabled]))
+	{
+		if (isOnLastLevel(attacker) || get_pcvar_num(cvarsData[cvar_warmup_weapon]) == -2)
+		{
+			return HAM_SUPERCEDE;
+		}
 	}
 
 	// Show damage info in hud.
