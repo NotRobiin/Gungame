@@ -1525,7 +1525,8 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 
 	if (get_pcvar_num(cvars_data[cvar_wand_enabled]))
 	{
-		if (is_on_last_level(attacker) || get_pcvar_num(cvars_data[cvar_warmup_weapon]) == -2)
+		// todo: fix here
+		if (is_on_last_level(attacker) /*|| get_pcvar_num(cvars_data[cvar_warmup_weapon]) == -2*/)
 		{
 			return HAM_SUPERCEDE;
 		}
