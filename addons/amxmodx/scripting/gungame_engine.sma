@@ -264,7 +264,7 @@ enum (+= 1)
 
 new const wandSprites[][] =
 {
-	"sprites/gungame/wand_attack.spr",
+	//"sprites/gungame/wand_attack.spr",
 	"sprites/gungame/wandExplodeOnHit.spr",
 	"sprites/gungame/wandPostHit.spr",
 	"sprites/blood.spr"
@@ -874,6 +874,8 @@ public plugin_init()
 		// Test commands.
 		register_clcmd("say /lvl", "setMaxLevel");
 		register_clcmd("say /addlvl", "addLevel");
+		register_clcmd("say /awp", "setAWPLevel");
+		register_clcmd("say /godoff", "godmodOff");
 		register_clcmd("say /kills", "addKills");
 		register_clcmd("say /addkill", "addFrag");
 		register_clcmd("say /winmessage", "testWinMessage");
@@ -2847,7 +2849,7 @@ give_warmup_weapons(index)
 		// Set weapon backpack ammo.
 		if (weapon == CSW_AWP)
 		{
-			cs_set_user_bpammo(index, weapon, 1);
+			cs_set_user_bpammo(index, weapon, 100);
 			cs_set_weapon_ammo(weapon_entity, 1);
 		}
 		else
@@ -2866,15 +2868,16 @@ give_warmup_weapons(index)
 		// Add weapon.
 		give_item(index, weapon_entity_names[warmup_data[warmupWeaponIndex]]);
 
+		cs_set_user_bpammo(index, weapon, 100);
 		// Set weapon bp ammo.
-		if (weapon == CSW_AWP)
-		{
-			cs_set_user_bpammo(index, weapon, 1);
-		}
-		else
-		{
-			cs_set_user_bpammo(index, weapon, 100);
-		}
+		// if (weapon == CSW_AWP)
+		// {
+		// 	cs_set_user_bpammo(index, weapon, 100);
+		// }
+		// else
+		// {
+		// 	cs_set_user_bpammo(index, weapon, 100);
+		// }
 	}
 
 	// Set wand model.
@@ -3511,7 +3514,7 @@ give_weapons(index)
 		{
 			if (csw == CSW_AWP)
 			{
-				cs_set_user_bpammo(index, csw, 1);
+				cs_set_user_bpammo(index, csw, 100);
 				cs_set_weapon_ammo(weapon_entity, 1);
 			}
 			else
@@ -4242,8 +4245,8 @@ wand_attack(index, weapon)
 		write_coord(floatround(vicOrigin[0] + random_num(-20, 20)));
 		write_coord(floatround(vicOrigin[1] + random_num(-20, 20)));
 		write_coord(floatround(vicOrigin[2] + random_num(-20, 20)));
-		write_short(wand_sprites_indexes[wandSpriteBlood]);
-		write_short(wand_sprites_indexes[wandSpriteBlood]);
+		//write_short(wand_sprites_indexes[wandSpriteBlood]);
+		//write_short(wand_sprites_indexes[wandSpriteBlood]);
 		write_byte(248);
 		write_byte(blood_scale);
 		message_end();
@@ -4523,6 +4526,26 @@ public addLevel(index)
 	{
 		increment_team_level(get_user_team(index), 1, true);
 	}
+}
+
+public setAWPLevel(index)
+{
+	if (game_mode == modeNormal)
+	{
+		user_data[index][dataLevel] = 19;
+		increment_user_level(index, 1, true);
+	}
+	else
+	{
+		new team = get_user_team(index);
+		tp_data[tpTeamLevel][team - 1] = 19;
+		increment_team_level(team, 1, true);
+	}
+}
+
+public godmodOff(index)
+{
+	set_user_godmode(index, 0);
 }
 
 public addKills(index)
