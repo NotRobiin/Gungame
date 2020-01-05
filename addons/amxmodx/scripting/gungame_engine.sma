@@ -763,6 +763,9 @@ public plugin_init()
 		register_event("HLTV", "roundStart", "a", "1=0", "2=0");
 	}
 
+	// CurWeapon for AWP reloading
+	register_event("CurWeapon", "eventCurWeapon", "be", "1=1");
+
 	// Register info change and model set events.
 	register_forward(FM_ClientUserInfoChanged, "clientInfoChanged");
 	register_forward(FM_SetModel, "setEntityModel");
@@ -1405,6 +1408,25 @@ public onAddItemToPlayer(index, weapon_entity)
 	SetHamReturnInteger(false);
 
 	return HAM_SUPERCEDE;
+}
+
+public eventCurWeapon(id)
+{
+	if (!is_user_connected(id))
+	{
+		return;
+	}
+
+	// todo: cvar here
+	if(/*get_pcvar_num(gg_awp_oneshot) &&*/ read_data(2) == CSW_AWP && read_data(3) > 1)
+	{
+		new wEnt = find_ent_by_owner(-1, "weapon_awp", id);
+		if(pev_valid(wEnt))
+		{
+			cs_set_weapon_ammo(wEnt, 1);
+			cs_set_user_bpammo(id, CSW_AWP, 100);
+		}
+	}
 }
 
 public client_PreThink(index)
