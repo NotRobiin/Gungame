@@ -750,7 +750,9 @@ new user_data[MAX_PLAYERS + 1][userDataEnumerator],
 	disconnected_players_data[dcDataEnumerator],
 
 	message_hide_weapon,
-	message_hide_crosshair;
+	message_hide_crosshair,
+
+	bool:bomb_supported;
 
 
 public plugin_init()
@@ -873,6 +875,9 @@ public plugin_init()
 
 	// Load info required to connect to database.
 	load_sql_config();
+
+	// Load bomb-supported maps.
+	load_maps_info();
 
 	// Load cvars.
 	load_game_cvars();
@@ -1311,9 +1316,19 @@ public clientInfoChanged(index)
 	get_user_name_data(index);
 }
 
+public bomb_planting(index)
+{
+	if (bomb_supported)
+	{
+		return PLUGIN_CONTINUE;
+	}
+
+	return PLUGIN_HANDLED;
+}
+
 public bomb_planted(index)
 {
-	if(!get_pcvar_num(cvars_data[cvar_bomb_enabled]))
+	if (!get_pcvar_num(cvars_data[cvar_bomb_enabled]))
 	{
 		return;
 	}
@@ -2821,6 +2836,53 @@ load_sql_config()
 	}
 
 	db_data[sqlConfigFound] = true;
+}
+
+load_maps_info()
+{
+	new const file_path[] = "addons/amxmodx/configs/gg_bomb_maps.ini";
+
+	bomb_supported = false;
+
+	if (!file_exists(file_path))
+	{
+		return;
+	}
+	
+	new file_handle = fopen(file_path, "r"),
+		line_content[MAX_CHARS * 3],
+		current_map_name[MAX_CHARS];
+	
+	get_mapname(current_map_name, charsmax(current_map_name));
+
+	while (file_handle && !feof(file_handle))
+	{
+		// Read one line at a time.
+		fgets(file_handle, line_content, charsmax(line_content));
+		
+		// Replace newlines with a null character.
+		replace(line_content, charsmax(line_content), "^n", "");
+		
+		// Blank line or comment.
+		if (!line_content[0] || line_content[0] == ';')
+		{
+			continue;
+		}
+		
+		// Trim spaces.
+		trim(line_content);
+
+		remove_quotes(line_content);
+
+		if (!equal(line_content, current_map_name))
+		{
+			continue;
+		}
+
+		bomb_supported = true;
+
+		break;
+	}
 }
 
 load_game_cvars()
