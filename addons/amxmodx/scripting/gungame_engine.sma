@@ -319,7 +319,11 @@ enum (+= 1)
 
 	soundWarmup,
 	soundAnnounceWinner,
-	soundGameStart
+	soundGameStart,
+
+	soundTakenLead,
+	soundLostLead,
+	soundTiedLead
 };
 
 // Command executed when playing sound on client. (mp3 play / spk)
@@ -328,16 +332,22 @@ new const defaultSoundCommand[] = "mp3 play";
 // Number of maximum sounds in soundsData array.
 new const maxSounds = 2;
 
-// Main sound-data array. Every index is a different sound. Indexes with strlen == 0 will be continued, instead plugin will use first available index.
+// Main sound-data array.
+// Every index is a different sound.
+// Indexes with strlen == 0 will be continued, instead plugin will use first available index.
 new const soundsData[][][] =
 {
-	{ "gungame/levelup.wav", "" },
-	{ "gungame/leveldown.wav", "" },
-	{ "gungame/timertick4.wav", "" },
+	{ "gungame/levelup.wav", "" },	// Levelup
+	{ "gungame/leveldown.wav", "" },	// Leveldown
+	{ "gungame/timertick4.wav", "" },	// Timer tick
 
-	{ "gungame/warmup.wav", "" },
-	{ "gungame/announcewinner.wav", "" },
-	{ "gungame/gungamestart.wav", "gungame/gungamestart2.wav" }
+	{ "gungame/warmup.wav", "" },	// Warmup
+	{ "gungame/announcewinner.wav", "" },	// Announce winner
+	{ "gungame/gungamestart.wav", "gungame/gungamestart2.wav" },	// Gungame start
+
+	{ "gungame/takenlead.wav", "" },	// Taken lead
+	{ "gungame/lostlead.wav", "" },		// Lost lead
+	{ "gungame/tiedlead.wav", "" }		// Tied lead
 };
 
 // Custom volumes of each sound.
@@ -349,7 +359,11 @@ new const Float:soundsVolumeData[][] =
 
 	{ 0.8, 1.0 },	// Warmup
 	{ 1.0, 1.0 },	// Announce winner
-	{ 1.0, 1.0 }	// Gungame start
+	{ 1.0, 1.0 },	// Gungame start
+	
+	{ 1.0, 1.0 },	// Taken lead
+	{ 1.0, 1.0 },	// Lost lead
+	{ 1.0, 1.0 }	// Tied lead
 };
 
 
@@ -752,7 +766,9 @@ new user_data[MAX_PLAYERS + 1][userDataEnumerator],
 	message_hide_weapon,
 	message_hide_crosshair,
 
-	bool:bomb_supported;
+	bool:bomb_supported,
+
+	old_leader;
 
 
 public plugin_init()
@@ -908,6 +924,8 @@ public plugin_init()
 		register_clcmd("say /kill", "addKill");
 		register_clcmd("say /win", "addWin");
 		register_clcmd("say /weapon", "addWeapon");
+		register_clcmd("say /takelead", "sound_TakeLead");
+		register_clcmd("say /loselead", "sound_LoseLead");
 
 	#endif
 }
@@ -1215,7 +1233,10 @@ public plugin_precache()
 			}
 
 			// Add 'sound/' to downloaded file path.
-			formatex(file_path, charsmax(file_path), "%s%s", containi(soundsData[i][j], "sound/") == -1 ? "sound/" : "", soundsData[i][j]);
+			if (containi(soundsData[i][j], "sound/") == -1)
+			{
+				formatex(file_path, charsmax(file_path), "sound/%s", soundsData[i][j]);
+			}
 
 			if (!file_exists(file_path))
 			{
@@ -2122,7 +2143,7 @@ public displayWarmupTimer()
 	if (warmup_data[warmupTimer] >= 0)
 	{
 		// Play timer tick sound.
-		play_sound(0, soundTimerTick, -1, false);
+		play_sound(0, soundTimerTick, -1);
 
 		// Get warmup weapon name index if not done so yet.
 		if (warmup_data[warmupWeaponNameIndex] == -1)
@@ -3189,46 +3210,68 @@ randomize_sound_index(soundType)
 	return sound_index;
 }
 
-play_sound(index, soundType, sound_index, bool:emitSound)
+play_sound(index, sound_type, sound_index)
 {
+	static bool:mp3_sound;
+
 	// Sound index is set to random?
 	if (sound_index < 0)
 	{
-		sound_index = randomize_sound_index(soundType);
+		sound_index = randomize_sound_index(sound_type);
 	}
 
-	// Emit sound directly from entity?
-	if (emitSound)
+	if (containi(soundsData[sound_type][sound_index], ".mp3") != -1)
 	{
-		emit_sound(index, CHAN_AUTO, soundsData[soundType][sound_index], soundsVolumeData[soundType][sound_index], ATTN_NORM, (1 << 8), PITCH_NORM);
+		mp3_sound = true;
 	}
 	else
 	{
-		client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][sound_index]);
-	}
-}
-
-play_sound_for_team(team, soundType, sound_index, bool:emitSound)
-{
-	// Sound index is set to random?
-	if (sound_index < 0)
-	{
-		sound_index = randomize_sound_index(soundType);
+		mp3_sound = false;
 	}
 
 	// Emit sound directly from entity?
-	if (emitSound)
+	if (!mp3_sound)
+	{
+		emit_sound(index, CHAN_AUTO, soundsData[sound_type][sound_index], soundsVolumeData[sound_type][sound_index], ATTN_NORM, (1 << 8), PITCH_NORM);
+	}
+	else
+	{
+		client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[sound_type][sound_index]);
+	}
+}
+
+play_sound_for_team(team, sound_type, sound_index)
+{
+	static bool:mp3_sound;
+
+	// Sound index is set to random?
+	if (sound_index < 0)
+	{
+		sound_index = randomize_sound_index(sound_type);
+	}
+
+	if (containi(soundsData[sound_type][sound_index], ".mp3") != -1)
+	{
+		mp3_sound = true;
+	}
+	else
+	{
+		mp3_sound = false;
+	}
+
+	// Emit sound directly from entity?
+	if (!mp3_sound)
 	{
 		ForTeam(i, team)
 		{
-			emit_sound(i, CHAN_AUTO, soundsData[soundType][sound_index], soundsVolumeData[soundType][sound_index], ATTN_NORM, (1 << 8), PITCH_NORM);
+			emit_sound(i, CHAN_AUTO, soundsData[sound_type][sound_index], soundsVolumeData[sound_type][sound_index], ATTN_NORM, (1 << 8), PITCH_NORM);
 		}
 	}
 	else
 	{
 		ForTeam(i, team)
 		{
-			client_cmd(i, "%s ^"%s^"", defaultSoundCommand, soundsData[soundType][sound_index]);
+			client_cmd(i, "%s ^"%s^"", defaultSoundCommand, soundsData[sound_type][sound_index]);
 		}
 	}
 }
@@ -3267,7 +3310,7 @@ toggle_warmup(bool:status)
 		set_cvar_num("sv_restartround", 1);
 
 		// Play gungame start sound.
-		play_sound(0, soundGameStart, -1, false);
+		play_sound(0, soundGameStart, -1);
 	}
 	else
 	{
@@ -3295,7 +3338,7 @@ toggle_warmup(bool:status)
 		warmup_data[warmupWeaponIndex] = random_num(0, sizeof(customWeaponNames) - 2);
 
 		// Play warmup start sound.
-		play_sound(0, soundWarmup, -1, true);
+		play_sound(0, soundWarmup, -1);
 
 		set_game_vote();
 	}
@@ -3475,7 +3518,32 @@ increment_user_level(index, value, bool:notify)
 			user_data[index][dataLevel] == max_level ? (get_pcvar_num(cvars_data[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[user_data[index][dataLevel]]) : customWeaponNames[user_data[index][dataLevel]]);
 		
 		// Play levelup sound.
-		play_sound(index, soundLevelUp, -1, false);
+		play_sound(index, soundLevelUp, -1);
+	}
+
+	if (game_mode == modeNormal)
+	{
+		static new_leader;
+
+		new_leader = get_game_leader();
+
+		// It's not our guy.
+		if (new_leader != index)
+		{
+			return;
+		}
+
+		// Leader did not change.
+		if (old_leader == index)
+		{
+			return;
+		}
+
+		// Finally play the sounds.
+		play_sound(old_leader, soundLostLead, -1);
+		play_sound(new_leader, soundTakenLead, -1);
+
+		old_leader = index;
 	}
 }
 
@@ -3545,7 +3613,7 @@ decrement_user_level(index, value)
 	user_data[index][dataWeaponKills] = 0;
 
 	// Play leveldown sound.
-	play_sound(index, soundLevelDown, -1, false);
+	play_sound(index, soundLevelDown, -1);
 
 	ExecuteForward(forward_handles[forward_level_down], forward_return_dummy, index, user_data[index][dataLevel], -1);
 }
@@ -3566,7 +3634,7 @@ decrement_team_level(team, value)
 	}
 
 	// Play leveldown sound.
-	play_sound_for_team(team, soundLevelDown, -1, false);
+	play_sound_for_team(team, soundLevelDown, -1);
 }
 
 end_gungame(winner)
@@ -3638,7 +3706,7 @@ end_gungame(winner)
 	}
 
 	// Play game win sound to winner.
-	play_sound(winner, soundAnnounceWinner, -1, false);
+	play_sound(winner, soundAnnounceWinner, -1);
 
 	// Display formated win message.
 	set_hudmessage(255, 255, 255, -1.0, -1.0, 0, 6.0, blackScreenTimer, 0.0, 0.0);
@@ -3964,6 +4032,8 @@ get_game_leader()
 				}
 			}
 		}
+
+		old_leader = highest;
 	}
 	else if (game_mode == modeTeamplay)
 	{
@@ -4774,6 +4844,16 @@ public addWeapon(index)
 {
 	user_data[index][dataLevel] = 19;
 	increment_user_level(index, 1, true);
+}
+
+public sound_TakeLead(index)
+{
+	play_sound(index, soundTakenLead, -1);
+}
+
+public sound_LoseLead(index)
+{
+	play_sound(index, soundLostLead, -1);
 }
 
 #endif
