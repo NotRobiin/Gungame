@@ -822,7 +822,7 @@ public plugin_init()
 	}
 
 	new weapon_classname[24];
-	new const excluded_weapons = (CSW_KNIFE | CSW_C4);
+	new const excluded_weapons = CSW_KNIFE;
 
 	ForRange(i, 1, 30)
 	{
@@ -1351,7 +1351,8 @@ public bomb_planted(index)
 		return;
 	}
 
-	static reward;
+	static reward,
+		message[MAX_CHARS * 4];
 
 	reward = get_pcvar_num(cvars_data[cvar_bomb_plant_reward]);
 
@@ -1362,7 +1363,15 @@ public bomb_planted(index)
 	
 	increment_user_level(index, reward, true);
 
-	ColorChat(0, RED, "%s^x01 Gracz^x04 %n^x01 podlozyl bombe i otrzymal^x04 %i punktow^x01!", chatPrefix, index, reward);
+	formatex(message, charsmax(message), "%s^x01 Gracz^x04 %n^x01 podlozyl bombe i otrzymal^x04 %i punkt", chatPrefix, index, reward);
+
+	switch(reward)
+	{
+		case 2..4: add(message, charsmax(message), "y^x01.");
+		case 5..21: add(message, charsmax(message), "ow^x01.");
+	}
+
+	ColorChat(0, RED, message);
 }
 
 public bomb_defused(index)
@@ -1383,7 +1392,15 @@ public bomb_defused(index)
 
 	increment_user_level(index, reward, true);
 
-	ColorChat(0, RED, "%s^x01 Gracz^x04 %n^x01 rozbroil bombe i otrzymal^x04 %i punktow^x01!", chatPrefix, index, reward);
+	formatex(message, charsmax(message), "%s^x01 Gracz^x04 %n^x01 rozbroil bombe i otrzymal^x04 %i punkt", chatPrefix, index, reward);
+
+	switch(reward)
+	{
+		case 2..4: add(message, charsmax(message), "y^x01.");
+		case 5..21: add(message, charsmax(message), "ow^x01.");
+	}
+
+	ColorChat(0, RED, message);
 }
 
 // Prevent picking up weapons of off the ground.
@@ -1485,11 +1502,20 @@ public onAddItemToPlayer(index, weapon_entity)
 
 	if (csw == CSW_C4)
 	{
-		// Disable player's planting ability.
-		cs_set_user_plant(index, false, false);
+		if (!bomb_supported)
+		{
+			// Disable player's planting ability.
+			cs_set_user_plant(index, false, false);
 
-		// Reset body model to get rid of bomb on the back.
-		set_pev(index, pev_body, false);		
+			// Reset body model to get rid of bomb on the back.
+			set_pev(index, pev_body, false);
+
+			// Remove bomb from allowed weapons.
+			if (user_data[index][dataAllowedWeapons] & (1 << CSW_C4))
+			{
+				user_data[index][dataAllowedWeapons] &= ~(1 << CSW_C4);
+			}
+		}
 	}
 
 	// Kill weapon entity.
@@ -1500,9 +1526,9 @@ public onAddItemToPlayer(index, weapon_entity)
 	return HAM_SUPERCEDE;
 }
 
-public eventCurWeapon(id)
+public eventCurWeapon(index)
 {
-	if (!is_user_connected(id))
+	if (!is_user_connected(index))
 	{
 		return;
 	}
@@ -1510,11 +1536,12 @@ public eventCurWeapon(id)
 	// todo: cvar here
 	if (/*get_pcvar_num(gg_awp_oneshot) &&*/ read_data(2) == CSW_AWP && read_data(3) > 1)
 	{
-		new wEnt = find_ent_by_owner(-1, "weapon_awp", id);
-		if (pev_valid(wEnt))
+		new weapon_entity = find_ent_by_owner(-1, "weapon_awp", index);
+
+		if (pev_valid(weapon_entity))
 		{
-			cs_set_weapon_ammo(wEnt, 1);
-			cs_set_user_bpammo(id, CSW_AWP, 100);
+			cs_set_weapon_ammo(weapon_entity, 1);
+			cs_set_user_bpammo(index, CSW_AWP, 100);
 		}
 	}
 }
@@ -3014,6 +3041,33 @@ give_warmup_weapons(index)
 
 	user_data[index][dataAllowedWeapons] = (1 << CSW_KNIFE);
 
+	static user_team;
+
+	user_team = get_user_team(index);
+
+	// Add bomb to allowed weapons if it's supported. Remove it if player is a CT.
+	if (bomb_supported)
+	{
+		switch (user_team)
+		{
+			case 1:
+			{
+				if (!(user_data[index][dataAllowedWeapons] & (1 << CSW_C4)))
+				{
+					user_data[index][dataAllowedWeapons] |= (1 << CSW_C4);
+				}
+			}
+
+			case 2:
+			{
+				if (user_data[index][dataAllowedWeapons] & (1 << CSW_C4))
+				{
+					user_data[index][dataAllowedWeapons] &= ~(1 << CSW_C4);
+				}
+			}
+		}
+	}
+
 	// Give knife as a default weapon.
 	give_item(index, "weapon_knife");
 	
@@ -3761,6 +3815,33 @@ give_weapons(index)
 
 	// Reset player allowed weapons and add knife.
 	user_data[index][dataAllowedWeapons] = (1 << CSW_KNIFE);
+
+	static user_team;
+
+	user_team = get_user_team(index);
+
+	// Add bomb to allowed weapons if it's supported. Remove it if player is a CT.
+	if (bomb_supported)
+	{
+		switch (user_team)
+		{
+			case 1:
+			{
+				if (!(user_data[index][dataAllowedWeapons] & (1 << CSW_C4)))
+				{
+					user_data[index][dataAllowedWeapons] |= (1 << CSW_C4);
+				}
+			}
+
+			case 2:
+			{
+				if (user_data[index][dataAllowedWeapons] & (1 << CSW_C4))
+				{
+					user_data[index][dataAllowedWeapons] &= ~(1 << CSW_C4);
+				}
+			}
+		}
+	}
 
 	// Add wand if player is on last level and such option is enabled.
 	if (user_data[index][dataLevel] != max_level)
