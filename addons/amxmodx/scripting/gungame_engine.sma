@@ -47,7 +47,9 @@ enum (+= 2500)
 
 	TASK_SPAWNPROTECTION,
 	TASK_RESPAWN_ON_JOIN,
-	TASK_IDLECHECK
+	TASK_IDLECHECK,
+
+	TASK_MONEY
 };
 
 // Enum for weaponsData array.
@@ -534,7 +536,9 @@ enum (+= 1)
 	cvar_normal_friendly_fire,
 	cvar_teamplay_friendly_fire,
 
-	cvar_spawn_protection_type
+	cvar_spawn_protection_type,
+
+	cvar_money
 };
 
 new const ggCvarsData[][][] =
@@ -583,7 +587,9 @@ new const ggCvarsData[][][] =
 	{ "gg_normal_friendly_fire", "0" }, // Enable friendly fire in normal mode?
 	{ "gg_teamplay_friendly_fire", "0" }, // Enable friendly fire in teamplay mode?
 
-	{ "gg_spawn_protection_type", "0" } // Spawn protection effect: 0 - godmode, 1 - no points granted to killer if victim is on spawn protection.
+	{ "gg_spawn_protection_type", "0" }, // Spawn protection effect: 0 - godmode, 1 - no points granted to killer if victim is on spawn protection.
+
+	{ "gg_money", "1" } // Disable money? 0 - Money draw enabled, 1 - Money draw disabled
 };
 
 new const forwardsNames[][] =
@@ -738,7 +744,10 @@ new user_data[MAX_PLAYERS + 1][userDataEnumerator],
 	bool:game_vote_enabled,
 	game_mode = -1,
 
-	disconnected_players_data[dcDataEnumerator];
+	disconnected_players_data[dcDataEnumerator],
+
+	message_hide_weapon,
+	message_hide_crosshair;
 
 
 public plugin_init()
@@ -774,6 +783,9 @@ public plugin_init()
 	register_message(get_user_msgid("SayText"), "sayHandle");
 	register_message(get_user_msgid("TextMsg"), "textGrenadeMessage");
 	register_message(get_user_msgid("SendAudio"), "audioGrenadeMessage");
+	
+	message_hide_weapon = get_user_msgid("HideWeapon");
+	message_hide_crosshair = get_user_msgid("Crosshair");
 
 	RegisterHam(Ham_Spawn, "player", "playerSpawn", true);
 	RegisterHam(Ham_TakeDamage, "player", "takeDamage", false);
@@ -1418,10 +1430,10 @@ public eventCurWeapon(id)
 	}
 
 	// todo: cvar here
-	if(/*get_pcvar_num(gg_awp_oneshot) &&*/ read_data(2) == CSW_AWP && read_data(3) > 1)
+	if (/*get_pcvar_num(gg_awp_oneshot) &&*/ read_data(2) == CSW_AWP && read_data(3) > 1)
 	{
 		new wEnt = find_ent_by_owner(-1, "weapon_awp", id);
-		if(pev_valid(wEnt))
+		if (pev_valid(wEnt))
 		{
 			cs_set_weapon_ammo(wEnt, 1);
 			cs_set_user_bpammo(id, CSW_AWP, 100);
@@ -1877,6 +1889,11 @@ public playerSpawn(index)
 
 		ExecuteForward(forward_handles[forward_player_spawned], forward_return_dummy, index);
 	}
+
+	if (get_pcvar_num(cvars_data[cvar_money]))
+	{
+		set_task(0.4, "task_hide_money", index + TASK_MONEY);
+	}
 }
 
 public sayHandle(msgId, msgDest, msgEnt)
@@ -2007,6 +2024,28 @@ public audioGrenadeMessage()
 
 	// Block sending audio message.
 	return PLUGIN_HANDLED;
+}
+
+public task_hide_money(task_index)
+{
+	new index = task_index - TASK_MONEY;
+
+	if (!is_user_connected(index))
+	{
+		return;
+	}
+
+	const MoneyBitsum = (1 << 5);
+
+	// Hide money
+	message_begin(MSG_ONE, message_hide_weapon, _, index);
+	write_byte(MoneyBitsum);
+	message_end();
+	
+	// Hide the HL crosshair that's drawn
+	message_begin(MSG_ONE, message_hide_crosshair, _, index);
+	write_byte(0);
+	message_end();
 }
 
 public displayWarmupTimer()
@@ -3819,7 +3858,7 @@ get_game_leader()
 		{
 			highest = -1;
 		}
-		else if(tp_data[tpTeamLevel][0] > tp_data[tpTeamLevel][1])
+		else if (tp_data[tpTeamLevel][0] > tp_data[tpTeamLevel][1])
 		{
 			highest = 0;
 		}
@@ -3835,7 +3874,7 @@ get_game_leader()
 			{
 				highest = -1;
 			}
-			else if(tp_data[tpTeamKills][0] > tp_data[tpTeamKills][1])
+			else if (tp_data[tpTeamKills][0] > tp_data[tpTeamKills][1])
 			{
 				highest = 1;
 			}
