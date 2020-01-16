@@ -326,9 +326,6 @@ enum (+= 1)
 	soundTiedLead
 };
 
-// Command executed when playing sound on client. (mp3 play / spk)
-new const defaultSoundCommand[] = "mp3 play";
-
 // Number of maximum sounds in soundsData array.
 new const maxSounds = 2;
 
@@ -3212,7 +3209,14 @@ randomize_sound_index(soundType)
 
 play_sound(index, sound_type, sound_index)
 {
-	static bool:mp3_sound;
+	enum (+= 1)
+	{
+		type_mpthree,
+		type_wav,
+		type_emitsound
+	}
+
+	static sound_extension;
 
 	// Sound index is set to random?
 	if (sound_index < 0)
@@ -3220,29 +3224,38 @@ play_sound(index, sound_type, sound_index)
 		sound_index = randomize_sound_index(sound_type);
 	}
 
+	// Get sound extension.
 	if (containi(soundsData[sound_type][sound_index], ".mp3") != -1)
 	{
-		mp3_sound = true;
+		sound_extension = type_mpthree;
+	}
+	else if (containi(soundsData[sound_type][sound_index], ".wav") != -1)
+	{
+		sound_extension = type_wav;
 	}
 	else
 	{
-		mp3_sound = false;
+		sound_extension = type_emitsound;
 	}
 
-	// Emit sound directly from entity?
-	if (!mp3_sound)
+	switch(sound_extension)
 	{
-		emit_sound(index, CHAN_AUTO, soundsData[sound_type][sound_index], soundsVolumeData[sound_type][sound_index], ATTN_NORM, (1 << 8), PITCH_NORM);
-	}
-	else
-	{
-		client_cmd(index, "%s ^"%s^"", defaultSoundCommand, soundsData[sound_type][sound_index]);
+		case type_wav: client_cmd(index, "spk ^"%s^"", soundsData[sound_type][sound_index]);
+		case type_mpthree: client_cmd(index, "mp3 play ^"%s^"", soundsData[sound_type][sound_index]);
+		case type_emitsound: emit_sound(index, CHAN_AUTO, soundsData[sound_type][sound_index], soundsVolumeData[sound_type][sound_index], ATTN_NORM, (1 << 8), PITCH_NORM);
 	}
 }
 
 play_sound_for_team(team, sound_type, sound_index)
 {
-	static bool:mp3_sound;
+	enum (+= 1)
+	{
+		type_mpthree,
+		type_wav,
+		type_emitsound
+	}
+
+	static sound_extension;
 
 	// Sound index is set to random?
 	if (sound_index < 0)
@@ -3250,28 +3263,45 @@ play_sound_for_team(team, sound_type, sound_index)
 		sound_index = randomize_sound_index(sound_type);
 	}
 
+	// Get sound extension.
 	if (containi(soundsData[sound_type][sound_index], ".mp3") != -1)
 	{
-		mp3_sound = true;
+		sound_extension = type_mpthree;
+	}
+	else if (containi(soundsData[sound_type][sound_index], ".wav") != -1)
+	{
+		sound_extension = type_wav;
 	}
 	else
 	{
-		mp3_sound = false;
+		sound_extension = type_emitsound;
 	}
-
-	// Emit sound directly from entity?
-	if (!mp3_sound)
+	
+	// Play sound.
+	switch(sound_extension)
 	{
-		ForTeam(i, team)
+		case type_wav:
 		{
-			emit_sound(i, CHAN_AUTO, soundsData[sound_type][sound_index], soundsVolumeData[sound_type][sound_index], ATTN_NORM, (1 << 8), PITCH_NORM);
+			ForTeam(i, team)
+			{
+				client_cmd(i, "spk ^"%s^"", soundsData[sound_type][sound_index]);
+			}
 		}
-	}
-	else
-	{
-		ForTeam(i, team)
+
+		case type_mpthree:
 		{
-			client_cmd(i, "%s ^"%s^"", defaultSoundCommand, soundsData[sound_type][sound_index]);
+			ForTeam(i, team)
+			{
+				client_cmd(i, "mp3 play ^"%s^"", soundsData[sound_type][sound_index]);
+			}
+		}
+
+		case type_emitsound:
+		{
+			ForTeam(i, team)
+			{
+				emit_sound(i, CHAN_AUTO, soundsData[sound_type][sound_index], soundsVolumeData[sound_type][sound_index], ATTN_NORM, (1 << 8), PITCH_NORM);
+			}
 		}
 	}
 }
