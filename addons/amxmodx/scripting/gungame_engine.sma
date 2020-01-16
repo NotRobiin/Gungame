@@ -431,22 +431,17 @@ new const topPlayersMotdHTML[][] =
 		<th>\
 			<h3>Pozycja</h3>\
 		</th>\
-		\
 		<th>\
 			<h3>Nazwa gracza</h3>\
 		</th>\
-		\
 		<th>\
 			<h3>Wygrane gry</h3>\
 		</th>\
-		\
 		<th>\
-		\
 			<h3>Zabicia nozem</h3>\
 		</th>\
-		\
 		<th>\
-			<h3>%% HS</h3>\
+			<h3>%% Head shotow</h3>\
 		</th>\
 	</tr>"
 };
@@ -2169,6 +2164,7 @@ public topPlayersMotdHandler(index)
 	if (!top_data[topDataLoaded])
 	{
 		ColorChat(index, RED, "%s^x01 Topka nie zostala jeszcze zaladowana.", chatPrefix);
+
 		return PLUGIN_CONTINUE;
 	}
 
@@ -2831,25 +2827,21 @@ create_top_players_motd()
 			"<tr>\
 				<td>\
 					<b>\
-						<h4>%d</h4>\
+						<h4># %d</h4>\
 					</b>\
 				<td>\
-				\
-				<h4>%s</h4>\
-				\
-				<td>\
-					<h4>%d</h4>\
-				<td>\
-				\
+					<h4>%s</h4>\
 				<td>\
 					<h4>%d</h4>\
 				</td>\
-				\
+				<td>\
+					<h4>%d</h4>\
+				</td>\
 				<td>\
 					<h4>%d</h4>\
 				</td>\
 			</tr>",
-			i + 1, top_players[i][topNames], top_players[i][topWins], top_players[i][topKnifeKills], floatround(top_players[i][topHeadshots] / top_players[i][topKills] * 100.0));
+			i + 1, top_players[i][topNames], top_players[i][topWins], top_players[i][topKnifeKills], floatround(float(top_players[i][topHeadshots]) / float(top_players[i][topKills]) * 100.0));
 
 		players_displayed++;
 	}
@@ -3742,7 +3734,7 @@ get_warmup_winner()
 			new choosen = random_num(0, best_players_amount - 1);
 
 			ArrayGetArray(best_players, choosen, candidate_data);
-			
+
 			winner = candidate_data[0];
 		}
 
