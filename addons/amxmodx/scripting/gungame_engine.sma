@@ -1360,7 +1360,7 @@ public bomb_planted(index)
 		return;
 	}
 	
-	increment_user_level(index, reward, true);
+	increment_user_level(index, reward);
 
 	static formater[] = "%s^x01 Gracz^x04 %n^x01 podlozyl bombe i otrzymal^x04 %i punkt",
 		message[MAX_CHARS * 4];
@@ -1392,7 +1392,7 @@ public bomb_defused(index)
 		return;
 	}
 
-	increment_user_level(index, reward, true);
+	increment_user_level(index, reward);
 
 	static formater[] =  "%s^x01 Gracz^x04 %n^x01 rozbroil bombe i otrzymal^x04 %i punkt",
 		message[MAX_CHARS * 4];
@@ -1896,8 +1896,8 @@ public playerDeathEvent()
 		{
 			switch(game_mode)
 			{
-				case modeNormal: increment_user_level(killer, get_pcvar_num(cvars_data[cvar_knife_kill_reward]), true);
-				case modeTeamplay: increment_team_level(killer_team, get_pcvar_num(cvars_data[cvar_knife_kill_reward]), true);
+				case modeNormal: increment_user_level(killer, get_pcvar_num(cvars_data[cvar_knife_kill_reward]));
+				case modeTeamplay: increment_team_level(killer_team, get_pcvar_num(cvars_data[cvar_knife_kill_reward]));
 			}
 		}
 		else
@@ -3524,7 +3524,7 @@ increment_user_weapon_kills(index, value)
 	// Levelup player if weapon kills are greater than reqiured for his current level.
 	while (user_data[index][dataWeaponKills] >= weaponsData[user_data[index][dataLevel]][weaponKills])
 	{
-		increment_user_level(index, 1, true);
+		increment_user_level(index, 1);
 	}
 }
 
@@ -3534,7 +3534,7 @@ increment_team_weapon_kills(team, value)
 
 	while (tp_data[tpTeamKills][team - 1] >= weaponsData[tp_data[tpTeamLevel][team - 1]][weaponTeamKills])
 	{
-		increment_team_level(team, 1, true);
+		increment_team_level(team, 1);
 	}
 }
 
@@ -3577,7 +3577,7 @@ decrement_team_weapon_kills(team, value, bool:levelLose)
 	decrement_team_level(team, 1);
 }
 
-increment_user_level(index, value, bool:notify)
+increment_user_level(index, value, bool:notify = true)
 {
 	// Set weapon kills based on current level required kills. Set new level if valid number.
 	user_data[index][dataWeaponKills] -= weaponsData[user_data[index][dataLevel]][weaponKills];
@@ -3636,7 +3636,7 @@ increment_user_level(index, value, bool:notify)
 	}
 }
 
-increment_team_level(team, value, bool:notify)
+increment_team_level(team, value, bool:notify = true)
 {
 	// Set weapon kills based on current level required kills. Set new level if valid number.
 	tp_data[tpTeamKills][team - 1] = 0;
@@ -4866,7 +4866,7 @@ public setMaxLevel(index)
 	{
 		user_data[index][dataLevel] = sizeof(weaponsData) - 3;
 		
-		increment_user_level(index, 1, true);
+		increment_user_level(index, 1);
 	}
 	else
 	{
@@ -4874,7 +4874,7 @@ public setMaxLevel(index)
 
 		tp_data[tpTeamLevel][team - 1] = sizeof(weaponsData) - 3;
 
-		increment_team_level(team, 1, true);
+		increment_team_level(team, 1);
 	}
 }
 
@@ -4882,11 +4882,11 @@ public addLevel(index)
 {
 	if (game_mode == modeNormal)
 	{
-		increment_user_level(index, 1, true);
+		increment_user_level(index, 1);
 	}
 	else
 	{
-		increment_team_level(get_user_team(index), 1, true);
+		increment_team_level(get_user_team(index), 1);
 	}
 }
 
@@ -4895,13 +4895,13 @@ public setAWPLevel(index)
 	if (game_mode == modeNormal)
 	{
 		user_data[index][dataLevel] = 19;
-		increment_user_level(index, 1, true);
+		increment_user_level(index, 1);
 	}
 	else
 	{
 		new team = get_user_team(index);
 		tp_data[tpTeamLevel][team - 1] = 19;
-		increment_team_level(team, 1, true);
+		increment_team_level(team, 1);
 	}
 }
 
@@ -4959,7 +4959,7 @@ public addWin(index)
 public addWeapon(index)
 {
 	user_data[index][dataLevel] = 19;
-	increment_user_level(index, 1, true);
+	increment_user_level(index, 1);
 }
 
 public sound_TakeLead(index)
