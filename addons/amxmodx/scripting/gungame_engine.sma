@@ -1351,8 +1351,7 @@ public bomb_planted(index)
 		return;
 	}
 
-	static reward,
-		message[MAX_CHARS * 4];
+	static reward;
 
 	reward = get_pcvar_num(cvars_data[cvar_bomb_plant_reward]);
 
@@ -1363,7 +1362,10 @@ public bomb_planted(index)
 	
 	increment_user_level(index, reward, true);
 
-	formatex(message, charsmax(message), "%s^x01 Gracz^x04 %n^x01 podlozyl bombe i otrzymal^x04 %i punkt", chatPrefix, index, reward);
+	static formater[] = "%s^x01 Gracz^x04 %n^x01 podlozyl bombe i otrzymal^x04 %i punkt",
+		message[MAX_CHARS * 4];
+
+	formatex(message, charsmax(message), formater, chatPrefix, index, reward);
 
 	switch(reward)
 	{
@@ -1392,7 +1394,10 @@ public bomb_defused(index)
 
 	increment_user_level(index, reward, true);
 
-	formatex(message, charsmax(message), "%s^x01 Gracz^x04 %n^x01 rozbroil bombe i otrzymal^x04 %i punkt", chatPrefix, index, reward);
+	static formater[] =  "%s^x01 Gracz^x04 %n^x01 rozbroil bombe i otrzymal^x04 %i punkt",
+		message[MAX_CHARS * 4];
+
+	formatex(message, charsmax(message), formater, chatPrefix, index, reward);
 
 	switch(reward)
 	{
