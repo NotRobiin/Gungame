@@ -3527,7 +3527,7 @@ end_gungame(winner)
 			user_data[index][dataShortName],
 			user_data[index][dataLevel] + 1,
 			customWeaponNames[user_data[index][dataLevel]],
-			get_user_frags(index),
+			user_data[index][dataKills],
 			user_data[index][dataWins]);
 
 		add(win_message, charsmax(win_message), temp_message, charsmax(temp_message));
@@ -3647,7 +3647,7 @@ get_warmup_winner()
 
 	new candidates_amount = ArraySize(candidates);
 
-	if (candidates_amount == 0)
+	if (!candidates_amount)
 	{
 		// There is no winner, no real players on server
 		return 0;
@@ -3704,35 +3704,45 @@ get_warmup_winner()
 	ArraySortEx(candidates, "sort_players_by_kills_death_difference");
 
 	// Get only players with best score
-	new Array:best_players = ArrayCreate(2, 32);
-	new candidate_data[3];
+	new Array:best_players = ArrayCreate(2, 32),
+		candidate_data[3];
+	
 	ArrayGetArray(candidates, 0, candidate_data);
 
-	new maximum = candidate_data[1] + candidate_data[2]; // Get top player
-	new top_frags = candidate_data[1];
-	if (top_frags > 0) // Best player has killed someone = not everybody has 0:0 stats
+	// Get top player
+	new maximum = candidate_data[1] + candidate_data[2],
+		top_frags = candidate_data[1];
+	
+	// Best player has killed someone = not everybody has 0:0 stats
+	if (top_frags > 0)
 	{
 		ForDynamicArray(i, candidates)
 		{
 			ArrayGetArray(candidates, i, candidate_data);
+
 			if (candidate_data[1] < maximum)
 			{
 				break;
 			}
+
 			ArrayPushArray(best_players, candidate_data);
 		}
 
 		// Only player with top score, he's the winner
 		new best_players_amount = ArraySize(best_players);
+
 		if (best_players_amount == 1)
 		{
 			ArrayGetArray(best_players, 0, candidate_data);
+
 			winner = candidate_data[0];
 		}
 		else // There are more players with top score, let's randomly choose one
 		{
 			new choosen = random_num(0, best_players_amount - 1);
+
 			ArrayGetArray(best_players, choosen, candidate_data);
+			
 			winner = candidate_data[0];
 		}
 
