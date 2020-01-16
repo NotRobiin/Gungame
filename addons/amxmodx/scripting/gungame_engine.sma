@@ -533,7 +533,11 @@ enum (+= 1)
 
 	cvar_spawn_protection_type,
 
-	cvar_money
+	cvar_money,
+
+	cvar_bomb_enabled,
+	cvar_bomb_plant_reward,
+	cvar_bomb_defuse_reward
 };
 
 new const ggCvarsData[][][] =
@@ -584,7 +588,11 @@ new const ggCvarsData[][][] =
 
 	{ "gg_spawn_protection_type", "0" }, // Spawn protection effect: 0 - godmode, 1 - no points granted to killer if victim is on spawn protection.
 
-	{ "gg_money", "1" } // Disable money? 0 - Money draw enabled, 1 - Money draw disabled
+	{ "gg_money", "1" }, // Disable money? 0 - Money draw enabled, 1 - Money draw disabled
+
+	{ "gg_bomb_enabled", "1" }, // Support bomb?
+	{ "gg_bomb_reward_plant", "3" }, // Reward in weapon kills.
+	{ "gg_bomb_reward_defuse", "3" } // Reward in weapon kills.
 };
 
 new const forwardsNames[][] =
@@ -1301,6 +1309,48 @@ public clientInfoChanged(index)
 {
 	// Update name-related data.
 	get_user_name_data(index);
+}
+
+public bomb_planted(index)
+{
+	if(!get_pcvar_num(cvars_data[cvar_bomb_enabled]))
+	{
+		return;
+	}
+
+	static reward;
+
+	reward = get_pcvar_num(cvars_data[cvar_bomb_plant_reward]);
+
+	if (reward <= 0)
+	{
+		return;
+	}
+	
+	increment_user_level(index, reward, true);
+
+	ColorChat(0, RED, "%s^x01 Gracz^x04 %n^x01 podlozyl bombe i otrzymal^x04 %i punktow^x01!", chatPrefix, index, reward);
+}
+
+public bomb_defused(index)
+{
+	if (!get_pcvar_num(cvars_data[cvar_bomb_enabled]))
+	{
+		return;
+	}
+
+	static reward;
+
+	reward = get_pcvar_num(cvars_data[cvar_bomb_defuse_reward]);
+
+	if (reward <= 0)
+	{
+		return;
+	}
+
+	increment_user_level(index, reward, true);
+
+	ColorChat(0, RED, "%s^x01 Gracz^x04 %n^x01 rozbroil bombe i otrzymal^x04 %i punktow^x01!", chatPrefix, index, reward);
 }
 
 // Prevent picking up weapons of off the ground.
