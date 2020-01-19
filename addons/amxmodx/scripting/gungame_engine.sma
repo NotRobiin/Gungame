@@ -30,7 +30,7 @@ native showMapVoteMenu();
 // Used in loops and to determine static array sizes (+1).
 #define MAX_PLAYERS 32
 
-#define ForTeam(%1,%2) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++) if (is_user_connected(%1) && get_user_team(%1) == %2)
+#define ForTeam(%1,%2) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++) if (is_user_connected(%1) && user_data[%1][dataTeam] == %2)
 #define ForDynamicArray(%1,%2) for(new %1 = 0; %1 < ArraySize(%2); %1++)
 #define ForPlayers(%1) for(new %1 = 1; %1 <= MAX_PLAYERS; %1++)
 #define ForArray(%1,%2) for(new %1 = 0; %1 < sizeof(%2); %1++)
@@ -667,7 +667,8 @@ enum userDataEnumerator
 	dataKills,
 	dataKnifeKills,
 	dataHeadshots,
-	dataWandLastAttack
+	dataWandLastAttack,
+	dataTeam
 };
 
 enum topPlayersEnumerator
@@ -1595,16 +1596,16 @@ public onTeamAssign()
 {
 	new index = read_data(1);
 
+	user_data[index][dataTeam] = get_user_team(index);
+
 	// Do noting if player already spawned.
 	if (is_user_alive(index))
 	{
 		return;
 	}
 
-	new user_team = get_user_team(index);
-
 	// Narrow matches a bit.
-	if (0 >= user_team > 2)
+	if (0 >= user_data[index][dataTeam] > 2)
 	{
 		return;
 	}
@@ -1644,7 +1645,7 @@ public takeDamage(victim, idinflictor, attacker, Float:damage, damagebits)
 		return HAM_SUPERCEDE;
 	}
 
-	if (get_user_team(attacker) == get_user_team(victim))
+	if (user_data[attacker][dataTeam] == user_data[victim][dataTeam])
 	{
 		if (game_mode == modeNormal && !get_pcvar_num(cvars_data[cvar_normal_friendly_fire]))
 		{
@@ -1790,9 +1791,7 @@ public playerDeathEvent()
 	user_data[victim][dataAllowedWeapons] = 0;
 
 	new killer = read_data(1),
-		weapon[12],
-		killer_team = get_user_team(killer),
-		victim_team = get_user_team(victim);
+		weapon[12];
 
 	read_data(4, weapon, charsmax(weapon));
 
@@ -1821,18 +1820,18 @@ public playerDeathEvent()
 			
 			case modeTeamplay:
 			{
-				old_level = tp_data[tpTeamLevel][victim_team - 1];
+				old_level = tp_data[tpTeamLevel][user_data[victim][dataTeam] - 1];
 
-				decrement_team_weapon_kills(victim_team, 1, true);
+				decrement_team_weapon_kills(user_data[victim][dataTeam], 1, true);
 
-				if (tp_data[tpTeamLevel][victim_team - 1] < old_level)
+				if (tp_data[tpTeamLevel][user_data[victim][dataTeam] - 1] < old_level)
 				{
 					ColorChat(0, RED, "%s^x01 Przez samobojstwo gracza^x04 %n^x01 druzyna^x04 %s^x01 spadla do poziomu^x04 %i (%s)^x01.",
 						chatPrefix,
 						victim,
-						teamNames[victim_team - 1],
-						tp_data[tpTeamLevel][victim_team - 1],
-						customWeaponNames[tp_data[tpTeamLevel][victim_team - 1]]);
+						teamNames[user_data[victim][dataTeam] - 1],
+						tp_data[tpTeamLevel][user_data[victim][dataTeam] - 1],
+						customWeaponNames[tp_data[tpTeamLevel][user_data[victim][dataTeam] - 1]]);
 				}
 			}
 		}
@@ -1895,7 +1894,7 @@ public playerDeathEvent()
 				{
 					if (get_pcvar_num(cvars_data[cvar_knife_kill_level_down_teamplay]))
 					{
-						decrement_team_level(victim_team, 1);
+						decrement_team_level(user_data[victim][dataTeam], 1);
 					}
 				}
 			}
@@ -1904,7 +1903,7 @@ public playerDeathEvent()
 				chatPrefix,
 				killer,
 				game_mode == modeNormal ? "Twoj poziom" : "Poziom Twojej druzyny",
-				tp_data[tpTeamLevel][victim_team]);
+				tp_data[tpTeamLevel][user_data[victim][dataTeam]]);
 		}
 
 		// Handle instant-level-up when killing with knife.
@@ -1913,7 +1912,7 @@ public playerDeathEvent()
 			switch(game_mode)
 			{
 				case modeNormal: increment_user_level(killer, get_pcvar_num(cvars_data[cvar_knife_kill_reward]));
-				case modeTeamplay: increment_team_level(killer_team, get_pcvar_num(cvars_data[cvar_knife_kill_reward]));
+				case modeTeamplay: increment_team_level(user_data[killer][dataTeam], get_pcvar_num(cvars_data[cvar_knife_kill_reward]));
 			}
 		}
 		else
@@ -1921,7 +1920,7 @@ public playerDeathEvent()
 			switch(game_mode)
 			{
 				case modeNormal: increment_user_weapon_kills(killer, get_pcvar_num(cvars_data[cvar_knife_kill_reward]));
-				case modeTeamplay: increment_team_weapon_kills(killer_team, get_pcvar_num(cvars_data[cvar_knife_kill_reward]));
+				case modeTeamplay: increment_team_weapon_kills(user_data[killer][dataTeam], get_pcvar_num(cvars_data[cvar_knife_kill_reward]));
 			}
 		}
 	}
@@ -1930,7 +1929,7 @@ public playerDeathEvent()
 		switch(game_mode)
 		{
 			case modeNormal: increment_user_weapon_kills(killer, 1);
-			case modeTeamplay: increment_team_weapon_kills(killer_team, 1);
+			case modeTeamplay: increment_team_weapon_kills(user_data[killer][dataTeam], 1);
 		}
 
 		// Notify about killer's health left.
@@ -1967,7 +1966,7 @@ public playerDeathEvent()
 		{
 			switch (get_pcvar_num(cvars_data[cvar_refill_weapon_ammo_teamplay]))
 			{
-				case 1: refill_ammo(killer_team, true); // Whole team
+				case 1: refill_ammo(user_data[killer][dataTeam], true); // Whole team
 				case 2: refill_ammo(killer); // Just the killer
 				case 3: // Vips only
 				{
@@ -2571,7 +2570,7 @@ public displayHud(taskIndex)
 	}
 	else
 	{
-		new team = get_user_team(index) - 1;
+		new team = user_data[index][dataTeam] - 1;
 
 		ShowSyncHudMsg(index, hud_objects[hudObjectDefault], "-- Tryb teamplay --^nPoziom druzyny: %i/%i [%s - %i/%i]^nNastepna bron: %s%s",
 			tp_data[tpTeamLevel][team] + 1,
@@ -3073,14 +3072,10 @@ give_warmup_weapons(index)
 
 	user_data[index][dataAllowedWeapons] = (1 << CSW_KNIFE);
 
-	static user_team;
-
-	user_team = get_user_team(index);
-
 	// Add bomb to allowed weapons if it's supported. Remove it if player is a CT.
 	if (bomb_supported)
 	{
-		switch (user_team)
+		switch (user_data[index][dataTeam])
 		{
 			case 1:
 			{
@@ -3542,10 +3537,8 @@ respawn_player(index, Float:time)
 		return;
 	}
 
-	new user_team = get_user_team(index);
-
 	// Not interested in spectator and unassigned players.
-	if (user_team != 1 && user_team != 2)
+	if (user_data[index][dataTeam] != 1 && user_data[index][dataTeam] != 2)
 	{
 		return;
 	}
@@ -3874,14 +3867,10 @@ give_weapons(index)
 	// Reset player allowed weapons and add knife.
 	user_data[index][dataAllowedWeapons] = (1 << CSW_KNIFE);
 
-	static user_team;
-
-	user_team = get_user_team(index);
-
 	// Add bomb to allowed weapons if it's supported. Remove it if player is a CT.
 	if (bomb_supported)
 	{
-		switch (user_team)
+		switch (user_data[index][dataTeam])
 		{
 			case 1:
 			{
@@ -4616,7 +4605,7 @@ wand_attack(index, weapon)
 	get_user_aiming(index, victim, bodyPart);
 
 	// Block attacking if they are in the same team.
-	if (get_user_team(index) == get_user_team(victim))
+	if (user_data[index][dataTeam] == user_data[victim][dataTeam])
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -4933,11 +4922,10 @@ public setMaxLevel(index)
 	}
 	else
 	{
-		new team = get_user_team(index);
 
-		tp_data[tpTeamLevel][team - 1] = sizeof(weaponsData) - 3;
+		tp_data[tpTeamLevel][user_data[index][dataTeam] - 1] = sizeof(weaponsData) - 3;
 
-		increment_team_level(team, 1);
+		increment_team_level(user_data[index][dataTeam], 1);
 	}
 }
 
@@ -4949,7 +4937,7 @@ public addLevel(index)
 	}
 	else
 	{
-		increment_team_level(get_user_team(index), 1);
+		increment_team_level(user_data[index][dataTeam], 1);
 	}
 }
 
@@ -4962,9 +4950,8 @@ public setAWPLevel(index)
 	}
 	else
 	{
-		new team = get_user_team(index);
-		tp_data[tpTeamLevel][team - 1] = 19;
-		increment_team_level(team, 1);
+		tp_data[tpTeamLevel][user_data[index][dataTeam] - 1] = 19;
+		increment_team_level(user_data[index][dataTeam], 1);
 	}
 }
 
