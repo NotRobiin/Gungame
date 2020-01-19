@@ -7,6 +7,7 @@
 #include <sqlx>
 #include <fun>
 #include <gungame_vip>
+#include <StripWeapons>
 
 // Do not change that, thank you
 #define AUTHOR "Wicked - amxx.pl/user/60210-wicked/ | Ogen Dogen  - amxx.pl/user/21503-ogen-dogen/"
@@ -906,6 +907,7 @@ public plugin_init()
 
 	// Load top players from MySQL.
 	loadTopPlayers();
+	
 	#if defined TEST_MODE
 
 		// Test commands.
@@ -924,6 +926,7 @@ public plugin_init()
 		register_clcmd("say /weapon", "addWeapon");
 		register_clcmd("say /takelead", "sound_TakeLead");
 		register_clcmd("say /loselead", "sound_LoseLead");
+		register_clcmd("say /paka", "addBomb");
 
 	#endif
 }
@@ -1410,9 +1413,21 @@ public bomb_defused(index)
 }
 
 // Prevent picking up weapons of off the ground.
-public onPlayerWeaponTouch(weapon, index)
+public onPlayerWeaponTouch(entity, index)
 {
-	return is_user_connected(index) ? HAM_SUPERCEDE : HAM_IGNORED;
+	if (!is_user_connected(index))
+	{
+		return HAM_IGNORED;
+	}
+
+	new bool:is_bomb = bool:(entity == get_bomb_entity());
+
+	if (is_bomb && user_data[index][dataAllowedWeapons] & (1 << CSW_C4))
+	{
+		return HAM_IGNORED;
+	}
+
+	return HAM_SUPERCEDE;
 }
 
 public setEntityModel(entity, model[])
@@ -1685,13 +1700,13 @@ public weaponDeploy(entity)
 	}
 
 	// We dont want to mess with the knife, all players should have it at all times.
-	if (weapon == CSW_KNIFE)
+	if (weapon == CSW_KNIFE || weapon == CSW_C4)
 	{
 		return;
 	}
 
 	// Check if player is holding weapon he shouldnt have.
-	if (!((1 << weapon) & user_data[index][dataAllowedWeapons]))
+	if (!(user_data[index][dataAllowedWeapons] & (1 << weapon)))
 	{
 		// Take away the weapon.
 		strip_user_weapon(index, weapon);
@@ -3202,6 +3217,26 @@ bool:is_he_grenade(entity)
 	return true;
 }
 
+get_bomb_entity()
+{
+	new const isBomb = 105;
+	new const weaponBox = 4;
+
+	new bomb_entity;
+
+	while (pev_valid((bomb_entity = find_ent_by_class(bomb_entity, "weaponbox"))))
+	{
+		if (!get_pdata_int(bomb_entity, isBomb, weaponBox))
+		{
+			continue;
+		}
+
+		return bomb_entity;
+	}
+
+	return 0;
+}
+
 set_wand_models(index)
 {
 	// Set V and P wand models.
@@ -3223,13 +3258,19 @@ set_weapon_animation(index, animation)
 
 remove_weapons_off_ground()
 {
-	new entity;
+	new entity,
+		bomb_entity = get_bomb_entity();
 
 	// Remove all weapons off the ground.
 	ForArray(i, droppedWeaponsClassnames)
 	{
 		while ((entity = find_ent_by_class(entity, droppedWeaponsClassnames[i])))
 		{
+			if (entity == bomb_entity)
+			{
+				continue;
+			}
+			
 			remove_entity(entity);
 		}
 	}
@@ -4870,18 +4911,10 @@ set_black_screen_fade(fade)
 
 stock remove_player_weapons(index)
 {
-	static entity;
-
-	entity = engfunc(EngFunc_CreateNamedEntity, engfunc(EngFunc_AllocString, "player_weaponstrip"));
-
-	if (!pev_valid(entity))
-	{
-		return;
-	}
-	
-	dllfunc(DLLFunc_Spawn, entity);
-	dllfunc(DLLFunc_Use, entity, index);
-	engfunc(EngFunc_RemoveEntity, entity);
+	StripWeapons(index, Primary);
+	StripWeapons(index, Secondary);
+	StripWeapons(index, Knife);
+	StripWeapons(index, Grenades);
 }
 
 #if defined TEST_MODE
@@ -4996,6 +5029,11 @@ public sound_TakeLead(index)
 public sound_LoseLead(index)
 {
 	play_sound(index, soundLostLead, -1);
+}
+
+public addBomb(index)
+{
+	give_item(index, "weapon_c4");
 }
 
 #endif
