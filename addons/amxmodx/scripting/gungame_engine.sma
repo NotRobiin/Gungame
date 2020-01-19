@@ -2492,7 +2492,7 @@ public displayHud(taskIndex)
 	// Format leader's data if available.
 	if (leader == -1)
 	{
-		formatex(leader_data, charsmax(leader_data), "^nLider: %s + %s", teamNames[0], teamNames[1]);
+		formatex(leader_data, charsmax(leader_data), "^nLider: Remis");
 	}
 	else
 	{
