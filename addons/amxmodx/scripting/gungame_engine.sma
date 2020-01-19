@@ -2509,10 +2509,10 @@ public displayHud(taskIndex)
 		{
 			formatex(leader_data, charsmax(leader_data), "^nLider: %s :: %i poziom [%s - %i/%i]",
 					teamNames[leader],
-					user_data[leader][dataLevel] + 1,
-					user_data[leader][dataLevel] == max_level ? (get_pcvar_num(cvars_data[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[user_data[leader][dataLevel]]) : customWeaponNames[user_data[leader][dataLevel]],
-					user_data[leader][dataWeaponKills],
-					weaponsData[user_data[leader][dataLevel]][weaponTeamKills]);
+					tp_data[tpTeamLevel][leader] + 1,
+					tp_data[tpTeamLevel][leader] == max_level ? (get_pcvar_num(cvars_data[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[tp_data[tpTeamLevel][leader]]) : customWeaponNames[tp_data[tpTeamLevel][leader]],
+					tp_data[tpTeamKills][leader],
+					weaponsData[tp_data[tpTeamLevel][leader]][weaponTeamKills]);
 		}
 	}
 
