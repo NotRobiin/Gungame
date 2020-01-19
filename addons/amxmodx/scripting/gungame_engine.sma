@@ -750,7 +750,6 @@ new user_data[MAX_PLAYERS + 1][userDataEnumerator],
 	sprite_levelup_index,
 
 	forward_handles[sizeof(forwardsNames)],
-	forward_return_dummy,
 
 	wand_sprites_indexes[sizeof(wandSprites)],
 
@@ -765,7 +764,9 @@ new user_data[MAX_PLAYERS + 1][userDataEnumerator],
 
 	bool:bomb_supported,
 
-	old_leader;
+	old_leader,
+
+	blank;
 
 
 public plugin_init()
@@ -1997,7 +1998,7 @@ public playerSpawn(index)
 		// Set task to chcek if player is AFK.
 		set_task(get_pcvar_float(cvars_data[cvar_idle_check_interval]), "checkIdle", index + TASK_IDLECHECK, .flags = "b");
 
-		ExecuteForward(forward_handles[forward_player_spawned], forward_return_dummy, index);
+		ExecuteForward(forward_handles[forward_player_spawned], blank, index);
 	}
 
 	if (get_pcvar_num(cvars_data[cvar_money]))
@@ -2485,8 +2486,9 @@ public displayHud(taskIndex)
 		return;
 	}
 
-	new leader = get_game_leader(),
-		leader_data[MAX_CHARS * 3],
+	new leader_counter,
+		leader = get_game_leader(leader_counter),
+		leader_data[MAX_CHARS * 5],
 		next_weapon[25];
 
 	// Format leader's data if available.
@@ -2498,8 +2500,15 @@ public displayHud(taskIndex)
 	{
 		if (game_mode == modeNormal)
 		{
-			formatex(leader_data, charsmax(leader_data), "^nLider: %n :: %i poziom [%s - %i/%i]",
-					leader,
+			static leader_name[MAX_CHARS * 2];
+
+			if (leader_counter > 1)
+			{
+				formatex(leader_name, charsmax(leader_name), "%n + %i innych", leader, leader_counter - 1);
+			}
+
+			formatex(leader_data, charsmax(leader_data), "^nLider: %s :: %i poziom [%s - %i/%i]",
+					leader_name,
 					user_data[leader][dataLevel] + 1,
 					user_data[leader][dataLevel] == max_level ? (get_pcvar_num(cvars_data[cvar_wand_enabled]) ? "Rozdzka" : customWeaponNames[user_data[leader][dataLevel]]) : customWeaponNames[user_data[leader][dataLevel]],
 					user_data[leader][dataWeaponKills],
@@ -3387,11 +3396,11 @@ toggle_warmup(bool:status)
 				set_task(2.0, "rewardWarmupWinner", winner + TASK_REWARDWINNER);
 			}
 
-			ExecuteForward(forward_handles[forward_game_beginning], forward_return_dummy, winner);
+			ExecuteForward(forward_handles[forward_game_beginning], blank, winner);
 		}
 		else
 		{
-			ExecuteForward(forward_handles[forward_game_beginning], forward_return_dummy, -1);
+			ExecuteForward(forward_handles[forward_game_beginning], blank, -1);
 		}
 
 		// Restart the game.
@@ -3518,7 +3527,7 @@ increment_user_weapon_kills(index, value)
 	user_data[index][dataCombo] += value;
 	user_data[index][dataWeaponKills] += value;
 
-	ExecuteForward(forward_handles[forward_combo_streak], forward_return_dummy, index, user_data[index][dataCombo]);
+	ExecuteForward(forward_handles[forward_combo_streak], blank, index, user_data[index][dataCombo]);
 
 	// Levelup player if weapon kills are greater than reqiured for his current level.
 	while (user_data[index][dataWeaponKills] >= weaponsData[user_data[index][dataLevel]][weaponKills])
@@ -3594,7 +3603,7 @@ increment_user_level(index, value, bool:notify = true)
 	// Add weapons for player's current level.
 	give_weapons(index);
 
-	ExecuteForward(forward_handles[forward_level_up], forward_return_dummy, index, user_data[index][dataLevel], -1);
+	ExecuteForward(forward_handles[forward_level_up], blank, index, user_data[index][dataLevel], -1);
 
 	if (notify)
 	{
@@ -3613,7 +3622,7 @@ increment_user_level(index, value, bool:notify = true)
 	{
 		static new_leader;
 
-		new_leader = get_game_leader();
+		new_leader = get_game_leader(blank);
 
 		// It's not our guy.
 		if (new_leader != index)
@@ -3652,7 +3661,7 @@ increment_team_level(team, value, bool:notify = true)
 		// Add weapons.
 		give_weapons(i);
 	
-		ExecuteForward(forward_handles[forward_level_up], forward_return_dummy, i, tp_data[tpTeamLevel][team - 1], team);
+		ExecuteForward(forward_handles[forward_level_up], blank, i, tp_data[tpTeamLevel][team - 1], team);
 	}
 
 	if (notify)
@@ -3703,7 +3712,7 @@ decrement_user_level(index, value)
 	// Play leveldown sound.
 	play_sound(index, soundLevelDown, -1);
 
-	ExecuteForward(forward_handles[forward_level_down], forward_return_dummy, index, user_data[index][dataLevel], -1);
+	ExecuteForward(forward_handles[forward_level_down], blank, index, user_data[index][dataLevel], -1);
 }
 
 decrement_team_level(team, value)
@@ -3718,7 +3727,7 @@ decrement_team_level(team, value)
 		user_data[i][dataLevel] = tp_data[tpTeamLevel][team - 1];
 		user_data[i][dataWeaponKills] = tp_data[tpTeamKills][team - 1];
 	
-		ExecuteForward(forward_handles[forward_level_down], forward_return_dummy, i, tp_data[tpTeamLevel][team - 1], team);
+		ExecuteForward(forward_handles[forward_level_down], blank, i, tp_data[tpTeamLevel][team - 1], team);
 	}
 
 	// Play leveldown sound.
@@ -3730,7 +3739,7 @@ end_gungame(winner)
 	// Mark gungame as ended.
 	gungame_ended = true;
 
-	ExecuteForward(forward_handles[forward_game_end], forward_return_dummy, winner);
+	ExecuteForward(forward_handles[forward_game_end], blank, winner);
 
 	// Remove hud, and tasks if they exist.
 	ForPlayers(i)
@@ -4118,7 +4127,7 @@ get_weapons_name(iterator, weaponIndex, string[], length)
 	copy(string, length, weapon_temp_name);
 }
 
-get_game_leader()
+get_game_leader(&leaders_counter)
 {
 	static highest;
 
@@ -4134,16 +4143,22 @@ get_game_leader()
 				continue;
 			}
 			
+			// By level
 			if (user_data[i][dataLevel] > user_data[highest][dataLevel])
 			{
 				highest = i;
+				leaders_counter = 1;
 			}
 
+			// By weapon kills
 			else if (user_data[i][dataLevel] == user_data[highest][dataLevel])
 			{
+				leaders_counter++;
+
 				if (user_data[i][dataWeaponKills] > user_data[highest][dataWeaponKills])
 				{
 					highest = i;
+					leaders_counter = 1;
 				}
 			}
 		}
@@ -5095,5 +5110,5 @@ public finish_game_vote()
 		}
 	}
 
-	ExecuteForward(forward_handles[forward_game_mode_chosen], forward_return_dummy, game_mode);
+	ExecuteForward(forward_handles[forward_game_mode_chosen], blank, game_mode);
 }
