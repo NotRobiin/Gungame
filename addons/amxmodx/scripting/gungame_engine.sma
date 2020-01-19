@@ -2588,10 +2588,10 @@ connectDatabase()
 	formatex(mysql_request, charsmax(mysql_request),
 		"CREATE TABLE IF NOT EXISTS `gungame` \
 			(`name` VARCHAR(35) NOT NULL, \
-			`wins` INT(6) NOT NULL DEFAULT 0, \
-			`knife_kills` INT(6) NOT NULL DEFAULT 0, \
-			`kills` INT(6) NOT NULL DEFAULT 0, \
-			`headshot_kills` INT(6) NOT NULL DEFAULT 0, \
+			`wins` INT NOT NULL DEFAULT 0, \
+			`knife_kills` INT NOT NULL DEFAULT 0, \
+			`kills` INT NOT NULL DEFAULT 0, \
+			`headshot_kills` INT NOT NULL DEFAULT 0, \
 		PRIMARY KEY (`name`));");
 
 	// Send request to database.
