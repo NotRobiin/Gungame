@@ -2496,7 +2496,6 @@ public displayHud(taskIndex)
 	}
 	else
 	{
-		// We dont talk about that. Ever.
 		if (game_mode == modeNormal)
 		{
 			formatex(leader_data, charsmax(leader_data), "^nLider: %n :: %i poziom [%s - %i/%i]",
@@ -3856,7 +3855,7 @@ give_weapons(index)
 			weapon_entity;
 
 		// Add weapon to allowed to carry by player.
-		user_data[index][dataAllowedWeapons] |= (1 << weaponsData[user_data[index][dataLevel]][weaponCSW]);
+		user_data[index][dataAllowedWeapons] |= (1 << csw);
 
 		weapon_entity = give_item(index, weapon_entity_names[user_data[index][dataLevel]]);
 
@@ -4121,12 +4120,12 @@ get_weapons_name(iterator, weaponIndex, string[], length)
 
 get_game_leader()
 {
-	new highest;
+	static highest;
+
+	highest = 0;
 	
 	if (game_mode == modeNormal)
 	{
-		highest = 0;
-
 		// Loop through all players, get one with highest level and kills.
 		ForPlayers(i)
 		{
@@ -4176,11 +4175,11 @@ get_game_leader()
 			}
 			else if (tp_data[tpTeamKills][0] > tp_data[tpTeamKills][1])
 			{
-				highest = 1;
+				highest = 0;
 			}
 			else
 			{
-				highest = 0;
+				highest = 1;
 			}
 		}
 	}
