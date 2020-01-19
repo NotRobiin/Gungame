@@ -2506,6 +2506,10 @@ public displayHud(taskIndex)
 			{
 				formatex(leader_name, charsmax(leader_name), "%n + %i innych", leader, leader_counter - 1);
 			}
+			else
+			{
+				copy(leader_name, charsmax(leader_name), user_data[leader][dataName]);
+			}
 
 			formatex(leader_data, charsmax(leader_data), "^nLider: %s :: %i poziom [%s - %i/%i]",
 					leader_name,
@@ -4140,6 +4144,14 @@ get_game_leader(&leaders_counter)
 		{
 			if (!is_user_connected(i))
 			{
+				continue;
+			}
+
+			if (!is_user_connected(highest))
+			{
+				highest = i;
+				leaders_counter = 1;
+
 				continue;
 			}
 			
