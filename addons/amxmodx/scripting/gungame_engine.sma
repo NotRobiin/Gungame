@@ -1949,10 +1949,16 @@ public playerDeathEvent()
 	{
 		case modeNormal:
 		{
+			// Refill type.
 			switch(get_pcvar_num(cvars_data[cvar_refill_weapon_ammo]))
 			{
-				case 1: refill_ammo(killer); // Killer
-				case 2: // Vips only
+				case 1:
+				{
+					refill_ammo(killer);
+				}
+				
+				// Vips only.
+				case 2:
 				{
 					if (gg_get_user_vip(killer))
 					{
@@ -1964,11 +1970,23 @@ public playerDeathEvent()
 
 		case modeTeamplay:
 		{
+			// Refill type.
 			switch (get_pcvar_num(cvars_data[cvar_refill_weapon_ammo_teamplay]))
 			{
-				case 1: refill_ammo(user_data[killer][dataTeam], true); // Whole team
-				case 2: refill_ammo(killer); // Just the killer
-				case 3: // Vips only
+				// Whole team.
+				case 1:
+				{
+					refill_ammo(user_data[killer][dataTeam], true);
+				}
+				
+				// Just the killer.
+				case 2:
+				{
+					refill_ammo(killer);
+				}
+
+				// Vips only.
+				case 3:
 				{
 					if (gg_get_user_vip(killer))
 					{
