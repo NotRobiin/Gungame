@@ -668,7 +668,8 @@ enum userDataEnumerator
 	dataKnifeKills,
 	dataHeadshots,
 	dataWandLastAttack,
-	dataTeam
+	dataTeam,
+	dataCurrentWeapon
 };
 
 enum topPlayersEnumerator
@@ -825,11 +826,10 @@ public plugin_init()
 	}
 
 	new weapon_classname[24];
-	new const excluded_weapons = CSW_KNIFE;
 
 	ForRange(i, 1, 30)
 	{
-		if (!(excluded_weapons & 1 << i) && get_weaponname(i, weapon_classname, charsmax(weapon_classname)))
+		if (get_weaponname(i, weapon_classname, charsmax(weapon_classname)))
 		{
 			RegisterHam(Ham_Item_Deploy, weapon_classname, "weaponDeploy");
 		}
@@ -1695,16 +1695,12 @@ public weaponDeploy(entity)
 	new index = pev(entity, pev_owner),
 		weapon = cs_get_weapon_id(entity);
 
-	if (!is_user_connected(index) || is_user_bot(index))
+	if (!is_user_connected(index) || is_user_bot(index) || !is_user_alive(index))
 	{
 		return;
 	}
 
-	// We dont want to mess with the knife, all players should have it at all times.
-	if (weapon == CSW_KNIFE || weapon == CSW_C4)
-	{
-		return;
-	}
+	user_data[index][dataCurrentWeapon] = weapon;
 
 	// Check if player is holding weapon he shouldnt have.
 	if (!(user_data[index][dataAllowedWeapons] & (1 << weapon)))
@@ -1713,6 +1709,37 @@ public weaponDeploy(entity)
 		strip_user_weapon(index, weapon);
 		
 		return;
+	}
+
+	// We dont want to mess with the bomb.
+	if (weapon == CSW_C4)
+	{
+		return;
+	}
+
+	if (weapon == CSW_KNIFE)
+	{
+		// Block if player is not on last level or its not a warmup.
+		if (!warmup_data[warmupEnabled] || user_data[index][dataLevel] != max_level)
+		{
+			return;
+		}
+
+		// Block if warmup weapon is not a wand.
+		if (warmup_data[warmupEnabled] && get_pcvar_num(cvars_data[cvar_warmup_weapon]) != -2)
+		{
+			return;
+		}
+
+		// Block if wands are disabled.
+		if (!get_pcvar_num(cvars_data[cvar_wand_enabled]))
+		{
+			return;
+		}
+		
+		// Set the wand model.
+		set_wand_models(index);
+		set_weapon_animation(index, 3);
 	}
 }
 
@@ -4408,8 +4435,7 @@ refill_ammo(index, bool:team = false)
 		return;
 	}
 
-	static userWeapon,
-		weapon_classname[MAX_CHARS - 1],
+	static weapon_classname[MAX_CHARS - 1],
 		weapon_entity;
 
 	if (team)
@@ -4420,17 +4446,15 @@ refill_ammo(index, bool:team = false)
 			{
 				continue;
 			}
-			
-			userWeapon = get_user_weapon(i);
 
 			// Continue if for some reason player has no weapon.
-			if (!userWeapon)
+			if (!user_data[i][dataCurrentWeapon])
 			{
 				continue;
 			}
 
 			// Get weapon classname.
-			get_weaponname(userWeapon, weapon_classname, charsmax(weapon_classname));
+			get_weaponname(user_data[index][dataCurrentWeapon], weapon_classname, charsmax(weapon_classname));
 
 			// Get entity index of player's weapon.
 			weapon_entity = find_ent_by_owner(-1, weapon_classname, i);
@@ -4442,21 +4466,19 @@ refill_ammo(index, bool:team = false)
 			}
 
 			// Refill weapon ammo.
-			cs_set_weapon_ammo(weapon_entity, ammoAmounts[userWeapon]);
+			cs_set_weapon_ammo(weapon_entity, ammoAmounts[user_data[index][dataCurrentWeapon]]);
 		}
 	}
 	else
 	{
-		userWeapon = get_user_weapon(index);
-
 		// Return if for some reason player has no weapon.
-		if (!userWeapon)
+		if (!user_data[index][dataCurrentWeapon])
 		{
 			return;
 		}
 		
 		// Get weapon classname.
-		get_weaponname(userWeapon, weapon_classname, charsmax(weapon_classname));
+		get_weaponname(user_data[index][dataCurrentWeapon], weapon_classname, charsmax(weapon_classname));
 
 		// Get entity index of player's weapon.
 		weapon_entity = find_ent_by_owner(-1, weapon_classname, index);
@@ -4468,7 +4490,7 @@ refill_ammo(index, bool:team = false)
 		}
 
 		// Refill weapon ammo.
-		cs_set_weapon_ammo(weapon_entity, ammoAmounts[userWeapon]);
+		cs_set_weapon_ammo(weapon_entity, ammoAmounts[user_data[index][dataCurrentWeapon]]);
 	}
 }
 
