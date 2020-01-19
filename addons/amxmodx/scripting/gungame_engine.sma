@@ -4900,11 +4900,11 @@ set_black_screen_fade(fade)
 		hold,
 		flags;
 
-	static iMsgScreenFade;
+	static message_screen_fade;
 
-	if (!iMsgScreenFade)
+	if (!message_screen_fade)
 	{
-		iMsgScreenFade = get_user_msgid("ScreenFade");
+		message_screen_fade = get_user_msgid("ScreenFade");
 	}
 	
 	switch (fade)
@@ -4931,7 +4931,7 @@ set_black_screen_fade(fade)
 		}
 	}
 
-	message_begin(MSG_BROADCAST, iMsgScreenFade);
+	message_begin(MSG_BROADCAST, message_screen_fade);
 	write_short(time);
 	write_short(hold);
 	write_short(flags);
