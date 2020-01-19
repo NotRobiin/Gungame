@@ -4188,6 +4188,7 @@ get_game_leader(&leaders_counter)
 				continue;
 			}
 
+			// No leader was chosen yet.
 			if (!is_user_connected(highest))
 			{
 				highest = i;
@@ -4196,22 +4197,25 @@ get_game_leader(&leaders_counter)
 				continue;
 			}
 			
-			// By level
+			// Leading by level.
 			if (user_data[i][dataLevel] > user_data[highest][dataLevel])
 			{
 				highest = i;
 				leaders_counter = 1;
 			}
 
-			// By weapon kills
+			// Leading by weapon kills.
 			else if (user_data[i][dataLevel] == user_data[highest][dataLevel])
 			{
-				leaders_counter++;
-
+				// Higher weapon kills - he's a new leader.
 				if (user_data[i][dataWeaponKills] > user_data[highest][dataWeaponKills])
 				{
 					highest = i;
 					leaders_counter = 1;
+				}
+				else if (user_data[i][dataWeaponKills] == user_data[highest][dataWeaponKills])
+				{
+					leaders_counter++;
 				}
 			}
 		}
