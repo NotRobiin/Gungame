@@ -549,7 +549,11 @@ enum (+= 1)
 
 	cvar_bomb_enabled,
 	cvar_bomb_plant_reward,
-	cvar_bomb_defuse_reward
+	cvar_bomb_defuse_reward,
+
+	cvar_allow_bomb_drop,
+
+	cvar_transfer_dropped_bomb
 };
 
 new const ggCvarsData[][][] =
@@ -604,7 +608,11 @@ new const ggCvarsData[][][] =
 
 	{ "gg_bomb_enabled", "1" }, // Support bomb?
 	{ "gg_bomb_reward_plant", "3" }, // Reward in weapon kills.
-	{ "gg_bomb_reward_defuse", "3" } // Reward in weapon kills.
+	{ "gg_bomb_reward_defuse", "3" }, // Reward in weapon kills.
+
+	{ "gg_allow_bomb_drop", "1" }, // Allow dropping the bomb?
+
+	{ "gg_transfer_dropped_bomb", "1" } // Transfer bomb when dropped? 0 - Disabled, 1 - Enabled, 2 - Only on "drop" command.
 };
 
 new const forwardsNames[][] =
@@ -1787,7 +1795,7 @@ public playerDeathEvent()
 	}
 
 	// Prevent weapon-drop to the floor.
-	remove_player_weapons(victim);
+	remove_player_weapons(victim, true);
 
 	if (gungame_ended)
 	{
@@ -4782,6 +4790,68 @@ wand_attack(index, weapon)
 	return PLUGIN_CONTINUE;
 }
 
+get_random_alive_player(team, Array:excluded)
+{
+	static player;
+
+	player = 0;
+	
+	if (!get_playersnum())
+	{
+		return player;
+	}
+
+	if (team != 1 && team != 2)
+	{
+		return player;
+	}
+
+	static bool:skip,
+		Array:players_list;
+
+	players_list = ArrayCreate(1, 1);
+
+	ForPlayers(i)
+	{
+		if (!is_user_connected(i) || !is_user_alive(i) || user_data[i][dataTeam] != team)
+		{
+			continue;
+		}
+
+		skip = false;
+
+		ForDynamicArray(j, excluded)
+		{
+			if (ArrayGetCell(excluded, j) == i)
+			{
+				skip = true;
+
+				break;
+			}
+		}
+
+		if (skip)
+		{
+			continue;
+		}
+
+		ArrayPushCell(players_list, i);
+	}
+
+	if (ArraySize(players_list))
+	{
+		player = ArrayGetCell(players_list, random_num(0, ArraySize(players_list) - 1));
+	}
+	else
+	{
+		player = 0;
+	}
+
+	ArrayDestroy(players_list);
+
+	return player;
+}
+
 stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = true)
 {
 	if (!weaponSlot)
@@ -4886,6 +4956,12 @@ stock register_commands(const array[][], arraySize, function[], include_say = tr
 
 public block_command_usage(index)
 {
+	// Allow droping the bomb.
+	if (get_pcvar_num(cvars_data[cvar_allow_bomb_drop]) && user_data[index][dataCurrentWeapon] == CSW_C4)
+	{
+		return PLUGIN_CONTINUE;
+	}
+
 	return PLUGIN_HANDLED;
 }
 
@@ -4942,12 +5018,69 @@ set_black_screen_fade(fade)
 	message_end();
 }
 
-stock remove_player_weapons(index)
+stock remove_player_weapons(index, bool:drop_bomb = false)
 {
-	StripWeapons(index, Primary);
-	StripWeapons(index, Secondary);
-	StripWeapons(index, Knife);
-	StripWeapons(index, Grenades);
+	new bool:has_bomb = bool:user_has_weapon(index, CSW_C4);
+
+	if (drop_bomb && has_bomb)
+	{
+		static const weapon_classname[] = "weapon_c4";
+
+		// Make player drop the bomb.
+		engclient_cmd(index, "drop", weapon_classname);
+
+		// Transfer dropped bomb to someone else?
+		if (get_pcvar_num(cvars_data[cvar_transfer_dropped_bomb]) == 1)
+		{
+			static Array:excluded_indexes,
+				random_terrorist;
+
+			excluded_indexes = ArrayCreate(1, 1);
+
+			// Add our guy to skipped indexes so we dont target him as a bomb receiver.
+			ArrayPushCell(excluded_indexes, index);
+			
+			// Get random alive terrorist.
+			random_terrorist = get_random_alive_player(user_data[index][dataTeam], excluded_indexes);
+			
+			// Don't leak memory, please.
+			ArrayDestroy(excluded_indexes);
+
+			// Bomb receiver connected?
+			if (is_user_connected(random_terrorist))
+			{
+				static bomb_entity;
+				
+				bomb_entity = get_bomb_entity();
+
+				if (bomb_entity)
+				{
+					// Remove on-ground flag from bomb's pevs.
+					set_pev(bomb_entity, pev_flags, pev(bomb_entity, pev_flags) | FL_ONGROUND);
+					
+					// Simulate touching the bom by the bomb receiver.
+					dllfunc(DLLFunc_Touch, bomb_entity, random_terrorist);
+				}
+			}
+		}
+	}
+	
+	// Kill entities.
+	static entity;
+
+	// Create an entity 'player_weaponstrip' which works in a way that
+	// if a player uses it, his weapons are removed entirely.
+	entity = engfunc(EngFunc_CreateNamedEntity, engfunc(EngFunc_AllocString, "player_weaponstrip"));
+
+	// Invalid entity.
+	if (!pev_valid(entity))
+	{
+		return;
+	}
+	
+	dllfunc(DLLFunc_Spawn, entity); // Spawn the remove-weapons entity.
+	dllfunc(DLLFunc_Use, entity, index); // Force player to use it.
+	engfunc(EngFunc_RemoveEntity, entity); // Kill it right away.
 }
 
 #if defined TEST_MODE
