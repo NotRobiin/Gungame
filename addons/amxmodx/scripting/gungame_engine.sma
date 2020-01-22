@@ -4790,18 +4790,13 @@ wand_attack(index, weapon)
 	return PLUGIN_CONTINUE;
 }
 
-get_random_alive_player(team, Array:excluded)
+get_random_player(team = -1, bool:alive = false, Array:excluded)
 {
 	static player;
 
 	player = 0;
 	
 	if (!get_playersnum())
-	{
-		return player;
-	}
-
-	if (team != 1 && team != 2)
 	{
 		return player;
 	}
@@ -4813,7 +4808,17 @@ get_random_alive_player(team, Array:excluded)
 
 	ForPlayers(i)
 	{
-		if (!is_user_connected(i) || !is_user_alive(i) || user_data[i][dataTeam] != team)
+		if (!is_user_connected(i))
+		{
+			continue;
+		}
+
+		if (team && user_data[i][dataTeam] != team)
+		{
+			continue;
+		}
+
+		if (alive && !is_user_alive(i))
 		{
 			continue;
 		}
@@ -5033,7 +5038,7 @@ stock remove_player_weapons(index, bool:drop_bomb = false)
 		if (get_pcvar_num(cvars_data[cvar_transfer_dropped_bomb]) == 1)
 		{
 			static Array:excluded_indexes,
-				random_terrorist;
+				receiver;
 
 			excluded_indexes = ArrayCreate(1, 1);
 
@@ -5041,13 +5046,13 @@ stock remove_player_weapons(index, bool:drop_bomb = false)
 			ArrayPushCell(excluded_indexes, index);
 			
 			// Get random alive terrorist.
-			random_terrorist = get_random_alive_player(user_data[index][dataTeam], excluded_indexes);
+			receiver = get_random_player(user_data[index][dataTeam], true, excluded_indexes);
 			
 			// Don't leak memory, please.
 			ArrayDestroy(excluded_indexes);
 
 			// Bomb receiver connected?
-			if (is_user_connected(random_terrorist))
+			if (is_user_connected(receiver))
 			{
 				static bomb_entity;
 				
@@ -5059,7 +5064,7 @@ stock remove_player_weapons(index, bool:drop_bomb = false)
 					set_pev(bomb_entity, pev_flags, pev(bomb_entity, pev_flags) | FL_ONGROUND);
 					
 					// Simulate touching the bom by the bomb receiver.
-					dllfunc(DLLFunc_Touch, bomb_entity, random_terrorist);
+					dllfunc(DLLFunc_Touch, bomb_entity, receiver);
 				}
 			}
 		}
