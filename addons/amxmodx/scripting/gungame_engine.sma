@@ -473,9 +473,6 @@ static const NativesLogPrefix[] = "[GUNGAME ERROR]";
 
 #endif
 
-// Value which will be returned if an error occured in any of natives.
-static const NativesErrorValue = -1;
-
 // Natives: [][0] is native name, [][1] is native function.
 static const NativesData[][][] =
 {
@@ -956,17 +953,17 @@ public plugin_natives()
 
 public native_set_user_level(plugin, params)
 {
-	if (params != 2)
+	if (!check_params("set_user_level", 2, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Get targeted player index.
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == NativesErrorValue)
+	if (isPlayerConnected(index) == -1)
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Get level to be set.
@@ -981,7 +978,7 @@ public native_set_user_level(plugin, params)
 		
 		#endif
 
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Set level.
@@ -992,17 +989,17 @@ public native_set_user_level(plugin, params)
 
 public native_get_user_level(plugin, params)
 {
-	if (params != 1)
+	if (!check_params("set_user_level", 1, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Get targeted player index.
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == NativesErrorValue)
+	if (isPlayerConnected(index) == -1)
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Return user level.
@@ -1011,9 +1008,9 @@ public native_get_user_level(plugin, params)
 
 public native_set_team_level(plugin, params)
 {
-	if (params != 3)
+	if (!check_params("set_team_level", 3, params))
 	{
-		return false;
+		return -1;
 	}
 
 	new team = get_param(1);
@@ -1049,9 +1046,9 @@ public native_set_team_level(plugin, params)
 
 public native_get_team_level(plugin, params)
 {
-	if (params != 1)
+	if (!check_params("get_team_level", 1, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	new team = get_param(1);
@@ -1067,16 +1064,16 @@ public native_get_team_level(plugin, params)
 
 public native_get_user_weapon_kills(plugin, params)
 {
-	if (params != 1)
+	if (!check_params("get_user_weapon_kills", 1, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == NativesErrorValue)
+	if (isPlayerConnected(index) == -1)
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Return weapon kills.
@@ -1086,9 +1083,9 @@ public native_get_user_weapon_kills(plugin, params)
 // Return max level.
 public native_get_max_level(plugin, params)
 {
-	if (params != 1)
+	if (!check_params("get_max_level", 1, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	return max_level;
@@ -1096,17 +1093,16 @@ public native_get_max_level(plugin, params)
 
 public native_respawn_player(plugin, params)
 {
-	if (params != 2)
+	if (!check_params("respawn_player", 2, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
-
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == NativesErrorValue)
+	if (isPlayerConnected(index) == -1)
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	new Float:time = get_param_f(2);
@@ -1120,7 +1116,7 @@ public native_respawn_player(plugin, params)
 		
 		#endif
 
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Set respawn task.
@@ -1131,16 +1127,16 @@ public native_respawn_player(plugin, params)
 
 public native_get_user_weapon(plugin, params)
 {
-	if (params != 1)
+	if (!check_params("get_user_weapon", 1, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == NativesErrorValue)
+	if (isPlayerConnected(index) == -1)
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Return user current weapon.
@@ -1149,16 +1145,16 @@ public native_get_user_weapon(plugin, params)
 
 public native_get_weapons_data(plugin, params)
 {
-	if (params != 2)
+	if (!check_params("get_weapons_data", 2, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == NativesErrorValue)
+	if (isPlayerConnected(index) == -1)
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	new value = get_param(2),
@@ -1174,7 +1170,7 @@ public native_get_weapons_data(plugin, params)
 		
 		#endif
 
-		return NativesErrorValue;
+		return -1;
 	}
 
 	// Return weapons data.
@@ -1183,16 +1179,16 @@ public native_get_weapons_data(plugin, params)
 
 public native_get_user_wins(plugin, params)
 {
-	if (params != 1)
+	if (!check_params("get_user_wins", 1, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == NativesErrorValue)
+	if (isPlayerConnected(index) == -1)
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	return user_data[index][data_wins];
@@ -1200,16 +1196,16 @@ public native_get_user_wins(plugin, params)
 
 public native_get_user_combo(plugin, params)
 {
-	if (params != 1)
+	if (!check_params("get_user_combo", 1, params))
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == NativesErrorValue)
+	if (isPlayerConnected(index) == -1)
 	{
-		return NativesErrorValue;
+		return -1;
 	}
 
 	return user_data[index][data_combo];
@@ -2814,6 +2810,22 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 		[ FUNCTIONS ]
 */
 
+bool:check_params(native_name[], required, given)
+{
+	if(required != given)
+	{
+		#if defined DEBUG_MODE
+
+		log_amx("[NATIVE ERROR] Native ^"%s^" was given invalid amount of paramaters: %i, expected %i.", native_name, given, required);
+		
+		#endif
+
+		return false;
+	}
+
+	return true;
+}
+
 set_progress_bar(index, Float:time, start = 0)
 {
 	static barMessageHandle;
@@ -3038,7 +3050,7 @@ isPlayerConnected(index)
 		
 		#endif
 
-		return NativesErrorValue;
+		return -1;
 	}
 
 	return 1;
