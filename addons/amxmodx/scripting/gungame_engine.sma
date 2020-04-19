@@ -37,7 +37,7 @@ native showMapVoteMenu();
 #define ForRange(%1,%2,%3) for(new %1 = %2; %1 <= %3; %1++)
 
 // Task indexes.
-enum (+= 2500)
+enum _: (+= 2500)
 {
 	TASK_RESPAWN = 1337,
 	TASK_NOTIFY,

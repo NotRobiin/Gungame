@@ -2,11 +2,12 @@
 A mod where you start with (preferably) pistol and slowly upgrade to better weapon by getting kills.
 
 ### Requirements
-- AMXX 1.8.3 or higher
+- AMXX 1.9 or higher
 - ReHLDS
 - ReGameDLL
 - Map-chooser plugin that is located in the same repository
 - VIP plugin (def. located at addons/amxmodx/scripting/gungame_vip.sma)
+- Client data manager plugin (github.com/Wwicked/client-data-manager)
 
 ### Installation
 Default plugin installation.
