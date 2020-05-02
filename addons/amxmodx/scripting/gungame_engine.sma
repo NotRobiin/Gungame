@@ -655,7 +655,6 @@ enum UserDataEnumerator (+= 1)
 {
 	data_level,
 	data_weapon_kills,
-	data_name[MAX_CHARS],
 	data_short_name[MAX_CHARS],
 	data_safe_name[MAX_CHARS],
 	data_time_to_respawn,
@@ -2573,7 +2572,7 @@ public displayHud(taskIndex)
 			}
 			else
 			{
-				copy(leader_name, charsmax(leader_name), user_data[leader][data_name]);
+				copy(leader_name, charsmax(leader_name), fmt("%n", leader));
 			}
 
 			formatex(leader_data, charsmax(leader_data), "^nLider: %s :: %i poziom [%s - %i/%i]",
@@ -2848,7 +2847,7 @@ save_on_disconnect(index)
 {
 	ArrayPushCell(disconnected_players_data[dc_data_level], user_data[index][data_level]);
 	ArrayPushCell(disconnected_players_data[dc_data_weapon_kills], user_data[index][data_weapon_kills]);
-	ArrayPushString(disconnected_players_data[dc_data_name], user_data[index][data_name]);
+	ArrayPushString(disconnected_players_data[dc_data_name], fmt("%n", index));
 }
 
 get_on_connect(index)
@@ -2860,7 +2859,7 @@ get_on_connect(index)
 		ArrayGetString(disconnected_players_data[dc_data_name], i, name, charsmax(name));
 
 		// Not our guy.
-		if (!equal(name, user_data[index][data_name]))
+		if (!equal(name, fmt("%n", index)))
 		{
 			continue;
 		}
@@ -2885,14 +2884,11 @@ get_user_name_data(index)
 		return;
 	}
 
-	// Get player's name once, so we dont do that every time we need that data.
-	get_user_name(index, user_data[index][data_name], MAX_CHARS - 1);
-
 	// Clamp down player's name so we can use that to prevent char-overflow in HUD etc.
 	clamp_down_client_name(index, user_data[index][data_short_name], MAX_CHARS - 1, MaxNicknameLength, NicknameReplaceToken);
 
 	// Get player's name to mysql-request-safe state.
-	escape_string(user_data[index][data_name], user_data[index][data_safe_name], MAX_CHARS * 2);
+	escape_string(fmt("%n", index), user_data[index][data_safe_name], MAX_CHARS * 2);
 }
 
 escape_string(const source[], output[], length)
@@ -4363,7 +4359,7 @@ get_player_by_name(name[])
 	// Loop through players, get index if names are matching.
 	ForPlayers(i)
 	{
-		if (!is_user_connected(i) || containi(user_data[i][data_name], name) == -1)
+		if (!is_user_connected(i) || containi(fmt("%n", i), name) == -1)
 		{
 			continue;
 		}
@@ -4549,16 +4545,16 @@ random_warmup_weapon(index)
 // Clamp down user name if its length is greater than "value" argument.
 clamp_down_client_name(index, output[], length, const value, const token[])
 {
-	if (strlen(user_data[index][data_name]) > value)
+	if (strlen(fmt("%n", index)) > value)
 	{
-		format(output, value, user_data[index][data_name]);
+		format(output, value, fmt("%n", index));
 
 		add(output, length, token);
 	}
 	else
 	{
 		// Just copy his original name instead.
-		copy(user_data[index][data_short_name], MAX_CHARS - 1, user_data[index][data_name]);
+		copy(user_data[index][data_short_name], MAX_CHARS - 1, fmt("%n", index));
 	}
 }
 
