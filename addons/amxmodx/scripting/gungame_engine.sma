@@ -891,7 +891,7 @@ public plugin_init()
 	forward_handles[forward_game_mode_chosen] = CreateMultiForward(ForwardsNames[6], ET_IGNORE, FP_CELL); // Game mode chosen (1)
 
 	// Toggle warmup a bit delayed from plugin start.
-	set_task(1.0, "delayed_toggle_warmup");
+	set_task(1.0, "delayedToggleWarmup");
 
 	// Load info required to connect to database.
 	load_sql_config();
@@ -903,7 +903,7 @@ public plugin_init()
 	load_game_cvars();
 
 	// Connect do mysql database.
-	connectDatabase();
+	connect_database();
 
 	// Initialize dynamic arrays.
 	disconnected_players_data[dc_data_level] = ArrayCreate(1, 1);
@@ -911,7 +911,7 @@ public plugin_init()
 	disconnected_players_data[dc_data_weapon_kills] = ArrayCreate(1, 1);
 
 	// Load top players from MySQL.
-	loadTopPlayers();
+	load_top_players();
 	
 	#if defined TEST_MODE
 
@@ -1297,7 +1297,7 @@ public client_authorized(index)
 	get_user_name_data(index);
 
 	// Load mysql data.
-	getUserData(index);
+	get_user_data(index);
 
 	// Preset user level to 0.
 	user_data[index][data_level] = 0;
@@ -1331,7 +1331,7 @@ public client_putinserver(index)
 public client_disconnect(index)
 {
 	remove_hud(index);
-	updateUserData(index);
+	update_user_data(index);
 	save_on_disconnect(index);
 }
 
@@ -1636,18 +1636,17 @@ public round_start()
 
 public take_damage(victim, idinflictor, attacker, Float:damage, damagebits)
 {
-	// Return if attacker isnt alive, self damage, no damage or players are on the same team.
 	if (!is_user_alive(attacker) || victim == attacker || !damage || !is_user_alive(victim))
 	{
 		return HAM_IGNORED;
 	}
 
-	// Return if gungame has ended.
 	if (gungame_ended)
 	{
 		return HAM_SUPERCEDE;
 	}
 
+	// Block friendly fire on teamplay if set so.
 	if (user_data[attacker][data_team] == user_data[victim][data_team])
 	{
 		if (game_mode == mode_normal && !get_pcvar_num(cvars_data[cvar_normal_friendly_fire]))
@@ -1660,19 +1659,23 @@ public take_damage(victim, idinflictor, attacker, Float:damage, damagebits)
 		}
 	}
 
+	// Prevent from spawn-killing.
 	if (user_data[victim][data_spawn_protection] && !get_pcvar_num(cvars_data[cvar_spawn_protection_type]))
 	{
 		return HAM_SUPERCEDE;
 	}
 
-	if (get_pcvar_num(cvars_data[cvar_wand_enabled]))
-	{
-		// todo: fix here
-		if (is_on_last_level(attacker) /*|| get_pcvar_num(cvars_data[cvar_warmup_weapon]) == -2*/)
-		{
-			return HAM_SUPERCEDE;
-		}
-	}
+	// https://github.com/Wwicked/Gungame/commit/dbdc57bca81099fc3add150f1de7ed1f19d09759
+	// This makes no sense whatsoever.
+	//
+	// if (get_pcvar_num(cvars_data[cvar_wand_enabled]))
+	// {
+	// 	// todo: fix here
+	// 	if (is_on_last_level(attacker) /*|| get_pcvar_num(cvars_data[cvar_warmup_weapon]) == -2*/)
+	// 	{
+	// 		return HAM_SUPERCEDE;
+	// 	}
+	// }
 
 	// Show damage info in hud.
 	set_hudmessage(TakeDamageHudColor[0], TakeDamageHudColor[1], TakeDamageHudColor[2], 0.5, 0.4, 0, 6.0, get_pcvar_float(cvars_data[cvar_take_damage_hud_time]), 0.0, 0.0);
@@ -2362,7 +2365,7 @@ public top_players_motd_handler(index)
 		[ TASKS ]
 */
 
-public delayed_toggle_warmup()
+public delayedToggleWarmup()
 {
 	toggle_warmup(true);
 }
@@ -2643,7 +2646,7 @@ public respawnPlayerOnJoin(taskIndex)
 		[ Database ]
 */
 
-connectDatabase()
+connect_database()
 {
 	new mysql_request[MAX_CHARS * 10];
 
@@ -2678,7 +2681,7 @@ public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, dat
 	return PLUGIN_CONTINUE;
 }
 
-getUserData(index)
+get_user_data(index)
 {
 	if (is_user_hltv(index) || is_user_bot(index))
 	{
@@ -2711,11 +2714,11 @@ public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[]
 	}
 	else
 	{
-		insertUserData(index);
+		insert_user_data(index);
 	}
 }
 
-insertUserData(index)
+insert_user_data(index)
 {
 	if (is_user_hltv(index) || is_user_bot(index))
 	{
@@ -2735,7 +2738,7 @@ insertUserData(index)
 	SQL_ThreadQuery(db_data[sql_handle], "ignoreHandle", mysql_request);
 }
 
-updateUserData(index)
+update_user_data(index)
 {
 	if (!is_user_connected(index) || is_user_hltv(index) || is_user_bot(index))
 	{
@@ -2765,7 +2768,7 @@ public ignoreHandle(failState, Handle:query, error[], errorNum, data[], dataSize
 	return PLUGIN_CONTINUE;
 }
 
-loadTopPlayers()
+load_top_players()
 {
 	new mysql_request[MAX_CHARS * 3];
 
@@ -2812,7 +2815,7 @@ public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data
 
 bool:check_params(native_name[], required, given)
 {
-	if(required != given)
+	if (required != given)
 	{
 		#if defined DEBUG_MODE
 
@@ -3857,7 +3860,7 @@ end_gungame(winner)
 		}
 
 		remove_hud(i);
-		updateUserData(i);
+		update_user_data(i);
 	}
 
 	new win_message[MAX_CHARS * 10],
@@ -3872,7 +3875,7 @@ end_gungame(winner)
 	set_task(1.0, "set_black_screen_on");
 
 	// Update top players.
-	loadTopPlayers();
+	load_top_players();
 
 	// Get top players.
 	get_player_by_top_level(top_players, charsmax(top_players));
