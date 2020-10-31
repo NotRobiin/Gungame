@@ -1322,7 +1322,7 @@ public client_putinserver(index)
 }
 
 // Remove hud tasks on disconnect.
-public client_disconnect(index)
+public client_disconnected(index)
 {
 	remove_hud(index);
 	update_user_data(index);
