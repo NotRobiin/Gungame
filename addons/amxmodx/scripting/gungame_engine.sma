@@ -2252,7 +2252,8 @@ public display_warmup_timer()
 					continue;
 				}
 
-				ShowSyncHudMsg(i, hud_objects[hud_object_warmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]",
+				ShowSyncHudMsg(i, hud_objects[hud_object_warmup],
+					"[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]",
 					warmup_data[WARMUP_TIMER],
 					CustomWeaponNames[user_data[i][DATA_WARMUP_CUSTOM_WEAPON_INDEX]]);
 			}
@@ -2278,7 +2279,10 @@ public display_warmup_timer()
 				}
 			}
 
-			ShowSyncHudMsg(0, hud_objects[hud_object_warmup], "[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]", warmup_data[WARMUP_TIMER], weapon_name);
+			ShowSyncHudMsg(0, hud_objects[hud_object_warmup],
+				"[ ROZGRZEWKA: %i sekund ]^n[ Bron na rozgrzewke: %s ]",
+				warmup_data[WARMUP_TIMER],
+				weapon_name);
 		}
 
 		// Set task to display hud again.
@@ -2603,7 +2607,8 @@ public display_hud(task_index)
 	
 	if (game_mode == MODE_NORMAL)
 	{
-		ShowSyncHudMsg(index, hud_objects[hud_object_default], "-- Tryb normalny --^nTwoj poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s",
+		ShowSyncHudMsg(index, hud_objects[hud_object_default],
+			"-- Tryb normalny --^nTwoj poziom: %i/%i [%s - %i/%i] :: Zabic z rzedu: %i^nNastepna bron: %s%s",
 			user_data[index][DATA_LEVEL] + 1,
 			sizeof(WeaponsData),
 			is_on_last_level(index) ? (get_pcvar_num(cvars_data[CVAR_WAND_ENABLED]) ? "Rozdzka" : CustomWeaponNames[user_data[leader][DATA_LEVEL]]) : CustomWeaponNames[user_data[index][DATA_LEVEL]],
@@ -2617,7 +2622,8 @@ public display_hud(task_index)
 	{
 		new team = user_data[index][DATA_TEAM] - 1;
 
-		ShowSyncHudMsg(index, hud_objects[hud_object_default], "-- Tryb teamplay --^nPoziom druzyny: %i/%i [%s - %i/%i]^nNastepna bron: %s%s",
+		ShowSyncHudMsg(index, hud_objects[hud_object_default],
+			"-- Tryb teamplay --^nPoziom druzyny: %i/%i [%s - %i/%i]^nNastepna bron: %s%s",
 			tp_data[TP_TEAM_LEVEL][team] + 1,
 			sizeof(WeaponsData),
 			is_on_last_level(index) ? (get_pcvar_num(cvars_data[CVAR_WAND_ENABLED]) ? "Rozdzka" : CustomWeaponNames[user_data[leader][DATA_LEVEL]]) : CustomWeaponNames[user_data[index][DATA_LEVEL]],
@@ -2664,12 +2670,12 @@ connect_database()
 public connect_database_handler(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	// Connection has succeded?
-	db_data[SQL_LOADED] = bool:(failState == TQUERY_SUCCESS);
+	db_data[SQL_LOADED] = bool:(fail_state == TQUERY_SUCCESS);
 
 	// Throw log to server's console if error occured.
 	if (!db_data[SQL_LOADED])
 	{
-		log_amx("Database connection status: Not connected. Error (%i): %s", errorNumber, error);
+		log_amx("Database connection status: Not connected. Error (%i): %s", error_code, error);
 	}
 
 	return PLUGIN_CONTINUE;
@@ -2902,9 +2908,9 @@ escape_string(const source[], output[], length)
 
 load_sql_config()
 {
-	static const sqlConfigPath[] = "addons/amxmodx/configs/gg_sql.cfg";
+	static const SqlConfigPath[] = "addons/amxmodx/configs/gg_sql.cfg";
 
-	static const sqlConfigLabels[][] =
+	static const SqlConfigLabels[][] =
 	{
 		"gg_sql_host",
 		"gg_sql_user",
@@ -2912,20 +2918,20 @@ load_sql_config()
 		"gg_sql_db"
 	};
 
-	if (!file_exists(sqlConfigPath))
+	if (!file_exists(SqlConfigPath))
 	{
 		db_data[SQL_CONFIG_FOUND] = false;
 
 		return;
 	}
 
-	new file_handle = fopen(sqlConfigPath, "r"),
+	new file_handle = fopen(SqlConfigPath, "r"),
 		line_content[MAX_CHARS * 10],
 		key[MAX_CHARS * 5],
 		value[MAX_CHARS * 5],
 		entries;
 
-	while (file_handle && !feof(file_handle) && entries < sizeof(sqlConfigLabels))
+	while (file_handle && !feof(file_handle) && entries < sizeof(SqlConfigLabels))
 	{
 		// Read one line at a time.
 		fgets(file_handle, line_content, charsmax(line_content));
@@ -2948,9 +2954,9 @@ load_sql_config()
 
 		remove_quotes(value);
 
-		ForArray(i, sqlConfigLabels)
+		ForArray(i, SqlConfigLabels)
 		{
-			if (!equal(key, sqlConfigLabels[i]))
+			if (!equal(key, SqlConfigLabels[i]))
 			{
 				continue;
 			}
@@ -2974,16 +2980,16 @@ load_sql_config()
 
 load_maps_info()
 {
-	static const file_path[] = "addons/amxmodx/configs/gg_bomb_maps.ini";
+	static const FilePath[] = "addons/amxmodx/configs/gg_bomb_maps.ini";
 
 	bomb_supported = false;
 
-	if (!file_exists(file_path))
+	if (!file_exists(FilePath))
 	{
 		return;
 	}
 	
-	new file_handle = fopen(file_path, "r"),
+	new file_handle = fopen(FilePath, "r"),
 		line_content[MAX_CHARS * 3],
 		current_map_name[MAX_CHARS];
 	
@@ -3272,14 +3278,14 @@ bool:is_he_grenade(entity)
 
 get_bomb_entity()
 {
-	static const isBomb = 105;
-	static const weaponBox = 4;
+	static const IsBomb = 105;
+	static const WeaponBox = 4;
 
 	new bomb_entity;
 
 	while (pev_valid((bomb_entity = find_ent_by_class(bomb_entity, "weaponbox"))))
 	{
-		if (!get_pdata_int(bomb_entity, isBomb, weaponBox))
+		if (!get_pdata_int(bomb_entity, IsBomb, WeaponBox))
 		{
 			continue;
 		}
@@ -3806,7 +3812,7 @@ decrement_user_level(index, value)
 	user_data[index][DATA_WEAPON_KILLS] = 0;
 
 	// Play leveldown sound.
-	play_sound(index, sound_level_down, -1);
+	play_sound(index, SOUND_LEVEL_DOWN, -1);
 
 	ExecuteForward(forward_handles[FORWARD_LEVEL_DOWN], blank, index, user_data[index][DATA_LEVEL], -1);
 }
@@ -3827,7 +3833,7 @@ decrement_team_level(team, value)
 	}
 
 	// Play leveldown sound.
-	play_sound_for_team(team, sound_level_down, -1);
+	play_sound_for_team(team, SOUND_LEVEL_DOWN, -1);
 }
 
 end_gungame(winner)
@@ -4871,30 +4877,30 @@ stock strip_user_weapon(index, weapon_csw, weapon_slot = 0, bool:switch_weapon =
 		weapon_slot = WeaponSlots[weapon_csw];
 	}
 
-	const XTRA_OFS_PLAYER = 5;
-	const m_rgpPlayerItems_Slot0 = 367;
-	const XTRA_OFS_WEAPON = 4;
-	const m_pNext = 42;
-	const m_iId = 43;
-	const m_pActiveItem = 373;
+	const PlayerOffset = 5;
+	const SlotOffset = 367;
+	const WeaponOffset = 4;
+	const NextCbase = 42;
+	const IndexCbase = 43;
+	const ActiveItem = 373;
 
-	new weapon = get_pdata_cbase(index, m_rgpPlayerItems_Slot0 + weapon_slot, XTRA_OFS_PLAYER);
+	new weapon = get_pdata_cbase(index, SlotOffset + weapon_slot, PlayerOffset);
 
 	while (weapon)
 	{
 		// Break if we got the weapon right away.
-		if (get_pdata_int(weapon, m_iId, XTRA_OFS_WEAPON) == weapon_csw)
+		if (get_pdata_int(weapon, IndexCbase, WeaponOffset) == weapon_csw)
 		{
 			break;
 		}
 
 		// Assign new entity.
-		weapon = get_pdata_cbase(weapon, m_pNext, XTRA_OFS_WEAPON);
+		weapon = get_pdata_cbase(weapon, NextCbase, WeaponOffset);
 	}
 
 	if (weapon)
 	{
-		if (switch_weapon && get_pdata_cbase(index, m_pActiveItem, XTRA_OFS_PLAYER) == weapon)
+		if (switch_weapon && get_pdata_cbase(index, ActiveItem, PlayerOffset) == weapon)
 		{
 			ExecuteHamB(Ham_Weapon_RetireWeapon, weapon);
 		}
@@ -5034,10 +5040,10 @@ stock remove_player_weapons(index, bool:drop_bomb = false)
 
 	if (drop_bomb && has_bomb)
 	{
-		static const weapon_classname[] = "weapon_c4";
+		static const WeaponClassname[] = "weapon_c4";
 
 		// Make player drop the bomb.
-		engclient_cmd(index, "drop", weapon_classname);
+		engclient_cmd(index, "drop", WeaponClassname);
 
 		// Transfer dropped bomb to someone else?
 		if (get_pcvar_num(cvars_data[CVAR_TRANSFER_DROPPED_BOMB]) == 1)
