@@ -885,7 +885,7 @@ public plugin_init()
 	forward_handles[FORWARD_GAME_MODE_CHOSEN] = CreateMultiForward(ForwardsNames[6], ET_IGNORE, FP_CELL); // Game mode chosen (1)
 
 	// Toggle warmup a bit delayed from plugin start.
-	set_task(1.0, "delayedToggleWarmup");
+	set_task(1.0, "delayed_toggle_warmup");
 
 	// Load info required to connect to database.
 	load_sql_config();
@@ -1317,7 +1317,7 @@ public client_authorized(index)
 public client_putinserver(index)
 {
 	// Respawn player.
-	set_task(2.0, "respawnPlayerOnJoin", index + TASK_RESPAWN_ON_JOIN);
+	set_task(2.0, "respawn_player_on_join", index + TASK_RESPAWN_ON_JOIN);
 	set_task(3.0, "show_game_vote_menu", index);
 }
 
@@ -1465,7 +1465,7 @@ public set_entity_model(entity, model[])
 	{
 		if (WeaponsData[user_data[owner][DATA_LEVEL]][weapon_CSW] == CSW_HEGRENADE || get_pcvar_num(cvars_data[CVAR_WARMUP_WEAPON]) == CSW_HEGRENADE && warmup_data[WARMUP_ENABLED])
 		{
-			set_task(get_pcvar_float(cvars_data[CVAR_GIVE_BACK_HE_INTERVAL]), "giveHeGrenade", owner + TASK_GIVEGRENADE);
+			set_task(get_pcvar_float(cvars_data[CVAR_GIVE_BACK_HE_INTERVAL]), "give_he_grenade", owner + TASK_GIVEGRENADE);
 		}
 
 		if (HeGrenadeExplodeTime != DefaultExplodeTime)
@@ -1475,7 +1475,7 @@ public set_entity_model(entity, model[])
 	}
 	else if (equal(model[9], "fl", 2) && WeaponsData[user_data[owner][DATA_LEVEL]][weapon_CSW] == CSW_KNIFE)
 	{
-		set_task(get_pcvar_float(cvars_data[CVAR_GIVE_BACK_FLASH_INTERVAL]), "giveFlashGrenade", owner + TASK_GIVEGRENADE);
+		set_task(get_pcvar_float(cvars_data[CVAR_GIVE_BACK_FLASH_INTERVAL]), "give_flash_grenade", owner + TASK_GIVEGRENADE);
 	}
 }
 
@@ -1620,7 +1620,7 @@ public on_team_assign()
 	}
 
 	// Respawn player shortly after joining team.
-	set_task(2.0, "respawnPlayerOnJoin", index + TASK_RESPAWN_ON_JOIN);
+	set_task(2.0, "respawn_player_on_join", index + TASK_RESPAWN_ON_JOIN);
 }
 
 public round_start()
@@ -2052,10 +2052,10 @@ public player_spawned(index)
 		toggle_spawn_protection(index, true);
 
 		// Set task to disable spawn protection.
-		set_task(get_pcvar_float(cvars_data[CVAR_SPAWN_PROTECTION_TIME]), "spawnProtectionOff", index + TASK_SPAWNPROTECTION);
+		set_task(get_pcvar_float(cvars_data[CVAR_SPAWN_PROTECTION_TIME]), "spawn_protection_off", index + TASK_SPAWNPROTECTION);
 
 		// Set task to chcek if player is AFK.
-		set_task(get_pcvar_float(cvars_data[CVAR_IDLE_CHECK_INTERVAL]), "checkIdle", index + TASK_IDLECHECK, .flags = "b");
+		set_task(get_pcvar_float(cvars_data[CVAR_IDLE_CHECK_INTERVAL]), "check_idle", index + TASK_IDLECHECK, .flags = "b");
 
 		ExecuteForward(forward_handles[FORWARD_PLAYER_SPAWNED], blank, index);
 	}
@@ -2218,7 +2218,7 @@ public task_hide_money(task_index)
 	message_end();
 }
 
-public displayWarmupTimer()
+public display_warmup_timer()
 {
 	// Return if warmup has ended.
 	if (!warmup_data[WARMUP_ENABLED])
@@ -2282,7 +2282,7 @@ public displayWarmupTimer()
 		}
 
 		// Set task to display hud again.
-		set_task(1.2, "displayWarmupTimer");
+		set_task(1.2, "display_warmup_timer");
 	}
 	else // Disable warmup if timer is less than 0.
 	{
@@ -2359,12 +2359,12 @@ public top_players_motd_handler(index)
 		[ TASKS ]
 */
 
-public delayedToggleWarmup()
+public delayed_toggle_warmup()
 {
 	toggle_warmup(true);
 }
 
-public rewardWarmupWinner(taskIndex)
+public reward_warmup_winner(taskIndex)
 {
 	new winner = taskIndex - TASK_REWARDWINNER;
 
@@ -2385,7 +2385,7 @@ public rewardWarmupWinner(taskIndex)
 	}
 }
 
-public giveHeGrenade(taskIndex)
+public give_he_grenade(taskIndex)
 {
 	new index = taskIndex - TASK_GIVEGRENADE;
 
@@ -2399,7 +2399,7 @@ public giveHeGrenade(taskIndex)
 	give_item(index, "weapon_hegrenade");
 }
 
-public giveFlashGrenade(taskIndex)
+public give_flash_grenade(taskIndex)
 {
 	new index = taskIndex - TASK_GIVEGRENADE;
 
@@ -2413,7 +2413,7 @@ public giveFlashGrenade(taskIndex)
 	give_item(index, "weapon_flashbang");
 }
 
-public spawnProtectionOff(taskIndex)
+public spawn_protection_off(taskIndex)
 {
 	new index = taskIndex - TASK_SPAWNPROTECTION;
 
@@ -2427,7 +2427,7 @@ public spawnProtectionOff(taskIndex)
 	toggle_spawn_protection(index, false);
 }
 
-public checkIdle(taskIndex)
+public check_idle(taskIndex)
 {
 	new index = taskIndex - TASK_IDLECHECK;
 
@@ -2489,7 +2489,7 @@ public checkIdle(taskIndex)
 	}
 }
 
-public clientRespawn(taskIndex)
+public client_respawn(taskIndex)
 {
 	new index = taskIndex - TASK_RESPAWN;
 
@@ -2503,7 +2503,7 @@ public clientRespawn(taskIndex)
 	ExecuteHamB(Ham_CS_RoundRespawn, index);
 }
 
-public respawnNotify(taskIndex)
+public respawn_notify(taskIndex)
 {
 	new index = taskIndex - TASK_NOTIFY;
 
@@ -2536,7 +2536,7 @@ public respawnNotify(taskIndex)
 	user_data[index][DATA_TIME_TO_RESPAWN]--;
 }
 
-public displayHud(taskIndex)
+public display_hud(taskIndex)
 {
 	new index = taskIndex - TASK_DISPLAYHUD;
 
@@ -2629,7 +2629,7 @@ public displayHud(taskIndex)
 }
 
 // Respawn player.
-public respawnPlayerOnJoin(taskIndex)
+public respawn_player_on_join(taskIndex)
 {
 	new index = taskIndex - TASK_RESPAWN_ON_JOIN;
 
@@ -3491,7 +3491,7 @@ toggle_warmup(bool:status)
 			// Set task to reward winner after game restart.
 			if (is_user_connected(winner))
 			{
-				set_task(2.0, "rewardWarmupWinner", winner + TASK_REWARDWINNER);
+				set_task(2.0, "reward_warmup_winner", winner + TASK_REWARDWINNER);
 			}
 
 			ExecuteForward(forward_handles[FORWARD_GAME_BEGINNING], blank, winner);
@@ -3544,7 +3544,7 @@ set_warmup_hud(bool:status)
 {
 	if (status)
 	{
-		set_task(1.0, "displayWarmupTimer");
+		set_task(1.0, "display_warmup_timer");
 
 		warmup_data[WARMUP_TIMER] = get_pcvar_num(cvars_data[CVAR_WARMUP_DURATION]);
 	}
@@ -3575,7 +3575,7 @@ toggle_spawn_protection(index, bool:status)
 // Set hud display task.
 show_hud(index)
 {
-	set_task(HudDisplayInterval, "displayHud", index + TASK_DISPLAYHUD, .flags = "b");
+	set_task(HudDisplayInterval, "display_hud", index + TASK_DISPLAYHUD, .flags = "b");
 }
 
 // Remove hud display task.
@@ -3610,11 +3610,11 @@ respawn_player(index, Float:time)
 	// Set tasks to notify about timeleft to respawn.
 	ForRange(i, 0, int_time - 1)
 	{
-		set_task(float(i), "respawnNotify", index + TASK_NOTIFY);
+		set_task(float(i), "respawn_notify", index + TASK_NOTIFY);
 	}
 
 	// Set an actuall respawn function delayed.
-	set_task(time, "clientRespawn", index + TASK_RESPAWN);
+	set_task(time, "client_respawn", index + TASK_RESPAWN);
 }
 
 increment_user_weapon_kills(index, value)
