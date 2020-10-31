@@ -1628,7 +1628,7 @@ public round_start()
 	remove_weapons_off_ground();
 }
 
-public take_damage(victim, idinflictor, attacker, Float:damage, damagebits)
+public take_damage(victim, index_inflictor, attacker, Float:damage, damagebits)
 {
 	if (!is_user_alive(attacker) || victim == attacker || !damage || !is_user_alive(victim))
 	{
@@ -2066,7 +2066,7 @@ public player_spawned(index)
 	}
 }
 
-public say_handle(msgId, msgDest, msgEnt)
+public say_handle(message_index, message_dest, message_ent)
 {
 	new index = get_msg_arg_int(1);
 
@@ -2141,7 +2141,7 @@ public say_custom_command_handle(index)
 	return PLUGIN_CONTINUE;
 }
 
-public text_grenade_message(msgid, dest, id)
+public text_grenade_message(msgid, dest, index)
 {
 	// Return if text is not the one we are looking for.
 	if (get_msg_args() != 5 || get_msg_argtype(5) != ARG_STRING)
@@ -2364,9 +2364,9 @@ public delayed_toggle_warmup()
 	toggle_warmup(true);
 }
 
-public reward_warmup_winner(taskIndex)
+public reward_warmup_winner(task_index)
 {
-	new winner = taskIndex - TASK_REWARDWINNER;
+	new winner = task_index - TASK_REWARDWINNER;
 
 	// Return if user is not connected or his level is somehow incorrect. 
 	if (!is_user_connected(winner) || user_data[winner][DATA_LEVEL] >= get_pcvar_num(cvars_data[CVAR_WARMUP_LEVEL_REWARD]))
@@ -2385,9 +2385,9 @@ public reward_warmup_winner(taskIndex)
 	}
 }
 
-public give_he_grenade(taskIndex)
+public give_he_grenade(task_index)
 {
-	new index = taskIndex - TASK_GIVEGRENADE;
+	new index = task_index - TASK_GIVEGRENADE;
 
 	// Return if player is not alive or this type of grenade is none of his weapons.
 	if (!is_user_alive(index) || !warmup_data[WARMUP_ENABLED] && WeaponsData[user_data[index][DATA_LEVEL]][weapon_CSW] != CSW_HEGRENADE || warmup_data[WARMUP_ENABLED] && warmup_data[WARMUP_WEAPON_INDEX] == CSW_HEGRENADE)
@@ -2399,9 +2399,9 @@ public give_he_grenade(taskIndex)
 	give_item(index, "weapon_hegrenade");
 }
 
-public give_flash_grenade(taskIndex)
+public give_flash_grenade(task_index)
 {
-	new index = taskIndex - TASK_GIVEGRENADE;
+	new index = task_index - TASK_GIVEGRENADE;
 
 	// Return if player is not alive or flash grenade is none of his allowed weapons.
 	if (!is_user_alive(index) || WeaponsData[user_data[index][DATA_LEVEL]][weapon_CSW] != CSW_KNIFE)
@@ -2413,9 +2413,9 @@ public give_flash_grenade(taskIndex)
 	give_item(index, "weapon_flashbang");
 }
 
-public spawn_protection_off(taskIndex)
+public spawn_protection_off(task_index)
 {
-	new index = taskIndex - TASK_SPAWNPROTECTION;
+	new index = task_index - TASK_SPAWNPROTECTION;
 
 	// Return if player is not alive.
 	if (!is_user_alive(index))
@@ -2427,9 +2427,9 @@ public spawn_protection_off(taskIndex)
 	toggle_spawn_protection(index, false);
 }
 
-public check_idle(taskIndex)
+public check_idle(task_index)
 {
-	new index = taskIndex - TASK_IDLECHECK;
+	new index = task_index - TASK_IDLECHECK;
 
 	// Return if player is not alive.
 	if (!is_user_alive(index))
@@ -2489,9 +2489,9 @@ public check_idle(taskIndex)
 	}
 }
 
-public client_respawn(taskIndex)
+public client_respawn(task_index)
 {
-	new index = taskIndex - TASK_RESPAWN;
+	new index = task_index - TASK_RESPAWN;
 
 	// Return if player is not connected anymore.
 	if (!is_user_connected(index))
@@ -2503,9 +2503,9 @@ public client_respawn(taskIndex)
 	ExecuteHamB(Ham_CS_RoundRespawn, index);
 }
 
-public respawn_notify(taskIndex)
+public respawn_notify(task_index)
 {
-	new index = taskIndex - TASK_NOTIFY;
+	new index = task_index - TASK_NOTIFY;
 
 	// Return if player not connected or gungame has ended.
 	if (!is_user_connected(index) || gungame_ended)
@@ -2536,9 +2536,9 @@ public respawn_notify(taskIndex)
 	user_data[index][DATA_TIME_TO_RESPAWN]--;
 }
 
-public display_hud(taskIndex)
+public display_hud(task_index)
 {
-	new index = taskIndex - TASK_DISPLAYHUD;
+	new index = task_index - TASK_DISPLAYHUD;
 
 	if (!is_user_alive(index))
 	{
@@ -2629,9 +2629,9 @@ public display_hud(taskIndex)
 }
 
 // Respawn player.
-public respawn_player_on_join(taskIndex)
+public respawn_player_on_join(task_index)
 {
-	new index = taskIndex - TASK_RESPAWN_ON_JOIN;
+	new index = task_index - TASK_RESPAWN_ON_JOIN;
 
 	respawn_player(index, 0.1);
 }
@@ -2661,7 +2661,7 @@ connect_database()
 	SQL_ThreadQuery(db_data[SQL_HANDLE], "connectDatabaseHandler", mysql_request);
 }
 
-public connectDatabaseHandler(failState, Handle:query, error[], errorNumber, data[], dataSize)
+public connectDatabaseHandler(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	// Connection has succeded?
 	db_data[SQL_LOADED] = bool:(failState == TQUERY_SUCCESS);
@@ -2695,7 +2695,7 @@ get_user_data(index)
 }
 
 // Read user wins from database.
-public getUserInfoDataHandler(failState, Handle:query, error[], errorNum, data[], dataSize)
+public getUserInfoDataHandler(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	new index = data[0];
 
@@ -2757,7 +2757,7 @@ update_user_data(index)
 }
 
 // Pretty much ignore any data that database sends back.
-public ignoreHandle(failState, Handle:query, error[], errorNum, data[], dataSize)
+public ignoreHandle(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	return PLUGIN_CONTINUE;
 }
@@ -2773,7 +2773,7 @@ load_top_players()
 	SQL_ThreadQuery(db_data[SQL_HANDLE], "loadTopPlayersHandler", mysql_request);
 }
 
-public loadTopPlayersHandler(failState, Handle:query, error[], errorNumber, data[], dataSize)
+public loadTopPlayersHandler(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	new iterator;
 
@@ -3226,19 +3226,19 @@ get_chat_message_arguments(message[], length)
 	remove_quotes(message);
 }
 
-get_first_argument(word[], wordLength, string[], stringLength)
+get_first_argument(word[], word_length, string[], string_length)
 {
 	if (string[0] == '^"')
 	{
 		// Handle message different if it has quotes in it.	
-		strtok(string[1], word, wordLength, string, stringLength, '^"');
+		strtok(string[1], word, word_length, string, string_length, '^"');
 
 		// Get rid of white-chars.
 		trim(string);
 	}
 	else
 	{
-		strtok(string, word, wordLength, string, stringLength);
+		strtok(string, word, word_length, string, string_length);
 	}
 }
 
@@ -3349,7 +3349,7 @@ show_player_info(index, target)
 	}
 }
 
-randomize_sound_index(soundType)
+randomize_sound_index(sound_type)
 {
 	// Create dynamic array to store valid sound indexes.
 	new Array:sound_indexes = ArrayCreate(1, 1);
@@ -3357,7 +3357,7 @@ randomize_sound_index(soundType)
 	// Iterate through sounds array to find valid sounds, then add them to dynamic array.
 	ForRange(j, 0, MaxSounds - 1)
 	{
-		if (strlen(SoundsData[soundType][j]))
+		if (strlen(SoundsData[sound_type][j]))
 		{
 			ArrayPushCell(sound_indexes, j);
 		}
@@ -3643,11 +3643,11 @@ increment_team_weapon_kills(team, value)
 }
 
 // Decrement weapon kills, take care of leveldown.
-decrement_user_weapon_kills(index, value, bool:levelLose)
+decrement_user_weapon_kills(index, value, bool:level_Lose)
 {
 	user_data[index][DATA_WEAPON_KILLS] -= value;
 
-	if (levelLose && user_data[index][DATA_WEAPON_KILLS] < 0)
+	if (level_Lose && user_data[index][DATA_WEAPON_KILLS] < 0)
 	{
 		decrement_user_level(index, 1);
 	}
@@ -3659,7 +3659,7 @@ decrement_user_weapon_kills(index, value, bool:levelLose)
 }
 
 // Decrement weapon kills, take care of leveldown.
-decrement_team_weapon_kills(team, value, bool:levelLose)
+decrement_team_weapon_kills(team, value, bool:level_Lose)
 {
 	tp_data[TP_TEAM_KILLS][team - 1] -= value;
 
@@ -3673,7 +3673,7 @@ decrement_team_weapon_kills(team, value, bool:levelLose)
 		user_data[i][DATA_WEAPON_KILLS] = tp_data[TP_TEAM_KILLS][team - 1];
 	}
 
-	if (!levelLose)
+	if (!level_Lose)
 	{
 		return;
 	}
@@ -4204,10 +4204,10 @@ public sort_players_by_kills_death_difference(Array:array, elem1[], elem2[], con
 	return 0;
 }
 
-get_weapons_name(iterator, weaponIndex, string[], length)
+get_weapons_name(iterator, weapon_index, string[], length)
 {
 	// Get weapon classname.
-	get_weaponname(weaponIndex, weapon_entity_names[iterator], charsmax(weapon_entity_names[]));
+	get_weaponname(weapon_index, weapon_entity_names[iterator], charsmax(weapon_entity_names[]));
 
 	// Get rid of "weapon_" prefix.
 	copy(weapon_temp_name, charsmax(weapon_temp_name), weapon_entity_names[iterator][7]);
@@ -4862,13 +4862,13 @@ get_random_player(team = -1, bool:alive = false, Array:excluded)
 	return player;
 }
 
-stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = true)
+stock strip_user_weapon(index, weapon_csw, weapon_slot = 0, bool:switch_weapon = true)
 {
-	if (!weaponSlot)
+	if (!weapon_slot)
 	{
-		static const weaponsSlots[] = { -1, 2, -1, 1, 4, 1, 5, 1, 1, 4, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 4, 2, 1, 1, 3, 1 };
+		static const WeaponSlots[] = { -1, 2, -1, 1, 4, 1, 5, 1, 1, 4, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 4, 2, 1, 1, 3, 1 };
 		
-		weaponSlot = weaponsSlots[weaponCsw];
+		weapon_slot = WeaponSlots[weapon_csw];
 	}
 
 	const XTRA_OFS_PLAYER = 5;
@@ -4878,12 +4878,12 @@ stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = tr
 	const m_iId = 43;
 	const m_pActiveItem = 373;
 
-	new weapon = get_pdata_cbase(index, m_rgpPlayerItems_Slot0 + weaponSlot, XTRA_OFS_PLAYER);
+	new weapon = get_pdata_cbase(index, m_rgpPlayerItems_Slot0 + weapon_slot, XTRA_OFS_PLAYER);
 
 	while (weapon)
 	{
 		// Break if we got the weapon right away.
-		if (get_pdata_int(weapon, m_iId, XTRA_OFS_WEAPON) == weaponCsw)
+		if (get_pdata_int(weapon, m_iId, XTRA_OFS_WEAPON) == weapon_csw)
 		{
 			break;
 		}
@@ -4894,7 +4894,7 @@ stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = tr
 
 	if (weapon)
 	{
-		if (switchWeapon && get_pdata_cbase(index, m_pActiveItem, XTRA_OFS_PLAYER) == weapon)
+		if (switch_weapon && get_pdata_cbase(index, m_pActiveItem, XTRA_OFS_PLAYER) == weapon)
 		{
 			ExecuteHamB(Ham_Weapon_RetireWeapon, weapon);
 		}
@@ -4902,7 +4902,7 @@ stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = tr
 		if (ExecuteHamB(Ham_RemovePlayerItem, index, weapon))
 		{
 			// Honestly dont know what is the point of this one.
-			user_has_weapon(index, weaponCsw, 0);
+			user_has_weapon(index, weapon_csw, 0);
 
 			// Kill weapon entity.
 			ExecuteHamB(Ham_Item_Kill, weapon);
@@ -4916,7 +4916,7 @@ stock strip_user_weapon(index, weaponCsw, weaponSlot = 0, bool:switchWeapon = tr
 	return false;
 }
 
-stock register_commands(const array[][], arraySize, function[], include_say = true)
+stock register_commands(const array[][], array_size, function[], include_say = true)
 {
 	#if !defined ForRange
 
@@ -4926,7 +4926,7 @@ stock register_commands(const array[][], arraySize, function[], include_say = tr
 
 	#if AMXX_VERSION_NUM > 183
 	
-	ForRange(i, 0, arraySize - 1)
+	ForRange(i, 0, array_size - 1)
 	{
 		ForRange(j, 0, 1)
 		{
@@ -4945,7 +4945,7 @@ stock register_commands(const array[][], arraySize, function[], include_say = tr
 
 	new new_command[33];
 
-	ForRange(i, 0, arraySize - 1)
+	ForRange(i, 0, array_size - 1)
 	{
 		ForRange(j, 0, 1)
 		{
