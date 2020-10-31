@@ -955,7 +955,7 @@ public native_set_user_level(plugin, params)
 	// Get targeted player index.
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == -1)
+	if (is_player_connected(index) == -1)
 	{
 		return -1;
 	}
@@ -991,7 +991,7 @@ public native_get_user_level(plugin, params)
 	// Get targeted player index.
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == -1)
+	if (is_player_connected(index) == -1)
 	{
 		return -1;
 	}
@@ -1065,7 +1065,7 @@ public native_get_user_weapon_kills(plugin, params)
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == -1)
+	if (is_player_connected(index) == -1)
 	{
 		return -1;
 	}
@@ -1094,7 +1094,7 @@ public native_respawn_player(plugin, params)
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == -1)
+	if (is_player_connected(index) == -1)
 	{
 		return -1;
 	}
@@ -1128,7 +1128,7 @@ public native_get_user_weapon(plugin, params)
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == -1)
+	if (is_player_connected(index) == -1)
 	{
 		return -1;
 	}
@@ -1146,7 +1146,7 @@ public native_get_weapons_data(plugin, params)
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == -1)
+	if (is_player_connected(index) == -1)
 	{
 		return -1;
 	}
@@ -1180,7 +1180,7 @@ public native_get_user_wins(plugin, params)
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == -1)
+	if (is_player_connected(index) == -1)
 	{
 		return -1;
 	}
@@ -1197,7 +1197,7 @@ public native_get_user_combo(plugin, params)
 
 	new index = get_param(1);
 
-	if (isPlayerConnected(index) == -1)
+	if (is_player_connected(index) == -1)
 	{
 		return -1;
 	}
@@ -3039,7 +3039,7 @@ bool:is_on_last_level(index)
 }
 
 // To be used in natives only.
-isPlayerConnected(index)
+is_player_connected(index)
 {
 	// Throw error and return error value if player is not connected.
 	if (!is_user_connected(index))
