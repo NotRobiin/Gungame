@@ -2658,10 +2658,10 @@ connect_database()
 		PRIMARY KEY (`name`));");
 
 	// Send request to database.
-	SQL_ThreadQuery(db_data[SQL_HANDLE], "connectDatabaseHandler", mysql_request);
+	SQL_ThreadQuery(db_data[SQL_HANDLE], "connect_database_handler", mysql_request);
 }
 
-public connectDatabaseHandler(fail_state, Handle:query, error[], error_code, data[], data_size)
+public connect_database_handler(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	// Connection has succeded?
 	db_data[SQL_LOADED] = bool:(failState == TQUERY_SUCCESS);
@@ -2691,11 +2691,11 @@ get_user_data(index)
 	formatex(mysql_request, charsmax(mysql_request), "SELECT * FROM `gungame` WHERE `name` = '%s';", user_data[index][DATA_SAFE_NAME]);
 
 	// Send request to database.
-	SQL_ThreadQuery(db_data[SQL_HANDLE], "getUserInfoDataHandler", mysql_request, data, charsmax(data));
+	SQL_ThreadQuery(db_data[SQL_HANDLE], "get_user_info_data_handler", mysql_request, data, charsmax(data));
 }
 
 // Read user wins from database.
-public getUserInfoDataHandler(fail_state, Handle:query, error[], error_code, data[], data_size)
+public get_user_info_data_handler(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	new index = data[0];
 
@@ -2729,7 +2729,7 @@ insert_user_data(index)
 			('%s', %i, %i, %i, %i);", user_data[index][DATA_SAFE_NAME], user_data[index][DATA_WINS], user_data[index][DATA_KNIFE_KILLS], user_data[index][DATA_KILLS], user_data[index][DATA_HEADSHOTS]);
 
 	// Send request.
-	SQL_ThreadQuery(db_data[SQL_HANDLE], "ignoreHandle", mysql_request);
+	SQL_ThreadQuery(db_data[SQL_HANDLE], "ignore_handle", mysql_request);
 }
 
 update_user_data(index)
@@ -2753,11 +2753,11 @@ update_user_data(index)
 			`name` = '%s';", user_data[index][DATA_SAFE_NAME], user_data[index][DATA_WINS], user_data[index][DATA_KNIFE_KILLS], user_data[index][DATA_KILLS], user_data[index][DATA_HEADSHOTS], user_data[index][DATA_SAFE_NAME]);
 
 	// Send request.
-	SQL_ThreadQuery(db_data[SQL_HANDLE], "ignoreHandle", mysql_request);
+	SQL_ThreadQuery(db_data[SQL_HANDLE], "ignore_handle", mysql_request);
 }
 
 // Pretty much ignore any data that database sends back.
-public ignoreHandle(fail_state, Handle:query, error[], error_code, data[], data_size)
+public ignore_handle(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	return PLUGIN_CONTINUE;
 }
@@ -2770,10 +2770,10 @@ load_top_players()
 	formatex(mysql_request, charsmax(mysql_request), "SELECT * FROM `gungame` ORDER BY `wins` DESC LIMIT %i;", TopPlayersDisplayed + 1);
 
 	// Send request to database.
-	SQL_ThreadQuery(db_data[SQL_HANDLE], "loadTopPlayersHandler", mysql_request);
+	SQL_ThreadQuery(db_data[SQL_HANDLE], "load_top_players_handler", mysql_request);
 }
 
-public loadTopPlayersHandler(fail_state, Handle:query, error[], error_code, data[], data_size)
+public load_top_players_handler(fail_state, Handle:query, error[], error_code, data[], data_size)
 {
 	new iterator;
 
